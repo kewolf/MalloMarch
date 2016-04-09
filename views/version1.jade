@@ -1,0 +1,104 @@
+doctype html
+html(lang='en')
+    head
+        meta(charset='UTF-8')
+        title Version 1
+        script(src='/socket.io/socket.io.js')
+        script.
+            //var numOscil;
+            var audioContext;
+            var initialVol = 0.5;
+            var freqArr = [];
+            /*
+             var oscPort = new osc.WebSocketPort({
+             url: "ws://localhost:57110" // URL to your Web Socket server.
+             });
+             oscPort.on("message", function (oscMsg) {
+             console.log("An OSC message just arrived!", oscMsg);
+             });
+             */
+            //init sound stuff!
+            window.addEventListener('load', init, false);
+            var socket = io('http://localhost:3000');
+            socket.on('welcome', function (data) {
+                addMessage(data.message, 0, 0);
+                // Respond with a message including this clients' id sent from the server
+                setInterval(function () {
+                    var currentTime = audioContext.currentTime;
+                    socket.emit('time_req', {clientTime: currentTime, id: data.id});
+                }, 1000);
+            });
+            socket.on('time_res', function (data) {
+                //var currentTime = audioContext.currentTime;
+                //DO CALCULATIONS
+                //UPDATE KALMAN FILTER
+                var text = data.message + " Server Time: " + data.serverTime + " client Time: " + data.clientTime;
+                addMessage(text, 0, 0);
+                // Respond with a message including this clients' id sent from the server
+            });
+            /*
+             socket.on('welcome', function(data) {
+             numOscil = data.numInstruments;
+             addMessage(data.message, 0, 0);
+             // Respond with a message including this clients' id sent from the server
+             socket.emit('i am client', {data: 'foo!', id: data.id});
+             });*/
+            socket.on('oscInfo', function (data) {
+                var currentTime = audioContext.currentTime;
+                var instr;
+                if (data.address == "/left") {
+                    instr = 1;
+                }
+                if (data.address == "/right") {
+                    instr = 2;
+                }
+                var text = "Instrument " + instr + " at " + currentTime;
+                addMessage(text, currentTime, instr);
+            });
+            socket.on('error', console.error.bind(console));
+            socket.on('message', console.log.bind(console));
+            function addMessage(message, time, instrument) {
+                var text = document.createTextNode(message),
+                        el = document.createElement('li'),
+                        messages = document.getElementById('messages');
+                el.appendChild(text);
+                messages.appendChild(el);
+                console.log(text);
+                if (time > 0) {
+                    playSound(time, 0.05, instrument);
+                }
+            }
+            //init the sound system
+            function init() {
+                console.log("in init");
+                try {
+                    // Fix up for prefixing
+                    if (isAudioContextSupported()) {
+                        console.log("It is supported!");
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
+                        for (var i = 1; i < 4; i++) {
+                            freqArr[i] = 120 * i;
+                        }
+                    }
+                } catch (e) {
+                    alert('You need webaudio support - try another browser');
+                }
+            }
+            function isAudioContextSupported() {
+                // This feature is still prefixed in Safari
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                return !!window.AudioContext;
+            }
+            function playSound(time, duration, instrument) {
+                console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
+                var oscillator = audioContext.createOscillator();
+                oscillator.connect(audioContext.destination); // Connect sound to speakers
+                oscillator.frequency.value = freqArr[instrument];
+                oscillator.start(time);
+                oscillator.stop(time + duration);
+            }
+    body
+        h1  This is the index, is the sound working?
+        ul#messages
+
