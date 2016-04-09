@@ -1,0 +1,161 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('MalloMarch:server');
+var http = require('http');
+var fs = require('fs');
+var url = require('url');
+var osc = require('osc');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+//Create a socket io that listens on our server
+var io = require('socket.io').listen(server);
+
+// Create an osc.js UDP Port listening on port 6449.
+var udpPort = new osc.UDPPort({
+    localAddress: "0.0.0.0",
+    localPort: 6449
+});
+
+
+// Listen for incoming OSC Messages
+udpPort.on("bundle", function (oscBundle, timeTag, info) {
+    //console.log("An OSC bundle just arrived for time tag" + timeTag + " : " +  oscBundle);
+    //console.log("Remote info objct is: " + info);
+    //console.log("IP Address of Sender: " + info.address);
+
+    var path = oscBundle.packets[0].address;
+    if (path == '/time_req') {
+        //DO CLOCK SYNC STUFF
+        var arg1 = oscBundle.packets[0].args[0];
+    } else {
+        var time = oscBundle.packets[0].args[0];
+        var velocity = oscBundle.packets[0].args[1];
+        sendPrediction(path, time, velocity);
+    }
+});
+
+// Open the socket for listening
+udpPort.open();
+
+// Send an OSC message back to performer
+udpPort.send({
+    address: "/time_res",
+    args: [100]
+}, "127.0.0.1", 57110);
+
+
+// Emit welcome message on when the socket connects and set up our listeners on this
+io.on('connection', function (socket) {
+    // Use socket to communicate with this particular client only, sending it it's own id
+    socket.emit('welcome', {message: 'Welcome!', id: socket.id, numInstruments: 3});
+    socket.on('i am client', console.log);
+    socket.on('time_req', function (newSocket) {
+        console.log("Received Time Request: " + newSocket.clientTime + " Sending Response");
+        var serverTime = (new Date).getTime();
+
+        // Use socket to communicate with this particular client only, sending it it's own id
+        socket.emit('time_res', {
+            message: 'Response',
+            serverTime: serverTime,
+            clientTime: newSocket.clientTime,
+            id: newSocket.id
+        });
+    });
+});
+
+
+//function for passing the osc messages onto our
+function sendPrediction(address, time, velocity) {
+    io.emit('oscInfo', {
+        address: address,
+        time: time,
+        velocity: velocity
+    });
+}
+
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    var bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+}
