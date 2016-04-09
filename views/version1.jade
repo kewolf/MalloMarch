@@ -5,44 +5,41 @@ html(lang='en')
         title Version 1
         script(src='/socket.io/socket.io.js')
         script.
-            //var numOscil;
+
             var audioContext;
             var initialVol = 0.5;
-            var freqArr = [];
-            /*
-             var oscPort = new osc.WebSocketPort({
-             url: "ws://localhost:57110" // URL to your Web Socket server.
-             });
-             oscPort.on("message", function (oscMsg) {
-             console.log("An OSC message just arrived!", oscMsg);
-             });
-             */
+            var soundDuration = 0.05;
+            var freqArr = []; //array of frequencies
+
             //init sound stuff!
             window.addEventListener('load', init, false);
+
+            //socket to send/receive stuff from
             var socket = io('http://localhost:3000');
+
+            //
             socket.on('welcome', function (data) {
                 addMessage(data.message, 0, 0);
-                // Respond with a message including this clients' id sent from the server
+                // Respond every second with a message including this clients' id sent (from server) and current time
                 setInterval(function () {
                     var currentTime = audioContext.currentTime;
                     socket.emit('time_req', {clientTime: currentTime, id: data.id});
                 }, 1000);
             });
+
+            //when we receive a time response - do the time sync stuff
             socket.on('time_res', function (data) {
                 //var currentTime = audioContext.currentTime;
                 //DO CALCULATIONS
                 //UPDATE KALMAN FILTER
                 var text = data.message + " Server Time: " + data.serverTime + " client Time: " + data.clientTime;
+
+                //add message to console
                 addMessage(text, 0, 0);
-                // Respond with a message including this clients' id sent from the server
             });
-            /*
-             socket.on('welcome', function(data) {
-             numOscil = data.numInstruments;
-             addMessage(data.message, 0, 0);
-             // Respond with a message including this clients' id sent from the server
-             socket.emit('i am client', {data: 'foo!', id: data.id});
-             });*/
+
+
+            //when we receive OSC infromation, make sound!
             socket.on('oscInfo', function (data) {
                 var currentTime = audioContext.currentTime;
                 var instr;
@@ -55,8 +52,13 @@ html(lang='en')
                 var text = "Instrument " + instr + " at " + currentTime;
                 addMessage(text, currentTime, instr);
             });
+
             socket.on('error', console.error.bind(console));
-            socket.on('message', console.log.bind(console));
+
+            //socket.on('message', console.log.bind(console));
+
+
+            //Add message to the console if time > 0 then play sound for instrument for a duration
             function addMessage(message, time, instrument) {
                 var text = document.createTextNode(message),
                         el = document.createElement('li'),
@@ -65,9 +67,10 @@ html(lang='en')
                 messages.appendChild(el);
                 console.log(text);
                 if (time > 0) {
-                    playSound(time, 0.05, instrument);
+                    playSound(time, soundDuration, instrument);
                 }
             }
+
             //init the sound system
             function init() {
                 console.log("in init");
@@ -85,11 +88,14 @@ html(lang='en')
                     alert('You need webaudio support - try another browser');
                 }
             }
+
             function isAudioContextSupported() {
                 // This feature is still prefixed in Safari
                 window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                return !!window.AudioContext;
+                return window.AudioContext;
             }
+
+            //play the sound by creating an oscillator
             function playSound(time, duration, instrument) {
                 console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
                 var oscillator = audioContext.createOscillator();
