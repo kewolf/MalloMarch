@@ -4,11 +4,16 @@ html(lang='en')
         meta(charset='UTF-8')
         title Version 1
         script(src='/socket.io/socket.io.js')
+        script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
+        script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
+        script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
         script.
 
             var audioContext;
             var initialVol = 0.5;
             var soundDuration = 0.05;
+            var drums = [];
+            var numDrums = 3;
             var freqArr = []; //array of frequencies
 
             //init sound stuff!
@@ -83,6 +88,10 @@ html(lang='en')
                         for (var i = 1; i < 4; i++) {
                             freqArr[i] = 120 * i;
                         }
+                        for (var i = 1; i < numDrums; i++) {
+                            drums[i] = new WebDrum(audioContext);
+                            drums[i].connect();
+                        }
                     }
                 } catch (e) {
                     alert('You need webaudio support - try another browser');
@@ -98,13 +107,17 @@ html(lang='en')
             //play the sound by creating an oscillator
             function playSound(time, duration, instrument) {
                 console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
+                drums[instrument].trigger();
+                /*
                 var oscillator = audioContext.createOscillator();
                 oscillator.connect(audioContext.destination); // Connect sound to speakers
                 oscillator.frequency.value = freqArr[instrument];
                 oscillator.start(time);
                 oscillator.stop(time + duration);
+                 */
             }
     body
+
         h1  This is the index, is the sound working?
         ul#messages
 
