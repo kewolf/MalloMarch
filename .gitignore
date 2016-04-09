@@ -33,5 +33,5 @@ node_modules
 .node_repl_history
 
 # Because youtube told us
-# For WebStorm
+# For WebStorm Settings and Configurations
 .idea
