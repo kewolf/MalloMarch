@@ -7,6 +7,7 @@ html(lang='en')
         script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
         script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
         script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
+        script(type='text/javascript', src='/javascripts/Interface/build/interface.js')
         script.
 
             var audioContext;
@@ -88,9 +89,9 @@ html(lang='en')
                         for (var i = 1; i < 4; i++) {
                             freqArr[i] = 120 * i;
                         }
-                        for (var i = 1; i < numDrums; i++) {
-                            drums[i] = new WebDrum(audioContext);
-                            drums[i].connect();
+                        for (var j = 1; j < numDrums; j++) {
+                            drums[j] = new WebDrum(audioContext);
+                            drums[j].connect();
                         }
                     }
                 } catch (e) {
@@ -116,7 +117,28 @@ html(lang='en')
                 oscillator.stop(time + duration);
                  */
             }
+
     body
+        script.
+            var a = new Interface.Panel();
+
+            var b = new Interface.Button({
+                bounds: [.05, .05, .3, .9],
+                label: 'toggle'
+            });
+            var c = new Interface.Button({
+                bounds: [.35, .05, .3, .9],
+                label: 'momentary',
+                mode: 'momentary'
+            });
+            var d = new Interface.Button({
+                bounds: [.65, .05, .3, .9],
+                label: 'contact',
+                mode: 'contact'
+            });
+
+            a.background = 'black';
+            a.add(b, c, d);
 
         h1  This is the index, is the sound working?
         ul#messages
