@@ -1,15 +1,15 @@
-doctype html
-html(lang='en')
-    head
-        meta(charset='UTF-8')
-        title Version 1
+extends layout
+
+block content
         script(src='/socket.io/socket.io.js')
         script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
         script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
         script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
-        script(type='text/javascript', src='/javascripts/Interface/build/interface.js')
-        script.
+//script(type='text/javascript', src='/javascripts/Interface/build/interface.js)
+//link(rel='javascripts', href='/jquery/jquery.mobile-1.4.5.min.js')
+//link(rel='javascripts', href='/jquery/jquery-1.12.4.js')
 
+script.
             var audioContext;
             var initialVol = 0.5;
             var soundDuration = 0.05;
@@ -20,7 +20,7 @@ html(lang='en')
             //init sound stuff!
             window.addEventListener('load', init, false);
 
-            //socket to send/receive stuff from
+            //socket to send/receive stuff from host
             var socket = io('http://localhost:3000');
 
             //
@@ -63,7 +63,6 @@ html(lang='en')
 
             //socket.on('message', console.log.bind(console));
 
-
             //Add message to the console if time > 0 then play sound for instrument for a duration
             function addMessage(message, time, instrument) {
                 var text = document.createTextNode(message),
@@ -83,7 +82,7 @@ html(lang='en')
                 try {
                     // Fix up for prefixing
                     if (isAudioContextSupported()) {
-                        console.log("It is supported!");
+                        console.log("Web Audio is supported!");
                         audioContext = new (window.AudioContext || window.webkitAudioContext)();
                         //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
                         for (var i = 1; i < 4; i++) {
@@ -110,36 +109,219 @@ html(lang='en')
                 console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
                 drums[instrument].trigger();
                 /*
-                var oscillator = audioContext.createOscillator();
-                oscillator.connect(audioContext.destination); // Connect sound to speakers
-                oscillator.frequency.value = freqArr[instrument];
-                oscillator.start(time);
-                oscillator.stop(time + duration);
+                 var oscillator = audioContext.createOscillator();
+                 oscillator.connect(audioContext.destination); // Connect sound to speakers
+                 oscillator.frequency.value = freqArr[instrument];
+                 oscillator.start(time);
+                 oscillator.stop(time + duration);
                  */
             }
 
-    body
-        script.
-            var a = new Interface.Panel();
 
-            var b = new Interface.Button({
-                bounds: [.05, .05, .3, .9],
-                label: 'toggle'
-            });
-            var c = new Interface.Button({
-                bounds: [.35, .05, .3, .9],
-                label: 'momentary',
-                mode: 'momentary'
-            });
-            var d = new Interface.Button({
-                bounds: [.65, .05, .3, .9],
-                label: 'contact',
-                mode: 'contact'
+            //we are going to run these functions when the window fully loads:
+            $(window).load(function () {
+                //report changes in the sliders
+
+                $("#slider-1").on('change', function (event) {
+                    var slider_value = $("#slider-1").val();
+                    console.log("New Slider 1 value: " + slider_value);
+                });
+
+                $("#slider-2").on('change', function (event) {
+                    var slider_value = $("#slider-2").val();
+                    console.log("New Slider 2 value: " + slider_value);
+                });
+
+                $(".dial").knob({
+                    'change': function (v) {
+                        console.log("Knob changed: " + v);
+                    }
+                });
+                /*
+                 $("#m1-knob-1").knob({
+                 'change': function (v) {
+                 console.log("Knob 1 changed: " + v);
+                 }
+                 });
+                 $("#m1-knob-2").knob({
+                 'change': function (v) {
+                 console.log("Knob 2 changed: " + v);
+                 }
+                 });
+                 $("#m1-knob-3").knob({
+                 'change': function (v) {
+                 console.log("Knob 3 changed: " + v);
+                 }
+                 });
+                 $("#m2-knob-1").knob({
+                 'change': function (v) {
+                 console.log("Knob 1 changed: " + v);
+                 }
+                 });
+                 $("#m2-knob-2").knob({
+                 'change': function (v) {
+                 console.log("Knob 2 changed: " + v);
+                 }
+                 });
+                 $("#m2-knob-3").knob({
+                 'change': function (v) {
+                 console.log("Knob 3 changed: " + v);
+                 }
+                 });
+                 $("#m3-knob-1").knob({
+                 'change': function (v) {
+                 console.log("Knob 1 changed: " + v);
+                 }
+                 });
+                 $("#m3-knob-2").knob({
+                 'change': function (v) {
+                 console.log("Knob 2 changed: " + v);
+                 }
+                 });
+                 $("#m3-knob-3").knob({
+                 'change': function (v) {
+                 console.log("Knob 3 changed: " + v);
+                 }
+                 });
+                 */
+                //set initial values of knobs
+                $('#knob-1').val(27).trigger('change');
+                $('#knob-2').val(55).trigger('change');
+                $('#knob-3').val(99).trigger('change');
+
+                //set initial open tab
+                $('#tabButton1').click();
+
+
             });
 
-            a.background = 'black';
-            a.add(b, c, d);
+            $(function () {
+                $(document).delegate('[data-role="navbar"] a', 'click', function () {
+                    $('[data-role="navbar"] a').removeClass("ui-btn-active");
+                    $('.tabs-content').children().hide();
+                    $('#' + $(this).attr('data-tab')).show();
+                    $("html,body").animate({scrollTop: 0}, 500);
+                    $(this).addClass("ui-btn-active");
+                });
+            });
 
-        h1  This is the index, is the sound working?
+            $(document).on("tabsbeforeactivate", "#tabs", function (e, ui) {
+                var reverse = ui.newPanel.index() < ui.oldPanel.index() ? " reverse" : "",
+                        classes = "in slide" + reverse;
+                $(ui.newPanel).addClass(classes).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
+                    $(this).removeClass(classes);
+                });
+            });
+
+//div(data-role='header', data-position='inline', role='banner')
+//    h1(role='heading', aria-level='1') Cool New Interface
+
+#tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
+    div(data-role='navbar')
+        ul
+            li
+                a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Channel
+            li
+                a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Instrument
+            li
+                a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false') Build the Instrument
+
+
+
+    #one.ui-content(data-role='main')
+        ul(data-role='listview', data-inset='true')
+            p Listen and Enjoy
+
+    #two.ui-content(data-role='main')
+        ul(data-role='listview', data-inset='true')
+            li
+                a(href='#') MalLo 1
+            li
+                a(href='#') MalLo 2
+            li
+                a(href='#') MalLo 3
+
+    #three.ui-content(data-role='main')
+        div(data-role='collapsible', data-inset='false')
+            h3 MalLo 1
+            form
+                .ui-field-contain
+                    label(for='m1-slider-1') Slider 1:
+                    input#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                .ui-field-contain
+                    label(for='m1-slider-2') Slider 2:
+                    input#m1-slider-2(type='range', name='m1-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                br
+
+                .ui-grid-b
+                    .ui-block-a(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 1
+                            input.dial#m1-knob-1(type='text', name='m1-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                    .ui-block-b(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 2
+                            input.dial#m1-knob-2(type='text', name='m1-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
+                    .ui-block-c(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 3
+                            input.dial#m1-knob-3(type='text', name='m1-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+        div(data-role='collapsible', data-inset='false')
+            h3 MalLo 2
+            form
+                .ui-field-contain
+                    label(for='m2-slider-1') Slider 1:
+                    input#m2-slider-1(type='range', name='m2-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                .ui-field-contain
+                    label(for='m2-slider-2') Slider 2:
+                    input#m2-slider-2(type='range', name='m2-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                br
+
+                .ui-grid-b
+                    .ui-block-a(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 1
+                            input.dial#m2-knob-1(type='text', name='m2-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                    .ui-block-b(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 2
+                            input.dial#m2-knob-2(type='text', name='m2-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
+                    .ui-block-c(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 3
+                            input.dial#m2-knob-3(type='text', name='m2-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+        div(data-role='collapsible', data-inset='false')
+            h3 MalLo 3
+            form
+                .ui-field-contain
+                    label(for='m3-slider-1') Slider 1:
+                    input#m3-slider-1(type='range', name='m3-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                .ui-field-contain
+                    label(for='m3-slider-2') Slider 2:
+                    input#m3-slider-2(type='range', name='m3-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                br
+
+                .ui-grid-b
+                    .ui-block-a(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 1
+                            input.dial#m3-knob-1(type='text', name='m3-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                    .ui-block-b(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 2
+                            input.dial#m3-knob-2(type='text', name='m3-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
+                    .ui-block-c(style='text-align: center;')
+                        .ui-bar.ui-bar-a(style='height:250px') Knob 3
+                            input.dial#m3-knob-3(type='text', name='m3-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+
+    p
+    |  Runnning List of messages:
         ul#messages
+
+div(data-role='footer', role='banner')
+    h1(role='heading', aria-level='1') Footer!
+        h3
+            .ui-grid-b
+                .ui-block-a(style='text-align: left;') COPYRIGHT
+                a.ui-block-b.ui-btn.ui-btn-a(href='#', style='text-align: center;') Anchor - Theme swatch A
+                .ui-block-c(style='text-align: right;') CONNECTION STATUS
+
 
