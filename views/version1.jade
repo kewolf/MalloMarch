@@ -33,17 +33,28 @@ script.
                 }, 1000);
             });
 
+
             //when we receive a time response - do the time sync stuff
+            var process_variance = 1; // todo: set to better value
+            var est_measure_variance = 1; // todo: set to a better value
+            var kalman_initialized = false;
+            var kalman_filter;
             socket.on('time_res', function (data) {
-                //var currentTime = audioContext.currentTime;
-                //DO CALCULATIONS
-                //UPDATE KALMAN FILTER
-                var text = data.message + " Server Time: " + data.serverTime + " client Time: " + data.clientTime;
-
+                var receive_time = audioContext.currentTime;
+                var smoothed_offset = 0;
+                var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
+                if (!kalman_initialized) {
+                    kalman_filter = new KalmanFilter(process_variance, est_measure_variance, instant_offset);
+                    kalman_initialized = true;
+                } else {
+                    kalman_filter.input_a_measurement(instant_offset);
+                }
+                smoothed_offset = kalman_filter.posteri_est;
+                // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
+                // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
                 //add message to console
-                addMessage(text, 0, 0);
+                // addMessage(text, 0, 0);
             });
-
 
             //when we receive OSC infromation, make sound!
             socket.on('oscInfo', function (data) {
