@@ -1,15 +1,12 @@
 extends layout
 
 block content
-        script(src='/socket.io/socket.io.js')
-        script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
-        script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
-        script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
-//script(type='text/javascript', src='/javascripts/Interface/build/interface.js)
-//link(rel='javascripts', href='/jquery/jquery.mobile-1.4.5.min.js')
-//link(rel='javascripts', href='/jquery/jquery-1.12.4.js')
+    script(src='/socket.io/socket.io.js')
+    script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
+    script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
+    script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
 
-script.
+    script.
             var audioContext;
             var initialVol = 0.5;
             var soundDuration = 0.05;
@@ -224,115 +221,108 @@ script.
                 });
             });
 
-//div(data-role='header', data-position='inline', role='banner')
-//    h1(role='heading', aria-level='1') Cool New Interface
-
-#tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
-    div(data-role='navbar')
-        ul
-            li
-                a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Channel
-            li
-                a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Instrument
-            li
-                a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false') Build the Instrument
+    #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
+        div(data-role='navbar')
+            ul
+                li
+                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Channel
+                li
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Instrument
+                li
+                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false') Build the Instrument
 
 
 
-    #one.ui-content(data-role='main')
-        ul(data-role='listview', data-inset='true')
-            p Listen and Enjoy
+        #one.ui-content(data-role='main')
+            ul(data-role='listview', data-inset='true')
+                p Listen and Enjoy
 
-    #two.ui-content(data-role='main')
-        ul(data-role='listview', data-inset='true')
-            li
-                a(href='#') MalLo 1
-            li
-                a(href='#') MalLo 2
-            li
-                a(href='#') MalLo 3
+        #two.ui-content(data-role='main')
+            ul(data-role='listview', data-inset='true')
+                li
+                    a(href='#') MalLo 1
+                li
+                    a(href='#') MalLo 2
+                li
+                    a(href='#') MalLo 3
 
-    #three.ui-content(data-role='main')
-        div(data-role='collapsible', data-inset='false')
-            h3 MalLo 1
-            form
-                .ui-field-contain
-                    label(for='m1-slider-1') Slider 1:
-                    input#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+        #three.ui-content(data-role='main')
+            div(data-role='collapsible', data-inset='false')
+                h3 MalLo 1
+                form
+                    .ui-field-contain
+                        label(for='m1-slider-1') Slider 1:
+                        input#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
 
-                .ui-field-contain
-                    label(for='m1-slider-2') Slider 2:
-                    input#m1-slider-2(type='range', name='m1-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+                    .ui-field-contain
+                        label(for='m1-slider-2') Slider 2:
+                        input#m1-slider-2(type='range', name='m1-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
 
-                br
+                    br
 
+                    .ui-grid-b
+                        .ui-block-a(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 1
+                                input.dial#m1-knob-1(type='text', name='m1-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                        .ui-block-b(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 2
+                                input.dial#m1-knob-2(type='text', name='m1-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
+                        .ui-block-c(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 3
+                                input.dial#m1-knob-3(type='text', name='m1-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+            div(data-role='collapsible', data-inset='false')
+                h3 MalLo 2
+                form
+                    .ui-field-contain
+                        label(for='m2-slider-1') Slider 1:
+                        input#m2-slider-1(type='range', name='m2-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                    .ui-field-contain
+                        label(for='m2-slider-2') Slider 2:
+                        input#m2-slider-2(type='range', name='m2-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                    br
+
+                    .ui-grid-b
+                        .ui-block-a(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 1
+                                input.dial#m2-knob-1(type='text', name='m2-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                        .ui-block-b(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 2
+                                input.dial#m2-knob-2(type='text', name='m2-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
+                        .ui-block-c(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 3
+                                input.dial#m2-knob-3(type='text', name='m2-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+            div(data-role='collapsible', data-inset='false')
+                h3 MalLo 3
+                form
+                    .ui-field-contain
+                        label(for='m3-slider-1') Slider 1:
+                        input#m3-slider-1(type='range', name='m3-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                    .ui-field-contain
+                        label(for='m3-slider-2') Slider 2:
+                        input#m3-slider-2(type='range', name='m3-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+
+                    br
+
+                    .ui-grid-b
+                        .ui-block-a(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 1
+                                input.dial#m3-knob-1(type='text', name='m3-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                        .ui-block-b(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 2
+                                input.dial#m3-knob-2(type='text', name='m3-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
+                        .ui-block-c(style='text-align: center;')
+                            .ui-bar.ui-bar-a(style='height:250px') Knob 3
+                                input.dial#m3-knob-3(type='text', name='m3-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+
+    div(data-role='footer', role='banner')
+        h1(role='heading', aria-level='1') Footer!
+            h3
                 .ui-grid-b
-                    .ui-block-a(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 1
-                            input.dial#m1-knob-1(type='text', name='m1-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
-                    .ui-block-b(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 2
-                            input.dial#m1-knob-2(type='text', name='m1-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
-                    .ui-block-c(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 3
-                            input.dial#m1-knob-3(type='text', name='m1-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
-        div(data-role='collapsible', data-inset='false')
-            h3 MalLo 2
-            form
-                .ui-field-contain
-                    label(for='m2-slider-1') Slider 1:
-                    input#m2-slider-1(type='range', name='m2-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                .ui-field-contain
-                    label(for='m2-slider-2') Slider 2:
-                    input#m2-slider-2(type='range', name='m2-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                br
-
-                .ui-grid-b
-                    .ui-block-a(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 1
-                            input.dial#m2-knob-1(type='text', name='m2-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
-                    .ui-block-b(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 2
-                            input.dial#m2-knob-2(type='text', name='m2-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
-                    .ui-block-c(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 3
-                            input.dial#m2-knob-3(type='text', name='m2-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
-        div(data-role='collapsible', data-inset='false')
-            h3 MalLo 3
-            form
-                .ui-field-contain
-                    label(for='m3-slider-1') Slider 1:
-                    input#m3-slider-1(type='range', name='m3-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                .ui-field-contain
-                    label(for='m3-slider-2') Slider 2:
-                    input#m3-slider-2(type='range', name='m3-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                br
-
-                .ui-grid-b
-                    .ui-block-a(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 1
-                            input.dial#m3-knob-1(type='text', name='m3-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
-                    .ui-block-b(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 2
-                            input.dial#m3-knob-2(type='text', name='m3-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
-                    .ui-block-c(style='text-align: center;')
-                        .ui-bar.ui-bar-a(style='height:250px') Knob 3
-                            input.dial#m3-knob-3(type='text', name='m3-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
-
-    p
-    |  Runnning List of messages:
-        ul#messages
-
-div(data-role='footer', role='banner')
-    h1(role='heading', aria-level='1') Footer!
-        h3
-            .ui-grid-b
-                .ui-block-a(style='text-align: left;') COPYRIGHT
-                a.ui-block-b.ui-btn.ui-btn-a(href='#', style='text-align: center;') Anchor - Theme swatch A
-                .ui-block-c(style='text-align: right;') CONNECTION STATUS
+                    .ui-block-a(style='text-align: left;') COPYRIGHT
+                    a.ui-block-b.ui-btn.ui-btn-a(href='#', style='text-align: center;') Anchor - Theme swatch A
+                    .ui-block-c(style='text-align: right;') CONNECTION STATUS
 
 
