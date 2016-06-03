@@ -5,221 +5,331 @@ block content
     script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
     script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
     script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
+    script(src='/javascripts/Sly/sly.min.js')
+    link(rel='stylesheet', href='/stylesheets/sly.css')
+    link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
 
     script.
-            var audioContext;
-            var initialVol = 0.5;
-            var soundDuration = 0.05;
-            var drums = [];
-            var numDrums = 3;
-            var freqArr = []; //array of frequencies
 
-            //init sound stuff!
-            window.addEventListener('load', init, false);
+        var audioContext;
+        var initialVol = 0.5;
+        var soundDuration = 0.05;
+        var drums = [];
+        var numDrums = 3;
+        var freqArr = []; //array of frequencies
 
-            //socket to send/receive stuff from host
-            var socket = io('http://localhost:3000');
+        //init sound stuff!
+        window.addEventListener('load', init, false);
 
-            //
-            socket.on('welcome', function (data) {
-                addMessage(data.message, 0, 0);
-                // Respond every second with a message including this clients' id sent (from server) and current time
-                setInterval(function () {
-                    var currentTime = audioContext.currentTime;
-                    socket.emit('time_req', {clientTime: currentTime, id: data.id});
-                }, 1000);
-            });
+        //socket to send/receive stuff from host
+        var socket = io('http://localhost:3000');
 
-
-            //when we receive a time response - do the time sync stuff
-            var process_variance = 1; // todo: set to better value
-            var est_measure_variance = 1; // todo: set to a better value
-            var kalman_initialized = false;
-            var kalman_filter;
-            socket.on('time_res', function (data) {
-                var receive_time = audioContext.currentTime;
-                var smoothed_offset = 0;
-                var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
-                if (!kalman_initialized) {
-                    kalman_filter = new KalmanFilter(process_variance, est_measure_variance, instant_offset);
-                    kalman_initialized = true;
-                } else {
-                    kalman_filter.input_a_measurement(instant_offset);
-                }
-                smoothed_offset = kalman_filter.posteri_est;
-                // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
-                // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
-                //add message to console
-                // addMessage(text, 0, 0);
-            });
-
-            //when we receive OSC infromation, make sound!
-            socket.on('oscInfo', function (data) {
+        //
+        socket.on('welcome', function (data) {
+            addMessage(data.message, 0, 0);
+            // Respond every second with a message including this clients' id sent (from server) and current time
+            setInterval(function () {
                 var currentTime = audioContext.currentTime;
-                var instr;
-                if (data.address == "/left") {
-                    instr = 1;
-                }
-                if (data.address == "/right") {
-                    instr = 2;
-                }
-                var text = "Instrument " + instr + " at " + currentTime;
-                addMessage(text, currentTime, instr);
-            });
+                socket.emit('time_req', {clientTime: currentTime, id: data.id});
+            }, 1000);
+        });
 
-            socket.on('error', console.error.bind(console));
 
-            //socket.on('message', console.log.bind(console));
-
-            //Add message to the console if time > 0 then play sound for instrument for a duration
-            function addMessage(message, time, instrument) {
-                var text = document.createTextNode(message),
-                        el = document.createElement('li'),
-                        messages = document.getElementById('messages');
-                el.appendChild(text);
-                messages.appendChild(el);
-                console.log(text);
-                if (time > 0) {
-                    playSound(time, soundDuration, instrument);
-                }
+        //when we receive a time response - do the time sync stuff
+        var process_variance = 1; // todo: set to better value
+        var est_measure_variance = 1; // todo: set to a better value
+        var kalman_initialized = false;
+        var kalman_filter;
+        socket.on('time_res', function (data) {
+            var receive_time = audioContext.currentTime;
+            var smoothed_offset = 0;
+            var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
+            if (!kalman_initialized) {
+                kalman_filter = new KalmanFilter(process_variance, est_measure_variance, instant_offset);
+                kalman_initialized = true;
+            } else {
+                kalman_filter.input_a_measurement(instant_offset);
             }
+            smoothed_offset = kalman_filter.posteri_est;
+            // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
+            // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
+            //add message to console
+            // addMessage(text, 0, 0);
+        });
 
-            //init the sound system
-            function init() {
-                console.log("in init");
-                try {
-                    // Fix up for prefixing
-                    if (isAudioContextSupported()) {
-                        console.log("Web Audio is supported!");
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
-                        for (var i = 1; i < 4; i++) {
-                            freqArr[i] = 120 * i;
-                        }
-                        for (var j = 1; j < numDrums; j++) {
-                            drums[j] = new WebDrum(audioContext);
-                            drums[j].connect();
-                        }
+        //when we receive OSC infromation, make sound!
+        socket.on('oscInfo', function (data) {
+            var currentTime = audioContext.currentTime;
+            var instr;
+            if (data.address == "/left") {
+                instr = 1;
+            }
+            if (data.address == "/right") {
+                instr = 2;
+            }
+            var text = "Instrument " + instr + " at " + currentTime;
+            addMessage(text, currentTime, instr);
+        });
+
+        socket.on('error', console.error.bind(console));
+
+        //socket.on('message', console.log.bind(console));
+
+        //Add message to the console if time > 0 then play sound for instrument for a duration
+        function addMessage(message, time, instrument) {
+            var text = document.createTextNode(message),
+                    el = document.createElement('li'),
+                    messages = document.getElementById('messages');
+            el.appendChild(text);
+            messages.appendChild(el);
+            console.log(text);
+            if (time > 0) {
+                playSound(time, soundDuration, instrument);
+            }
+        }
+
+        //init the sound system
+        function init() {
+            console.log("in init");
+            try {
+                // Fix up for prefixing
+                if (isAudioContextSupported()) {
+                    console.log("Web Audio is supported!");
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
+                    for (var i = 1; i < 4; i++) {
+                        freqArr[i] = 120 * i;
                     }
-                } catch (e) {
-                    alert('You need webaudio support - try another browser');
-                }
-            }
-
-            function isAudioContextSupported() {
-                // This feature is still prefixed in Safari
-                window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                return window.AudioContext;
-            }
-
-            //play the sound by creating an oscillator
-            function playSound(time, duration, instrument) {
-                console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
-                drums[instrument].trigger();
-                /*
-                 var oscillator = audioContext.createOscillator();
-                 oscillator.connect(audioContext.destination); // Connect sound to speakers
-                 oscillator.frequency.value = freqArr[instrument];
-                 oscillator.start(time);
-                 oscillator.stop(time + duration);
-                 */
-            }
-
-
-            //we are going to run these functions when the window fully loads:
-            $(window).load(function () {
-                //report changes in the sliders
-
-                $("#slider-1").on('change', function (event) {
-                    var slider_value = $("#slider-1").val();
-                    console.log("New Slider 1 value: " + slider_value);
-                });
-
-                $("#slider-2").on('change', function (event) {
-                    var slider_value = $("#slider-2").val();
-                    console.log("New Slider 2 value: " + slider_value);
-                });
-
-                $(".dial").knob({
-                    'change': function (v) {
-                        console.log("Knob changed: " + v);
+                    for (var j = 1; j < numDrums; j++) {
+                        drums[j] = new WebDrum(audioContext);
+                        drums[j].connect();
                     }
-                });
-                /*
-                 $("#m1-knob-1").knob({
-                 'change': function (v) {
-                 console.log("Knob 1 changed: " + v);
-                 }
-                 });
-                 $("#m1-knob-2").knob({
-                 'change': function (v) {
-                 console.log("Knob 2 changed: " + v);
-                 }
-                 });
-                 $("#m1-knob-3").knob({
-                 'change': function (v) {
-                 console.log("Knob 3 changed: " + v);
-                 }
-                 });
-                 $("#m2-knob-1").knob({
-                 'change': function (v) {
-                 console.log("Knob 1 changed: " + v);
-                 }
-                 });
-                 $("#m2-knob-2").knob({
-                 'change': function (v) {
-                 console.log("Knob 2 changed: " + v);
-                 }
-                 });
-                 $("#m2-knob-3").knob({
-                 'change': function (v) {
-                 console.log("Knob 3 changed: " + v);
-                 }
-                 });
-                 $("#m3-knob-1").knob({
-                 'change': function (v) {
-                 console.log("Knob 1 changed: " + v);
-                 }
-                 });
-                 $("#m3-knob-2").knob({
-                 'change': function (v) {
-                 console.log("Knob 2 changed: " + v);
-                 }
-                 });
-                 $("#m3-knob-3").knob({
-                 'change': function (v) {
-                 console.log("Knob 3 changed: " + v);
-                 }
-                 });
-                 */
-                //set initial values of knobs
-                $('#knob-1').val(27).trigger('change');
-                $('#knob-2').val(55).trigger('change');
-                $('#knob-3').val(99).trigger('change');
+                }
+            } catch (e) {
+                alert('You need webaudio support - try another browser');
+            }
+        }
 
-                //set initial open tab
-                $('#tabButton1').click();
+        function isAudioContextSupported() {
+            // This feature is still prefixed in Safari
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            return window.AudioContext;
+        }
 
+        //play the sound by creating an oscillator
+        function playSound(time, duration, instrument) {
+            console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
+            drums[instrument].trigger();
+            /*
+             var oscillator = audioContext.createOscillator();
+             oscillator.connect(audioContext.destination); // Connect sound to speakers
+             oscillator.frequency.value = freqArr[instrument];
+             oscillator.start(time);
+             oscillator.stop(time + duration);
+             */
+        }
 
+        //we are going to run these functions when the window fully loads:
+        $(window).load(function () {
+            //report changes in the sliders
+
+            $("#m1-pitch").on('change', function (event) {
+                var slider_value = $("#m1-pitch").val();
+                console.log("Mallo 1 Pitch value: " + slider_value);
             });
 
-            $(function () {
-                $(document).delegate('[data-role="navbar"] a', 'click', function () {
-                    $('[data-role="navbar"] a').removeClass("ui-btn-active");
-                    $('.tabs-content').children().hide();
-                    $('#' + $(this).attr('data-tab')).show();
-                    $("html,body").animate({scrollTop: 0}, 500);
-                    $(this).addClass("ui-btn-active");
-                });
+            $("#tabs").tabs({
+                activate: function (event, ui) {
+                    var active = $('#tabs').tabs('option', 'active');
+                    if (active == 0) {
+                        $('#channels').sly('reload');
+                    }
+                    else if (active == 1) {
+                        $('#i1').sly('reload');
+                        $('#i2').sly('reload');
+                        $('#i3').sly('reload');
+                    }
+                    console.log("Changed Tab!");
+                    $("#mode").html($("#tabs ul>li a").eq(active).html());
+                }
             });
 
-            $(document).on("tabsbeforeactivate", "#tabs", function (e, ui) {
-                var reverse = ui.newPanel.index() < ui.oldPanel.index() ? " reverse" : "",
-                        classes = "in slide" + reverse;
-                $(ui.newPanel).addClass(classes).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
-                    $(this).removeClass(classes);
-                });
+            //set initial values of knobs
+            $('#knob-1').val(27).trigger('change');
+            $('#knob-2').val(55).trigger('change');
+            $('#knob-3').val(99).trigger('change');
+
+            //set initial open tab
+            $('#tabButton1').click();
+
+
+        });
+
+        $(function () {
+            $(document).delegate('[data-role="navbar"] a', 'click', function () {
+                $('[data-role="navbar"] a').removeClass("ui-btn-active");
+                $('.tabs-content').children().hide();
+                $('#' + $(this).attr('data-tab')).show();
+                $("html,body").animate({scrollTop: 0}, 500);
+                $(this).addClass("ui-btn-active");
             });
+        });
+
+        $(document).on("tabsbeforeactivate", "#tabs", function (e, ui) {
+            var reverse = ui.newPanel.index() < ui.oldPanel.index() ? " reverse" : "",
+                    classes = "in slide" + reverse;
+            $(ui.newPanel).addClass(classes).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
+                $(this).removeClass(classes);
+            });
+        });
+
+        $(document).ready(function () {
+
+            //setup channels slider
+            var $channels_frame = $('#channels');
+            var $channels_wrap = $channels_frame.parent();
+
+            var channels_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $channels_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for the channels box slider
+            var sly_channels = new Sly('#channels', channels_options);
+
+            //Setup event listener for when a new item has been activated
+            //eventName: Event Name
+            //itemIndex: index of active item.
+            sly_channels.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the channel params
+                console.log("Channel Active Item: " + itemIndex);
+            });
+
+            //intialize the sly and activate the 0th box
+            sly_channels.init();
+            sly_channels.activate(0);
+
+
+            //setup instrument 1 slider
+            var $i1_frame = $('#i1');
+            var $i1_wrap = $i1_frame.parent();
+
+            var i1_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $i1_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for instrument 1 (box slider)
+            var sly_i1 = new Sly('#i1', i1_options);
+
+            sly_i1.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the instrument 1 params
+                console.log("Instr 1 Active Item: " + itemIndex);
+            });
+
+            sly_i1.init();
+            sly_i1.activate(0);
+
+            //setup instrument 2 slider
+            var $i2_frame = $('#i2');
+            var $i2_wrap = $i2_frame.parent();
+
+            var i2_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $i2_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for instrument 1 (box slider)
+            var sly_i2 = new Sly('#i2', i2_options);
+            sly_i2.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the instrument 2 params
+                console.log("Instr 2 Active Item: " + itemIndex);
+            });
+            sly_i2.init();
+            sly_i2.activate(0);
+
+
+            //setup instrument 3 slider
+            var $i3_frame = $('#i3');
+            var $i3_wrap = $i3_frame.parent();
+
+            var i3_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $i3_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for instrument 3 (box slider)
+            var sly_i3 = new Sly('#i3', i3_options);
+            sly_i3.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the instrument 3 params
+                console.log("Instr 3 Active Item: " + itemIndex);
+            });
+            sly_i3.init();
+            sly_i3.activate(0);
+        });
+
+        $(window).resize(function (e) {
+            $('#channels').sly('reload');
+            $('#i1').sly('reload');
+            $('#i2').sly('reload');
+            $('#i3').sly('reload');
+        });
 
     #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
         div(data-role='navbar')
@@ -231,98 +341,122 @@ block content
                 li
                     a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false') Build the Instrument
 
-
-
         #one.ui-content(data-role='main')
-            ul(data-role='listview', data-inset='true')
-                p Listen and Enjoy
+            .form.wrap
+                #scrollbar.scrollbar
+                    #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                #channels.frame(style='overflow; hidden;')
+                    ul#ch_slidee.slidee
+                        li#ch1 1
+                        li#ch2 2
+                        li#ch3 3
+                        li 4
+                        li 5
+                        li 6
+                        li 7
+                        li 8
+                        li 9
+
 
         #two.ui-content(data-role='main')
             ul(data-role='listview', data-inset='true')
-                li
+                li(data-icon='false')
                     a(href='#') MalLo 1
-                li
+                    .form.wrap
+                        #i1_scrollbar.scrollbar
+                            #i1_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i1.instr_frame(style='overflow; hidden;')
+                            ul#i1_slidee.slidee
+                                li#i1_v1 1
+                                li#i1_v2 2
+                                li#i1_v3 3
+                                li 4
+                                li 5
+                                li 6
+                                li 7
+                                li 8
+                                li 9
+                li(data-icon='false')
                     a(href='#') MalLo 2
-                li
+                    .form.wrap
+                        #i2_scrollbar.scrollbar
+                            #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i2.instr_frame(style='overflow; hidden;')
+                            ul#i2_slidee.slidee
+                                li#i2_v1 1
+                                li#i2_v2 2
+                                li#i2_v3 3
+                                li 4
+                                li 5
+                                li 6
+                                li 7
+                                li 8
+                                li 9
+                li(data-icon='false')
                     a(href='#') MalLo 3
+                    .form.wrap
+                        #i3_scrollbar.scrollbar
+                            #i3_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i3.instr_frame(style='overflow; hidden;')
+                            ul#i3_slidee.slidee
+                                li#i3_v1 1
+                                li#i3_v2 2
+                                li#i3_v3 3
+                                li 4
+                                li 5
+                                li 6
+                                li 7
+                                li 8
+                                li 9
+
 
         #three.ui-content(data-role='main')
-            div(data-role='collapsible', data-inset='false')
+            div.pop_countryBox(data-role='collapsible', data-inset='false')
                 h3 MalLo 1
-                form
-                    .ui-field-contain
-                        label(for='m1-slider-1') Slider 1:
-                        input#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+                form.ui-content.full-width-slider
+                    .full-width-slider
+                        .leftItem
+                            label(for='m1-pitch') Pitch:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-pitch(type='range', name='m1-pitch', data-track-theme='a', data-theme='a', min='1', max='1000', value='400', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m1-slider-1') # Drums:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='9', value='4', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m1-slider-3') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-slider-3(type='range', name='m1-slider-3', data-track-theme='a', data-theme='a', min='20', max='1000', value='500', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m1-slider-4') Dynamics:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-slider-4(type='range', name='m1-slider-4', data-track-theme='a', data-theme='a', min='0', max='9', value='4', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m1-slider-5') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-slider-5(type='range', name='m1-slider-5', data-track-theme='a', data-theme='a', min='0', max='9', value='4', data-popup-enabled='true' data-mini='true')
 
-                    .ui-field-contain
-                        label(for='m1-slider-2') Slider 2:
-                        input#m1-slider-2(type='range', name='m1-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
 
-                    br
 
-                    .ui-grid-b
-                        .ui-block-a(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 1
-                                input.dial#m1-knob-1(type='text', name='m1-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
-                        .ui-block-b(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 2
-                                input.dial#m1-knob-2(type='text', name='m1-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
-                        .ui-block-c(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 3
-                                input.dial#m1-knob-3(type='text', name='m1-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
             div(data-role='collapsible', data-inset='false')
                 h3 MalLo 2
-                form
-                    .ui-field-contain
-                        label(for='m2-slider-1') Slider 1:
-                        input#m2-slider-1(type='range', name='m2-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
+                form.ui-content.full-width-slider
 
-                    .ui-field-contain
-                        label(for='m2-slider-2') Slider 2:
-                        input#m2-slider-2(type='range', name='m2-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                    br
-
-                    .ui-grid-b
-                        .ui-block-a(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 1
-                                input.dial#m2-knob-1(type='text', name='m2-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
-                        .ui-block-b(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 2
-                                input.dial#m2-knob-2(type='text', name='m2-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
-                        .ui-block-c(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 3
-                                input.dial#m2-knob-3(type='text', name='m2-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
             div(data-role='collapsible', data-inset='false')
                 h3 MalLo 3
-                form
-                    .ui-field-contain
-                        label(for='m3-slider-1') Slider 1:
-                        input#m3-slider-1(type='range', name='m3-slider-1', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                    .ui-field-contain
-                        label(for='m3-slider-2') Slider 2:
-                        input#m3-slider-2(type='range', name='m3-slider-2', data-track-theme='a', data-theme='a', min='0', max='100', value='50')
-
-                    br
-
-                    .ui-grid-b
-                        .ui-block-a(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 1
-                                input.dial#m3-knob-1(type='text', name='m3-knob-1',  data-angleArc='250', data-angleOffset=-'125', value='75')
-                        .ui-block-b(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 2
-                                input.dial#m3-knob-2(type='text', name='m3-knob-2', data-angleArc='250', data-angleOffset=-'125', value='75')
-                        .ui-block-c(style='text-align: center;')
-                            .ui-bar.ui-bar-a(style='height:250px') Knob 3
-                                input.dial#m3-knob-3(type='text', name='m3-knob-3',  data-angleArc='250', data-angleOffset=-'125', value='75')
+                form.ui-content.full-width-slider
 
     div(data-role='footer', role='banner')
-        h1(role='heading', aria-level='1') Footer!
-            h3
-                .ui-grid-b
-                    .ui-block-a(style='text-align: left;') COPYRIGHT
-                    a.ui-block-b.ui-btn.ui-btn-a(href='#', style='text-align: center;') Anchor - Theme swatch A
-                    .ui-block-c(style='text-align: right;') CONNECTION STATUS
+        h1(role='heading', aria-level='1')
+            #mode Change the Channel
+            //h3
+                //.ui-grid-b
+                //    .ui-block-a(style='text-align: left;') COPYRIGHT
+                //    a.ui-block-b.ui-btn.ui-btn-a(href='#', style='text-align: center;') Anchor - Theme swatch A
+                //    .ui-block-c(style='text-align: right;') CONNECTION STATUS
 
 
