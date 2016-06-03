@@ -17,6 +17,8 @@ html(lang='en')
             var drums = [];
             var numDrums = 3;
             var freqArr = []; //array of frequencies
+            var snare1Buffer = null;
+            var myDrum;
 
             //init sound stuff!
             window.addEventListener('load', init, false);
@@ -27,57 +29,67 @@ html(lang='en')
             //
             socket.on('welcome', function (data) {
                 addMessage(data.message, 0, 0);
+                myDrum = new Drum(snare1Buffer);
                 // Respond every second with a message including this clients' id sent (from server) and current time
                 setInterval(function () {
-                    var currentTime = audioContext.currentTime;
-                    socket.emit('time_req', {clientTime: currentTime, id: data.id});
+                    myDrum.play(audioContext.currentTime)
                 }, 1000);
+
+                setInterval(function() {
+                    checkSchedule();
+                }, 5);
             });
 
-            var process_variance = 1; // todo: set to better value
-            var est_measure_variance = 1; // todo: set to a better value
-            var kalman_initialized = false;
-            var kalman_filter;
-            //when we receive a time response - do the time sync stuff
-            socket.on('time_res', function (data) {
-                var receive_time = audioContext.currentTime;
-                var smoothed_offset = 0;
-                var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
-                if (!kalman_initialized) {
-                    kalman_filter = new KalmanFilter(process_variance, est_measure_variance, instant_offset);
-                    kalman_initialized = true;
-                } else {
-                    kalman_filter.input_a_measurement(instant_offset);
+            // here is a simple starter instrument
+            var Drum = function(buffer)
+            {
+                this.buffer = buffer;
+                this.n_drummers = 1;
+                this.size = 0;
+                this.decay = 5;
+                this.pitch = 2000;
+                this.dynamics = 0;
+            };
+
+            Drum.prototype.play = function(time)
+            {
+                this.source = audioContext.createBufferSource();
+                this.source.buffer = this.buffer;
+                this.source.connect(audioContext.destination);
+                this.source.detune.value = (this.pitch - 2000);
+                this.source.start(AudioContext.currentTime);
+            };
+
+            // Drum.prototype.schedule = function(time)
+
+
+            // scheduling stuff
+            var nPlayers = 3;
+            var nextTimes = [-1, -1, -1];
+            var lastTimePlayed = [0, 0, 0];
+            var sleepAmt = 200;
+            var tooLateThreshold = -30;
+            var lookAhead = 10;
+
+            function networkTime() {
+                return audioContext.currentTime;
+            }
+
+            function checkSchedule()
+            {
+                for (var i = 0; i < nPlayers; i++) {
+                    if (nextTimes[i] - networkTime() < lookAhead &&
+                            nextTimes[i] - networkTime() > tooLateThreshold &&
+                            nextTimes[i] > lastTimePLayed[i] + sleepAmt) {
+                        intruments[i].schedule(nextTimes);
+                        lastTimePlayed[i] = nextTimes[i];
+                    }
                 }
-                smoothed_offset = kalman_filter.posteri_est;
-                // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
-                // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
-                //add message to console
-                // addMessage(text, 0, 0);
-            });
-
-
-            //when we receive OSC infromation, make sound!
-            socket.on('oscInfo', function (data) {
-                var currentTime = audioContext.currentTime;
-                var instr;
-                if (data.address == "/left") {
-                    instr = 1;
-                }
-                if (data.address == "/right") {
-                    instr = 2;
-                }
-                var text = "Instrument " + instr + " at " + currentTime;
-                addMessage(text, currentTime, instr);
-            });
-
-            socket.on('error', console.error.bind(console));
-
-            //socket.on('message', console.log.bind(console));
-
+            }
 
             //Add message to the console if time > 0 then play sound for instrument for a duration
-            function addMessage(message, time, instrument) {
+            function addMessage(message, time, instrument)
+            {
                 var text = document.createTextNode(message),
                         el = document.createElement('li'),
                         messages = document.getElementById('messages');
@@ -85,7 +97,7 @@ html(lang='en')
                 messages.appendChild(el);
                 console.log(text);
                 if (time > 0) {
-                    playSound(time, soundDuration, instrument);
+                    playSound();
                 }
             }
 
@@ -97,14 +109,8 @@ html(lang='en')
                     if (isAudioContextSupported()) {
                         console.log("Audio context is supported!");
                         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
-                        for (var i = 1; i < 4; i++) {
-                            freqArr[i] = 240 * i;
-                        }
-                        for (var j = 1; j < numDrums; j++) {
-                            drums[j] = new WebDrum(audioContext);
-                            drums[j].connect();
-                        }
+
+                        loadSnareSound();
                     }
                 } catch (e) {
                     alert('You need webaudio support - try another browser');
@@ -118,17 +124,30 @@ html(lang='en')
             }
 
             //play the sound by creating an oscillator
-            function playSound(time, duration, instrument) {
-                console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
-                drums[instrument].trigger();
-
-                var oscillator = audioContext.createOscillator();
-                oscillator.connect(audioContext.destination); // Connect sound to speakers
-                oscillator.frequency.value = freqArr[instrument];
-                oscillator.start(time);
-                oscillator.stop(time + duration);
-
+            function playSound() {
+                var source = audioContext.createBufferSource();
+                source.buffer = snare1Buffer;
+                source.connect(audioContext.destination);
+                source.start(AudioContext.currentTime);
             }
+
+            function loadSnareSound() {
+                var url = 'http://localhost:3000/audio/SNARE_BAD_MUTHA.wav';
+                var request = new XMLHttpRequest();
+                request.open('GET', url, true);
+                request.responseType = 'arraybuffer';
+
+                request.onload = function() {
+                    audioContext.decodeAudioData(request.response, function(buffer) {
+                        snare1Buffer = buffer;
+                    }, function(e) {
+                        "Error in decoding audio data: " + e.err;
+                    });
+                }
+                request.send();
+            }
+
+
 
     body
         script.
