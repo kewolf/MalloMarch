@@ -8,32 +8,47 @@ block content
     script(src='/javascripts/Sly/sly.min.js')
     link(rel='stylesheet', href='/stylesheets/sly.css')
     link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
+    script(src='/javascripts/WebAudioInstruments/Instruments.js')
 
     script.
 
         var audioContext;
         var initialVol = 0.5;
         var soundDuration = 0.05;
-        var drums = [];
-        var numDrums = 3;
+        var snares = [];
+        var nSnares = 2;
         var freqArr = []; //array of frequencies
+        var snare1Buffer;
+        var myDrum;
 
         //init sound stuff!
         window.addEventListener('load', init, false);
 
-        //socket to send/receive stuff from host
+        //socket to send/receive stuff from
         var socket = io('http://localhost:3000');
 
         //
         socket.on('welcome', function (data) {
-            addMessage(data.message, 0, 0);
+            console.log("got welcome message");
+            myDrum = new Drum(snares);
             // Respond every second with a message including this clients' id sent (from server) and current time
-            setInterval(function () {
-                var currentTime = audioContext.currentTime;
-                socket.emit('time_req', {clientTime: currentTime, id: data.id});
-            }, 1000);
-        });
 
+            setInterval(function () {
+                //var source;
+                //source = audioContext.createBufferSource();
+                var coinFlip = Math.floor(Math.random() * 2);
+                //source.buffer = snares[coinFlip];
+                console.log("Coin flip = " + coinFlip);
+                //source.connect(audioContext.destination);
+                //source.start(AudioContext.currentTime);
+                myDrum.play(audioContext.currentTime, coinFlip);
+            }, 1000);
+
+            /*setInterval(function () {
+             checkSchedule();
+             }, 5);
+             console.log("after setIntervals"); */
+        });
 
         //when we receive a time response - do the time sync stuff
         var process_variance = 1; // todo: set to better value
@@ -80,8 +95,8 @@ block content
             var text = document.createTextNode(message),
                     el = document.createElement('li'),
                     messages = document.getElementById('messages');
-            el.appendChild(text);
-            messages.appendChild(el);
+            //            el.appendChild(text);
+            //            messages.appendChild(el);
             console.log(text);
             if (time > 0) {
                 playSound(time, soundDuration, instrument);
@@ -96,14 +111,33 @@ block content
                 if (isAudioContextSupported()) {
                     console.log("Web Audio is supported!");
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
-                    for (var i = 1; i < 4; i++) {
-                        freqArr[i] = 120 * i;
+
+                    var requests = [];
+                    // get the snare samples from the server
+                    for (var i = 0; i < nSnares; i++) {
+                        var url = 'http://localhost:3000/audio/snare' + i + '.wav';
+                        requests[i] = new XMLHttpRequest();
+                        requests[i].open('GET', url, true);
+                        requests[i].responseType = 'arraybuffer';
+                        requests[i].i = i;
+
+                        console.log("outside i: " + i);
+                        requests[i].onload = function () {
+                            console.log("onload i: " + this.i)
+                            var index = this.i;
+                            audioContext.decodeAudioData(requests[index].response, function (buffer) {
+                                var curSnare = "snare" + index;
+                                console.log("loaded " + curSnare);
+                                snares.push(buffer);
+                                console.log("buffer length: " + buffer.length);
+                                //console.log("snares length: " + snares.length);
+                            }, function (e) {
+                                console.log("Error in decoding audio data: " + e.err);
+                            });
+                        };
+                        requests[i].send();
                     }
-                    for (var j = 1; j < numDrums; j++) {
-                        drums[j] = new WebDrum(audioContext);
-                        drums[j].connect();
-                    }
+
                 }
             } catch (e) {
                 alert('You need webaudio support - try another browser');
@@ -205,7 +239,6 @@ block content
                 elasticBounds: 1,
                 easing: 'swing',
                 clickBar: 1
-
             };
 
             //create our sly for the channels box slider
