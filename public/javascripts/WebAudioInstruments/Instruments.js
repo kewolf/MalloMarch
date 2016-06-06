@@ -1,3 +1,44 @@
+/* Player */
+
+var Player = function (drumBuffer, reverbBuffer) {
+
+    //common to all
+    this.size = 50;
+    this.decay = 0;
+
+    //drummers
+    this.nDrummers = 0;
+    this.drumPitch = 50;
+    this.dynamics = 0;
+
+    //pitched percussion
+    this.range = 0;
+    this.vibrato = 0;
+    this.trippiness = 0;
+
+    //electronic
+    this.grunge = 0;
+    this.electronicPitch = 0;
+    this.fatness = 0;
+
+    //other stuff
+    this.activeInstrument = 0;
+    this.drumIndex = 0;
+    this.drum = new Drum(drumBuffer);
+}
+
+Player.prototype.play = function (time) {
+    switch (this.activeInstrument) {
+        case 0:
+            this.drum.play(time, this);
+            break;
+        default:
+            console.log("default Player play was reached");
+    }
+}
+
+/* Drum Corp */
+
 var Drum = function (buffers)
 {
     this.buffers = buffers;
@@ -8,16 +49,33 @@ var Drum = function (buffers)
     this.dynamics = 0;
 };
 
-var Player = function () {
-    
-}
-
-Drum.prototype.play = function (time, drumIndex)
+Drum.prototype.play = function (time, player)
 {
+    //var coinFlip = Math.floor(Math.random() * 2);
+    //console.log("Coin flip = " + coinFlip);
+    var coinFlip = 0;
+
     this.source = audioContext.createBufferSource();
-    this.source.buffer = this.buffers[drumIndex];
-    this.source.connect(audioContext.destination);
-    this.source.detune.value = (this.pitch - 2000);
+    this.source.buffer = this.buffers[coinFlip];
+    this.source.detune.value = (player.drumPitch - 50) * 2000;
+
+    this.reverb = audioContext.createConvolver();
+    this.reverb.buffer = player.reverbBuffer;
+
+    this.reverbGain = audioContext.createGain();
+    this.reverbGain.gain.value = player.size / 100.0;
+
+    this.dryGain = audioContext.createGain();
+    this.dryGain.gain.value = 1 - (player.size / 100.0) * 0.25;
+
+    this.source.connect(this.reverb);
+    this.reverb.connect(this.reverbGain);
+    this.reverbGain.connect(audioContext.destination);
+
+    this.source.connect(this.dryGain);
+    this.dryGain.connect(audioContext.destination);
+    console.log("this.reverbGain.gain.value" + this.reverbGain.gain.value);
+
     this.source.start(AudioContext.currentTime);
 };
 

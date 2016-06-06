@@ -13,35 +13,33 @@ block content
     script.
 
         var audioContext;
+        var serverURL = 'http://localhost:3000';
         var initialVol = 0.5;
         var soundDuration = 0.05;
-        var snares = [];
+        var reverbBuffer;
+        var snareBuffers = [];
         var nSnares = 2;
-        var freqArr = []; //array of frequencies
-        var snare1Buffer;
-        var myDrum;
+        var nPlayers = 3;
+        var players = [];
 
         //init sound stuff!
         window.addEventListener('load', init, false);
 
         //socket to send/receive stuff from
-        var socket = io('http://localhost:3000');
+        var socket = io('http://localhost:3000');//init the sound system
 
         //
         socket.on('welcome', function (data) {
-            console.log("got welcome message");
-            myDrum = new Drum(snares);
-            // Respond every second with a message including this clients' id sent (from server) and current time
+            console.log("got welcome message");// create the players
+            for (var i = 0; i < nPlayers; i++) {
+                players.push(new Player(snareBuffers), reverbBuffer);
+            }
 
             setInterval(function () {
-                //var source;
-                //source = audioContext.createBufferSource();
-                var coinFlip = Math.floor(Math.random() * 2);
-                //source.buffer = snares[coinFlip];
-                console.log("Coin flip = " + coinFlip);
-                //source.connect(audioContext.destination);
-                //source.start(AudioContext.currentTime);
-                myDrum.play(audioContext.currentTime, coinFlip);
+                if (players[0].reverbBuffer == undefined) {
+                    players[0].reverbBuffer = reverbBuffer;
+                }
+                players[0].play(audioContext.currentTime);
             }, 1000);
 
             /*setInterval(function () {
@@ -69,7 +67,6 @@ block content
             // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
             // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
             //add message to console
-            // addMessage(text, 0, 0);
         });
 
         //when we receive OSC infromation, make sound!
@@ -83,27 +80,16 @@ block content
                 instr = 2;
             }
             var text = "Instrument " + instr + " at " + currentTime;
-            addMessage(text, currentTime, instr);
         });
 
         socket.on('error', console.error.bind(console));
 
         //socket.on('message', console.log.bind(console));
 
-        //Add message to the console if time > 0 then play sound for instrument for a duration
-        function addMessage(message, time, instrument) {
-            var text = document.createTextNode(message),
-                    el = document.createElement('li'),
-                    messages = document.getElementById('messages');
-            //            el.appendChild(text);
-            //            messages.appendChild(el);
-            console.log(text);
-            if (time > 0) {
-                playSound(time, soundDuration, instrument);
-            }
-        }
 
-        //init the sound system
+        /*********** functions ***********/
+
+        // init() probably occurs first (we think, but it's hard to know with the asynchronous
         function init() {
             console.log("in init");
             try {
@@ -112,25 +98,19 @@ block content
                     console.log("Web Audio is supported!");
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-                    var requests = [];
                     // get the snare samples from the server
+                    var requests = [];
                     for (var i = 0; i < nSnares; i++) {
-                        var url = 'http://localhost:3000/audio/snare' + i + '.wav';
+                        var url = serverURL + '/audio/snare' + i + '.wav';
                         requests[i] = new XMLHttpRequest();
                         requests[i].open('GET', url, true);
                         requests[i].responseType = 'arraybuffer';
                         requests[i].i = i;
-
-                        console.log("outside i: " + i);
                         requests[i].onload = function () {
-                            console.log("onload i: " + this.i)
                             var index = this.i;
                             audioContext.decodeAudioData(requests[index].response, function (buffer) {
                                 var curSnare = "snare" + index;
-                                console.log("loaded " + curSnare);
-                                snares.push(buffer);
-                                console.log("buffer length: " + buffer.length);
-                                //console.log("snares length: " + snares.length);
+                                snareBuffers.push(buffer);
                             }, function (e) {
                                 console.log("Error in decoding audio data: " + e.err);
                             });
@@ -138,11 +118,25 @@ block content
                         requests[i].send();
                     }
 
+                    // get reverb impulse
+                    var request = new XMLHttpRequest();
+                    var url = serverURL + '/audio/reverb.wav';
+                    request.open('GET', url, true);
+                    request.responseType = 'arraybuffer';
+                    request.onload = function () {
+                        audioContext.decodeAudioData(request.response, function (buffer) {
+                            reverbBuffer = buffer;
+                        }, function (e) {
+                            consolde.log("Error setting up the reverb buffer: " + e.err);
+                        });
+                    };
+                    request.send();
                 }
             } catch (e) {
                 alert('You need webaudio support - try another browser');
             }
         }
+
 
         function isAudioContextSupported() {
             // This feature is still prefixed in Safari
@@ -150,26 +144,17 @@ block content
             return window.AudioContext;
         }
 
-        //play the sound by creating an oscillator
-        function playSound(time, duration, instrument) {
-            console.log("Play Time " + time + " for duration: " + duration + " on instrument: " + instrument);
-            drums[instrument].trigger();
-            /*
-             var oscillator = audioContext.createOscillator();
-             oscillator.connect(audioContext.destination); // Connect sound to speakers
-             oscillator.frequency.value = freqArr[instrument];
-             oscillator.start(time);
-             oscillator.stop(time + duration);
-             */
-        }
+
+
+        /*************** JQuery stuff *****************/
 
         //we are going to run these functions when the window fully loads:
         $(window).load(function () {
             //report changes in the sliders
 
             $("#m1-pitch").on('change', function (event) {
-                var slider_value = $("#m1-pitch").val();
-                console.log("Mallo 1 Pitch value: " + slider_value);
+                players[0].size = $("#m1-pitch").val();
+                //console.log("Mallo 1 Pitch value: " + slider_value);
             });
 
             $("#tabs").tabs({
@@ -451,27 +436,27 @@ block content
                         .leftItem
                             label(for='m1-pitch') Pitch:
                         .rightItem
-                            input.ui-hidden-accessible#m1-pitch(type='range', name='m1-pitch', data-track-theme='a', data-theme='a', min='1', max='1000', value='400', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m1-pitch(type='range', name='m1-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .full-width-slider
                         .leftItem
                             label(for='m1-slider-1') # Drums:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='9', value='4', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='90', value='50', data-popup-enabled='true' data-mini='true')
                     .full-width-slider
                         .leftItem
                             label(for='m1-slider-3') Decay:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-3(type='range', name='m1-slider-3', data-track-theme='a', data-theme='a', min='20', max='1000', value='500', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m1-slider-3(type='range', name='m1-slider-3', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .full-width-slider
                         .leftItem
                             label(for='m1-slider-4') Dynamics:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-4(type='range', name='m1-slider-4', data-track-theme='a', data-theme='a', min='0', max='9', value='4', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m1-slider-4(type='range', name='m1-slider-4', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .full-width-slider
                         .leftItem
                             label(for='m1-slider-5') Size:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-5(type='range', name='m1-slider-5', data-track-theme='a', data-theme='a', min='0', max='9', value='4', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m1-slider-5(type='range', name='m1-slider-5', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
 
 
 
