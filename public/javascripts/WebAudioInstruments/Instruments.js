@@ -8,6 +8,10 @@ var Drum = function (buffers)
     this.dynamics = 0;
 };
 
+var Player = function () {
+    
+}
+
 Drum.prototype.play = function (time, drumIndex)
 {
     this.source = audioContext.createBufferSource();
