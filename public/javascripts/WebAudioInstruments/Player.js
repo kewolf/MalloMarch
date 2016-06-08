@@ -66,6 +66,7 @@ Player.prototype.play = function (time) {
 Player.prototype.getParameters = function() {
 
     var params = []
+    params['activeInstrument'] = this.activeInstrument;
     params['size'] = this.size;
     params['decay'] = this.decay;
 
@@ -88,4 +89,6 @@ Player.prototype.getParameters = function() {
         default:
             console.log("fell to the bottom of the active instrument switch statement (we should not have)");
     }
+
+    return params;
 }
