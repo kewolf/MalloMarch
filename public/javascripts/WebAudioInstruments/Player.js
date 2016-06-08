@@ -65,7 +65,7 @@ Player.prototype.play = function (time) {
 
 Player.prototype.getParameters = function() {
 
-    var params = []
+    var params = [];
     params['activeInstrument'] = this.activeInstrument;
     params['size'] = this.size;
     params['decay'] = this.decay;
@@ -87,8 +87,34 @@ Player.prototype.getParameters = function() {
             params['fatness'] = this.fatness;
             break;
         default:
-            console.log("fell to the bottom of the active instrument switch statement (we should not have)");
+            console.log("fell to the bottom of the getParameters switch statement (we should not have)");
     }
 
     return params;
-}
+};
+
+Player.prototype.setParameters = function(params) {
+    this.activeInstrument = params['activeInstrument'];
+    this.size = params['size'];
+    this.decay = params['decay'];
+
+    switch(params['activeInstrument']) {
+        case DRUM_CORP:
+            this.nDrummers = params['nDrummers'];
+            this.drumPitch = params['drumPitch'];
+            this.dynamics = params['dynamics'];
+            break;
+        case PITCHED:
+            this.range = params['range'];
+            this.vibrato = params['vibrato'];
+            this.trippiness = params['trippiness'];
+            break;
+        case ELECTRONIC:
+            this.grunge = params['grunge'];
+            this.electronicPitch = params['electronicPitch'];
+            this.fatness = params['fatness'];
+            break;
+        default:
+            console.log("fell to the bottom of the setParameters switch statement (we should not have)");
+    }
+};
