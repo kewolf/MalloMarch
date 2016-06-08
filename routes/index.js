@@ -11,6 +11,11 @@ router.get('/reid', function (req, res, next) {
     res.render('reid_playground', {title: 'playtime'});
 });
 
+router.get('/katie', function (req, res, next) {
+    res.render('katie_playground', {title: 'playtime'});
+});
+
+
 ///* GET home page. */
 //router.get('/version1', function(req, res, next) {
 //  res.render('version1', { title: 'Version 1' });

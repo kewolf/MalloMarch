@@ -6,6 +6,10 @@
     display: none !important;
 }
 
+.center {
+    text-align: center;
+}
+
 .leftItem {
     clear: both;
     float: left;
@@ -14,7 +18,8 @@
 
 .rightItem {
     float: left;
-    width: 79%
+!important;
+    width: 79% !important;
 }
 
 .pop_countryBox .ui-content {

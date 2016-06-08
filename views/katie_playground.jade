@@ -1,0 +1,563 @@
+extends layout
+
+block content
+    script(src='/socket.io/socket.io.js')
+    script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
+    script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
+    script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
+    script(src='/javascripts/Sly/sly.min.js')
+    link(rel='stylesheet', href='/stylesheets/sly.css')
+    link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
+    script(src='/javascripts/MalloTools/KalmanFilter.js')
+
+    script.
+
+        var audioContext;
+        var drums = [];
+        var numDrums = 3;
+        var freqArr = []; //array of frequencies
+
+        //init sound stuff!
+        window.addEventListener('load', init, false);
+
+        //socket to receive stuff from host
+        var socket = io('http://localhost:3000');
+
+        //socket to send stuff back to host;
+        var socketOut;
+
+        //
+        socket.on('welcome', function (data) {
+            // addMessage(data.message, 0, 0);
+            // Respond every second with a message including this clients' id sent (from server) and current time
+            setInterval(function () {
+                var currentTime = audioContext.currentTime;
+                socket.emit('time_req', {clientTime: currentTime, id: data.id});
+            }, 1000);
+        });
+
+
+        //when we receive a time response - do the time sync stuff
+        var process_variance = 1; // todo: set to better value
+        var est_measure_variance = 1; // todo: set to a better value
+        var kalman_initialized = false;
+        var kalman_filter;
+        socket.on('time_res', function (data) {
+            var receive_time = audioContext.currentTime;
+            var smoothed_offset = 0;
+            var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
+            if (!kalman_initialized) {
+                kalman_filter = new KalmanFilter(process_variance, est_measure_variance, instant_offset);
+                kalman_initialized = true;
+            } else {
+                kalman_filter.input_a_measurement(instant_offset);
+            }
+            smoothed_offset = kalman_filter.posteri_est;
+            // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
+            // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
+            //add message to console
+            // addMessage(text, 0, 0);
+        });
+
+        //when we receive OSC infromation, make sound!
+        socket.on('oscInfo', function (data) {
+            var currentTime = audioContext.currentTime;
+            var instr;
+            if (data.address == "/left") {
+                instr = 1;
+            }
+            if (data.address == "/right") {
+                instr = 2;
+            }
+            var text = "Instrument " + instr + " at " + currentTime;
+            addMessage(text, currentTime, instr);
+        });
+
+        socket.on('error', console.error.bind(console));
+
+        //socket.on('message', console.log.bind(console));
+
+        //init the sound system
+        function init() {
+            console.log("in init");
+            try {
+                // Fix up for prefixing
+                if (isAudioContextSupported()) {
+                    console.log("Web Audio is supported!");
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    //audioContext.createGainNode(); //silly workaround to get sounds current time to start in safari.
+                    for (var i = 1; i < 4; i++) {
+                        freqArr[i] = 120 * i;
+                    }
+                    for (var j = 1; j < numDrums; j++) {
+                        drums[j] = new WebDrum(audioContext);
+                        drums[j].connect();
+                    }
+                }
+            } catch (e) {
+                alert('You need webaudio support - try another browser');
+            }
+        }
+
+        function isAudioContextSupported() {
+            // This feature is still prefixed in Safari
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            return window.AudioContext;
+        }
+
+
+        //we are going to run these functions when the window fully loads:
+        $(window).load(function () {
+
+            //report changes in the sliders
+            $("#m0-pitch").on('change', function (event) {
+                var slider_value = $("#m0-pitch").val();
+                console.log("Mallo 1 Pitch value: " + slider_value);
+            });
+
+
+            //When a tab is selected, reload the sliders based upon which tab is opened.
+            $("#tabs").tabs({
+                activate: function (event, ui) {
+                    var active = $('#tabs').tabs('option', 'active');
+                    if (active == 0) {
+                        $('#channels').sly('reload');
+                    }
+                    else if (active == 1) {
+                        $('#i1').sly('reload');
+                        $('#i2').sly('reload');
+                        $('#i3').sly('reload');
+                    }
+
+                    //Change the name of the mode title
+                    $("#mode").html($("#tabs ul>li a").eq(active).attr('name'));
+                }
+            });
+
+
+            //set initial open tab
+            $("#tabButton1").click();
+
+            //set initial select boxes
+            $("#m0-select").val('0').trigger('change');
+
+
+        });
+
+        $.fn.serializeObject = function () {
+            var o = {};
+            var a = this.serializeArray();
+            $.each(a, function () {
+                if (o[this.name] !== undefined) {
+                    if (!o[this.name].push) {
+                        o[this.name] = [o[this.name]];
+                    }
+                    o[this.name].push(this.value || '');
+                } else {
+                    o[this.name] = this.value || '';
+                }
+            });
+            return o;
+        };
+
+        $(function () {
+            $('#saveButton').click(function () {
+                var str = JSON.stringify($('#m0-form').serializeObject())
+                console.log(str);
+                $('#result').text(str);
+
+                // Use socket to communicate with this particular client only, sending it it's own id
+                socket.emit('saveJSON', {
+                    str: str,
+                    id: socket.id
+                });
+
+                return false;
+            });
+        });
+
+
+        $(function () {
+            //Selector for mode 3 mallo 1:
+            $("#m0-select").change(function () {
+                var nextpage = $(this).children('option:selected').attr('value');
+                if (nextpage == '0') {
+                    console.log("Selected 1!");
+                    $('#m0-dc').show();
+                    $('#m0-pp').hide();
+                    $('#m0-el').hide();
+
+                } else if (nextpage == '1') {
+                    console.log("Selected 2!");
+                    $('#m0-dc').hide();
+                    $('#m0-pp').show();
+                    $('#m0-el').hide();
+                } else {
+                    console.log("Selected 3!");
+                    $('#m0-dc').hide();
+                    $('#m0-pp').hide();
+                    $('#m0-el').show();
+                }
+            });
+        });
+
+
+
+
+        //creates the animation and activation for the navigation bar
+        $(function () {
+            $(document).delegate('[data-role="navbar"] a', 'click', function () {
+                $('[data-role="navbar"] a').removeClass("ui-btn-active");
+                $('.tabs-content').children().hide();
+                $('#' + $(this).attr('data-tab')).show();
+                $("html,body").animate({scrollTop: 0}, 500);
+                $(this).addClass("ui-btn-active");
+                console.log("In Delegate");
+            });
+        });
+
+        $(document).on("tabsbeforeactivate", "#tabs", function (e, ui) {
+            var reverse = ui.newPanel.index() < ui.oldPanel.index() ? " reverse" : "",
+                    classes = "in slide" + reverse;
+            $(ui.newPanel).addClass(classes).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
+                $(this).removeClass(classes);
+            });
+        });
+
+        //setup with sliders!
+        $(document).ready(function () {
+
+            //setup channels slider
+            var $channels_frame = $('#channels');
+            var $channels_wrap = $channels_frame.parent();
+
+            var channels_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $channels_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for the channels box slider
+            var sly_channels = new Sly('#channels', channels_options);
+
+            //Setup event listener for when a new item has been activated
+            //eventName: Event Name
+            //itemIndex: index of active item.
+            sly_channels.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the channel params
+                console.log("Channel Active Item: " + itemIndex);
+            });
+
+            //intialize the sly and activate the 0th box
+            sly_channels.init();
+            sly_channels.activate(0);
+
+
+            //setup instrument 1 slider
+            var $i1_frame = $('#i1');
+            var $i1_wrap = $i1_frame.parent();
+
+            var i1_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $i1_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for instrument 1 (box slider)
+            var sly_i1 = new Sly('#i1', i1_options);
+
+            sly_i1.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the instrument 1 params
+                console.log("Instr 1 Active Item: " + itemIndex);
+            });
+
+            sly_i1.init();
+            sly_i1.activate(0);
+
+            //setup instrument 2 slider
+            var $i2_frame = $('#i2');
+            var $i2_wrap = $i2_frame.parent();
+
+            var i2_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $i2_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for instrument 1 (box slider)
+            var sly_i2 = new Sly('#i2', i2_options);
+            sly_i2.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the instrument 2 params
+                console.log("Instr 2 Active Item: " + itemIndex);
+            });
+            sly_i2.init();
+            sly_i2.activate(0);
+
+
+            //setup instrument 3 slider
+            var $i3_frame = $('#i3');
+            var $i3_wrap = $i3_frame.parent();
+
+            var i3_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $i3_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+
+            };
+
+            //create our sly for instrument 3 (box slider)
+            var sly_i3 = new Sly('#i3', i3_options);
+            sly_i3.on('active', function (eventName, itemIndex) {
+                //TODO: Add code to change the instrument 3 params
+                console.log("Instr 3 Active Item: " + itemIndex);
+            });
+            sly_i3.init();
+            sly_i3.activate(0);
+        });
+
+        $(window).resize(function (e) {
+            $('#channels').sly('reload');
+            $('#i1').sly('reload');
+            $('#i2').sly('reload');
+            $('#i3').sly('reload');
+        });
+
+    #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
+        div(data-role='navbar')
+            ul
+                li
+                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Channel') Mode 1
+                li
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Instrument') Mode 2
+                li
+                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', name = 'Build the Instrument') Mode 3
+        div.ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
+            h7#mode Change the Channel
+
+        #one.ui-content(data-role='main')
+            .form.wrap
+                #scrollbar.scrollbar
+                    #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                #channels.frame(style='overflow; hidden;')
+                    ul#ch_slidee.slidee
+                        li#ch1 1
+                        li#ch2 2
+                        li#ch3 3
+                        li 4
+                        li 5
+                        li 6
+                        li 7
+                        li 8
+                        li 9
+
+
+        #two.ui-content(data-role='main')
+            ul(data-role='listview', data-inset='true')
+                li(data-icon='false')
+                    a(href='#') MalLo 1
+                    .form.wrap
+                        #i1_scrollbar.scrollbar
+                            #i1_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i1.instr_frame(style='overflow; hidden;')
+                            ul#i1_slidee.slidee
+                                li#i1_v1 1
+                                li#i1_v2 2
+                                li#i1_v3 3
+                                li 4
+                                li 5
+                                li 6
+                                li 7
+                                li 8
+                                li 9
+                li(data-icon='false')
+                    a(href='#') MalLo 2
+                    .form.wrap
+                        #i2_scrollbar.scrollbar
+                            #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i2.instr_frame(style='overflow; hidden;')
+                            ul#i2_slidee.slidee
+                                li#i2_v1 1
+                                li#i2_v2 2
+                                li#i2_v3 3
+                                li 4
+                                li 5
+                                li 6
+                                li 7
+                                li 8
+                                li 9
+                li(data-icon='false')
+                    a(href='#') MalLo 3
+                    .form.wrap
+                        #i3_scrollbar.scrollbar
+                            #i3_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i3.instr_frame(style='overflow; hidden;')
+                            ul#i3_slidee.slidee
+                                li#i3_v1 1
+                                li#i3_v2 2
+                                li#i3_v3 3
+                                li 4
+                                li 5
+                                li 6
+                                li 7
+                                li 8
+                                li 9
+        #three.ui-content(data-role='main')
+            form#m0-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                h3 MalLo 1
+                .ui-field-contain
+                    label(for='m0-select') Type:
+                    select#m0-select(name='m0-select', data-mini='true', data-iconpos='left')
+                        option(value='0') Drum Corp
+                        option(value='1') Pitched Percussion
+                        option(value='2') Electronic
+                .ui-content.full-width-slider#m0-dc
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-dc-pitch') Pitch:
+                        .rightItem
+                            input.s.ui-hidden-accessible#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-dc-drums') # Drums:
+                        .rightItem
+                            input.s.ui-hidden-accessible#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-dc-decay') Decay:
+                        .rightItem
+                            input.s.ui-hidden-accessible#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-dc-dyn') Dynamics:
+                        .rightItem
+                            input.s.ui-hidden-accessible#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-dc-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                .ui-content.full-width-slider#m0-pp
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-pp-scale') Scale:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-pitch-vib') Vibrato:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pitch-vib(type='range', name='m0-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-pp-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-pp-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-pp-trip') Trippiness:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                .ui-content.full-width-slider#m0-el
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-el-grunge') Grunge:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-el-pitch') Pitch:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-el-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-el-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .full-width-slider
+                        .leftItem
+                            label(for='m0-el-fat') Fatness:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+
+            form#m1-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                h3 MalLo 2
+                form.ui-content.full-width-slider
+
+            form#m2-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                h3 MalLo 3
+                form.ui-content.full-width-slider
+
+
+
+    h2#result
+    div(data-role='footer', role='banner', data-position='inline')
+        h1
+            .ui-grid-b
+                .ui-block-a(style='text-align: left;')
+                a#saveButton.ui-block-b.ui-btn-a.ui-btn.ui-corner-all.ui-shadow(data-role="button", style='text-align: center;', input type="submit") Save
+                .ui-block-c(style='text-align: right;')
+
+
+
+

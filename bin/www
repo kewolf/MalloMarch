@@ -3,13 +3,14 @@
 /**
  * Module dependencies.
  */
-
 var app = require('../app');
 var debug = require('debug')('MalloMarch:server');
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
 var osc = require('osc');
+var jsonfile = require('jsonfile');
+var dateFormat = require('dateformat');
 
 /**
  * Get port from environment and store in Express.
@@ -72,9 +73,34 @@ udpPort.send({
 
 // Emit welcome message on when the socket connects and set up our listeners on this
 io.on('connection', function (socket) {
+    console.log(socket.request.connection);
     // Use socket to communicate with this particular client only, sending it it's own id
-    socket.emit('welcome', {message: 'Welcome!', id: socket.id, numInstruments: 3});
-    socket.on('i am client', console.log);
+    var address = socket.handshake.address;
+    socket.emit('welcome', {
+        message: 'Welcome!',
+        id: socket.id,
+        ip: address.address,
+        port: address.port,
+        numInstruments: 3
+    });
+    socket.on('saveJSON', function (newSocket) {
+            var id = socket.request.connection.remoteAddress;
+            var date = dateFormat(new Date(), "dd-mm-yy_hh:MM:ssTT")
+            var saveStr = id + "_" + date;
+            console.log(saveStr);
+            var file = 'public/json/' + saveStr + '.json';
+            var data = JSON.parse(newSocket.str);
+            /*
+             fs.writeFile(file, data, function (err) {
+             if (err) return console.log(err);
+             console.log('Hello World > helloworld.txt');
+             });*/
+            jsonfile.writeFile(file, data, function (err) {
+                console.error(err)
+            })
+
+        }
+    );
     socket.on('time_req', function (newSocket) {
         console.log("Received Time Request: " + newSocket.clientTime + " Sending Response");
         var serverTime = (new Date).getTime();

@@ -8,14 +8,18 @@ block content
     script(src='/javascripts/Sly/sly.min.js')
     link(rel='stylesheet', href='/stylesheets/sly.css')
     link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
-    script(src='/javascripts/WebAudioInstruments/Instruments.js')
+    script(src='/javascripts/WebDrum/src/web-ahdsr.js')
+    script(src='/javascripts/WebAudioInstruments/Drum_Corp.js')
+    script(src='/javascripts/WebAudioInstruments/Electronic.js')
+    script(src='/javascripts/WebAudioInstruments/Pitched.js')
+    script(src='/javascripts/WebAudioInstruments/Player.js')
 
     script.
 
         var audioContext;
+        var customIPflag = 1;
         var serverURL = 'http://localhost:3000';
-        var initialVol = 0.5;
-        var soundDuration = 0.05;
+        var customServerURL = '10.9.241.208:3000';
         var reverbBuffer;
         var snareBuffers = [];
         var nSnares = 2;
@@ -25,28 +29,68 @@ block content
         //init sound stuff!
         window.addEventListener('load', init, false);
 
-        //socket to send/receive stuff from
-        var socket = io('http://localhost:3000');//init the sound system
+        if (customIPflag) {
+            serverURL = customServerURL;
+        }
 
-        //
+        //socket to send/receive stuff from
+        var socket = io(serverURL);//init the sound system
+
+
         socket.on('welcome', function (data) {
             console.log("got welcome message");// create the players
-            for (var i = 0; i < nPlayers; i++) {
-                players.push(new Player(snareBuffers), reverbBuffer);
-            }
+            waitForBuffers();
+            //loadJSONfile();
 
-            setInterval(function () {
-                if (players[0].reverbBuffer == undefined) {
-                    players[0].reverbBuffer = reverbBuffer;
-                }
-                players[0].play(audioContext.currentTime);
-            }, 1000);
+            //welcome sound!
+            /*
+             var oscillator = audioContext.createOscillator();
+             oscillator.connect(audioContext.destination);
+             oscillator.type = 'square';
+             oscillator.frequency.value = 3000; // value in hertz
+             //oscillator.start();
+             oscillator.noteOn(1);
+             oscillator.noteOff(1.5);
+             */
 
             /*setInterval(function () {
              checkSchedule();
              }, 5);
              console.log("after setIntervals"); */
         });
+
+        function waitForBuffers() {
+            console.log("snareBuffers.length: " + snareBuffers.length + ", reverbBuffer: " + reverbBuffer);
+            if (snareBuffers.length != nSnares || reverbBuffer == undefined) {
+                window.setTimeout(waitForBuffers, 100);
+            } else {
+                for (var i = 0; i < nPlayers; i++) {
+                    console.log("snareBuffers.length: " + snareBuffers.length);
+                    players.push(new Player(snareBuffers), reverbBuffer);
+                }
+
+                setInterval(function () {
+                    players[0].play(audioContext.currentTime);
+                }, 1000);
+            }
+        }
+
+        /*
+         function loadJSONfile(){
+         var request = new XMLHttpRequest();
+         var url = '/json/instruments.json';
+         request.open('GET', url, true);
+         request.responseType = 'arraybuffer';
+         request.onload = function () {
+         audioContext.decodeAudioData(request.response, function (buffer) {
+         reverbBuffer = buffer;
+         }, function (e) {
+         console.log("Error setting up the reverb buffer: " + e.err);
+         });
+         };
+         request.send();
+         }
+         */
 
         //when we receive a time response - do the time sync stuff
         var process_variance = 1; // todo: set to better value
@@ -101,7 +145,7 @@ block content
                     // get the snare samples from the server
                     var requests = [];
                     for (var i = 0; i < nSnares; i++) {
-                        var url = serverURL + '/audio/snare' + i + '.wav';
+                        var url = '/audio/snare' + i + '.wav';
                         requests[i] = new XMLHttpRequest();
                         requests[i].open('GET', url, true);
                         requests[i].responseType = 'arraybuffer';
@@ -120,7 +164,7 @@ block content
 
                     // get reverb impulse
                     var request = new XMLHttpRequest();
-                    var url = serverURL + '/audio/reverb.wav';
+                    var url = '/audio/reverb.wav';
                     request.open('GET', url, true);
                     request.responseType = 'arraybuffer';
                     request.onload = function () {
@@ -148,14 +192,26 @@ block content
 
         /*************** JQuery stuff *****************/
 
+        /* Work on trying to dynamically create the sliders
+         function generateSliders() {
+         $(document).on('pagebeforeshow', '#three', function () {
+         // Add a new input element
+         var index = 4;
+         var newRight = "rightItem" + index;
+         $('[id="#m0-dc"]').append('<div label class="leftItem">NEW!</div>');
+         $('[id="#m0-dc"]').append('<div class="rightItem" id =' + newRight + '></div>');
+         $('[id=' + newRight + ']').append('<input type="range" name="slider-' + index + '" id="slider-' + index + '" value="25" min="0" max="100" data-track-theme="a" data-theme="a" data-popup-enabled="true" data-mini="true">');
+         // Enhance new input element, unfortunately slider() function is not goinf to work correctly
+
+         $('#three').trigger('create');
+         });
+         }
+         */
+
         //we are going to run these functions when the window fully loads:
         $(window).load(function () {
-            //report changes in the sliders
 
-            $("#m1-pitch").on('change', function (event) {
-                players[0].size = $("#m1-pitch").val();
-                //console.log("Mallo 1 Pitch value: " + slider_value);
-            });
+            //generateSliders();
 
             $("#tabs").tabs({
                 activate: function (event, ui) {
@@ -168,22 +224,136 @@ block content
                         $('#i2').sly('reload');
                         $('#i3').sly('reload');
                     }
-                    console.log("Changed Tab!");
-                    $("#mode").html($("#tabs ul>li a").eq(active).html());
+
+                    //Change the name of the mode title
+                    $("#mode").html($("#tabs ul>li a").eq(active).attr('name'));
                 }
             });
 
-            //set initial values of knobs
-            $('#knob-1').val(27).trigger('change');
-            $('#knob-2').val(55).trigger('change');
-            $('#knob-3').val(99).trigger('change');
 
             //set initial open tab
             $('#tabButton1').click();
 
+            //set initial select boxes
+            $("#m0-select").val('0').trigger('change');
+
 
         });
 
+        $.fn.serializeObject = function () {
+            var o = {};
+            var a = this.serializeArray();
+            $.each(a, function () {
+                if (o[this.name] !== undefined) {
+                    if (!o[this.name].push) {
+                        o[this.name] = [o[this.name]];
+                    }
+                    o[this.name].push(this.value || '');
+                } else {
+                    o[this.name] = this.value || '';
+                }
+            });
+            return o;
+        };
+
+
+        $(function () {
+            $('#saveButton').click(function () {
+                var str = JSON.stringify($('#m-form').serializeObject());
+                console.log(str);
+                $('#result').text(str);
+
+                // Use socket to communicate with this particular client only, sending it it's own id
+                socket.emit('saveJSON', {
+                    str: str,
+                    id: socket.id
+                });
+
+                return false;
+            });
+        });
+
+
+        //show or hide sliders for mode 3 depending on the selector
+        $(function () {
+            //Selector for ids that end in '-select'
+            $('[id$="-select"]').change(function () {
+                //get the id and extract the mallo id (m0, m1, m2)
+                var id = $(this).attr('id');
+                var playerNum = parseInt(id.slice(1));
+                console.log("Select Player: " + playerNum);
+                var malloId = id.slice(0, 2);
+                //get the value for the child that is selected
+                var nextpage = $(this).children('option:selected').attr('value');
+
+                //show/hide based on the selection.
+                if (nextpage == '0') {
+                    console.log("Selected 1!");
+                    //TO DO CHANGE TO CONSTANTS FOR 0, 1, 2
+                    //players[playerNum].activeInstrument = 0;
+                    $('#' + malloId + '-dc').show();
+                    $('#' + malloId + '-pp').hide();
+                    $('#' + malloId + '-el').hide();
+
+                } else if (nextpage == '1') {
+                    console.log("Selected 2!");
+                    //players[playerNum].activeInstrument = 1;
+                    $('#' + malloId + '-dc').hide();
+                    $('#' + malloId + '-pp').show();
+                    $('#' + malloId + '-el').hide();
+                } else {
+                    console.log("Selected 3!");
+                    //players[playerNum].activeInstrument = 2;
+                    $('#' + malloId + '-dc').hide();
+                    $('#' + malloId + '-pp').hide();
+                    $('#' + malloId + '-el').show();
+                }
+            });
+        });
+
+
+        //slider changes!
+        $(function () {
+            $(".ui-slider").on('change', function (event) {
+                var id = event.target.id;
+                var playerNumber = parseInt(id.slice(1));
+                var value = $(this).text();
+                console.log(event.target.id + " " + playerNumber + " " + value);
+                if (id.indexOf("decay") > -1) {
+                    players[playerNumber].decay = value;
+                    console.log("DECAY!");
+                    //TODO
+                    //will need to change all other decays as well...
+                } else if (id.indexOf("size") > -1) {
+                    players[playerNumber].size = value;
+                    //TODO
+                    //will need to change all other sizes as well...
+                } else if (id.indexOf("dc-pitch") > -1) {
+                    players[playerNumber].drumPitch = value;
+                } else if (id.indexOf("dc-dyn") > -1) {
+                    players[playerNumber].dynamics = value;
+                } else if (id.indexOf("dc-drums") > -1) {
+                    players[playerNumber].nDrummers = value;
+                } else if (id.indexOf("pp-vib") > -1) {
+                    players[playerNumber].vibrato = value;
+                } else if (id.indexOf("pp-trip") > -1) {
+                    players[playerNumber].trippiness = value;
+                } else if (id.indexOf("pp-scale") > -1) {
+                    players[playerNumber].range = value;
+                } else if (id.indexOf("el-fat") > -1) {
+                    players[playerNumber].fatness = value;
+                } else if (id.indexOf("el-pitch") > -1) {
+                    players[playerNumber].electronicPitch = value;
+                } else if (id.indexOf("el-grunge") > -1) {
+                    players[playerNumber].grunge = value;
+                }
+            });
+        });
+
+
+
+
+        //creates the animation and activation for the navigation bar
         $(function () {
             $(document).delegate('[data-role="navbar"] a', 'click', function () {
                 $('[data-role="navbar"] a').removeClass("ui-btn-active");
@@ -202,6 +372,7 @@ block content
             });
         });
 
+        //setup sliders for modes 1 and 2!
         $(document).ready(function () {
 
             //setup channels slider
@@ -242,104 +413,42 @@ block content
             sly_channels.activate(0);
 
 
-            //setup instrument 1 slider
-            var $i1_frame = $('#i1');
-            var $i1_wrap = $i1_frame.parent();
+            //Create 3 sliders for mode 2!
+            var slyArray = []; // sly array!
+            for (var i = 1; i < 4; i++) {
+                var $frame = $('#i' + i);
+                var $wrap = $frame.parent();
 
-            var i1_options = {
-                horizontal: 1,
-                itemNav: 'forceCentered',
-                smart: 1,
-                activateMiddle: 1,
-                activateOn: 'click',
-                mouseDragging: 1,
-                touchDragging: 1,
-                releaseSwing: 1,
-                startAt: 0,
-                scrollBar: $i1_wrap.find('.scrollbar'),
-                scrollBy: 1,
-                speed: 200,
-                elasticBounds: 1,
-                easing: 'swing',
-                clickBar: 1
+                var i_options = {
+                    horizontal: 1,
+                    itemNav: 'forceCentered',
+                    smart: 1,
+                    activateMiddle: 1,
+                    activateOn: 'click',
+                    mouseDragging: 1,
+                    touchDragging: 1,
+                    releaseSwing: 1,
+                    startAt: 0,
+                    scrollBar: $wrap.find('.scrollbar'),
+                    scrollBy: 1,
+                    speed: 200,
+                    elasticBounds: 1,
+                    easing: 'swing',
+                    clickBar: 1
+                };
 
-            };
+                //create our sly for instrument 1 (box slider)
 
-            //create our sly for instrument 1 (box slider)
-            var sly_i1 = new Sly('#i1', i1_options);
+                sly = new Sly('#i' + i, i_options);
 
-            sly_i1.on('active', function (eventName, itemIndex) {
-                //TODO: Add code to change the instrument 1 params
-                console.log("Instr 1 Active Item: " + itemIndex);
-            });
+                sly.on('active', function (eventName, itemIndex) {
+                    var id = this.frame.id;
+                    console.log("Instr " + id + " Active Item: " + itemIndex);
+                });
 
-            sly_i1.init();
-            sly_i1.activate(0);
-
-            //setup instrument 2 slider
-            var $i2_frame = $('#i2');
-            var $i2_wrap = $i2_frame.parent();
-
-            var i2_options = {
-                horizontal: 1,
-                itemNav: 'forceCentered',
-                smart: 1,
-                activateMiddle: 1,
-                activateOn: 'click',
-                mouseDragging: 1,
-                touchDragging: 1,
-                releaseSwing: 1,
-                startAt: 0,
-                scrollBar: $i2_wrap.find('.scrollbar'),
-                scrollBy: 1,
-                speed: 200,
-                elasticBounds: 1,
-                easing: 'swing',
-                clickBar: 1
-
-            };
-
-            //create our sly for instrument 1 (box slider)
-            var sly_i2 = new Sly('#i2', i2_options);
-            sly_i2.on('active', function (eventName, itemIndex) {
-                //TODO: Add code to change the instrument 2 params
-                console.log("Instr 2 Active Item: " + itemIndex);
-            });
-            sly_i2.init();
-            sly_i2.activate(0);
-
-
-            //setup instrument 3 slider
-            var $i3_frame = $('#i3');
-            var $i3_wrap = $i3_frame.parent();
-
-            var i3_options = {
-                horizontal: 1,
-                itemNav: 'forceCentered',
-                smart: 1,
-                activateMiddle: 1,
-                activateOn: 'click',
-                mouseDragging: 1,
-                touchDragging: 1,
-                releaseSwing: 1,
-                startAt: 0,
-                scrollBar: $i3_wrap.find('.scrollbar'),
-                scrollBy: 1,
-                speed: 200,
-                elasticBounds: 1,
-                easing: 'swing',
-                clickBar: 1
-
-            };
-
-            //create our sly for instrument 3 (box slider)
-            var sly_i3 = new Sly('#i3', i3_options);
-            sly_i3.on('active', function (eventName, itemIndex) {
-                //TODO: Add code to change the instrument 3 params
-                console.log("Instr 3 Active Item: " + itemIndex);
-            });
-            sly_i3.init();
-            sly_i3.activate(0);
+                sly.init();
+                sly.activate(0);
+            }
         });
 
         $(window).resize(function (e) {
@@ -353,11 +462,13 @@ block content
         div(data-role='navbar')
             ul
                 li
-                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Channel
+                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Channel') Mode 1
                 li
-                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false') Change the Instrument
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Instrument') Mode 2
                 li
-                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false') Build the Instrument
+                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', name = 'Build the Instrument') Mode 3
+        div.ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
+            h7#mode Change the Channel
 
         #one.ui-content(data-role='main')
             .form.wrap
@@ -426,55 +537,107 @@ block content
                                 li 7
                                 li 8
                                 li 9
-
-
         #three.ui-content(data-role='main')
-            div.pop_countryBox(data-role='collapsible', data-inset='false')
-                h3 MalLo 1
-                form.ui-content.full-width-slider
-                    .full-width-slider
-                        .leftItem
-                            label(for='m1-pitch') Pitch:
+            form#m-form
+                #m0-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                    h3 MalLo 1
+                    .ui-field-contain
+                        label(for='m0-select') Type:
+                        select#m0-select(name='m0-select', data-mini='true', data-iconpos='left')
+                            option(value='0') Drum Corp
+                            option(value='1') Pitched Percussion
+                            option(value='2') Electronic
+                    .ui-content#m0-dc
+                        label.leftItem(for='m0-dc-pitch') Pitch:
                         .rightItem
-                            input.ui-hidden-accessible#m1-pitch(type='range', name='m1-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                    .full-width-slider
-                        .leftItem
-                            label(for='m1-slider-1') # Drums:
+                            input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-drums') Drummers:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-1(type='range', name='m1-slider-1', data-track-theme='a', data-theme='a', min='0', max='90', value='50', data-popup-enabled='true' data-mini='true')
-                    .full-width-slider
-                        .leftItem
-                            label(for='m1-slider-3') Decay:
+                            input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-decay') Decay:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-3(type='range', name='m1-slider-3', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                    .full-width-slider
-                        .leftItem
-                            label(for='m1-slider-4') Dynamics:
+                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-dyn') Dynamics:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-4(type='range', name='m1-slider-4', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                    .full-width-slider
-                        .leftItem
-                            label(for='m1-slider-5') Size:
+                            input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-size') Size:
                         .rightItem
-                            input.ui-hidden-accessible#m1-slider-5(type='range', name='m1-slider-5', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .ui-content#m0-pp
+                        label.leftItem(for='m0-pp-scale') Scale:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-vib') Vibrato:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-vib(type='range', name='m0-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-trip') Trippiness:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                    .ui-content#m0-el
+                        label.leftItem(for='m0-el-grunge') Grunge:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-pitch') Pitch:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-fat') Fatness:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                #m1-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                    h3 MalLo 2
+                    .ui-field-contain
+                        label(for='m1-select') Type:
+                        select#m1-select(name='m1-select', data-mini='true', data-iconpos='left')
+                            option(value='0') Drum Corp
+                            option(value='1') Pitched Percussion
+                            option(value='2') Electronic
+                    .ui-content#m1-dc
+                        label.leftItem(for='m1-dc-pitch') Pitch:
+                        .rightItem
+                            input#m1-dc-pitch(type='range', name='m1-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-dc-drums') Drummers:
+                        .rightItem
+                            input#m1-dc-drums(type='range', name='m1-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+
+                #m2-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                    h3 MalLo 3
+                    .ui-field-contain
+                        label(for='m2-select') Type:
+                        select#m2-select(name='m2-select', data-mini='true', data-iconpos='left')
+                            option(value='0') Drum Corp
+                            option(value='1') Pitched Percussion
+                            option(value='2') Electronic
+                    .ui-content#m2-dc
+                        label.leftItem(for='m2-dc-pitch') Pitch:
+                        .rightItem
+                            input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-dc-drums') Drummers:
+                        .rightItem
+                            input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
 
 
 
-            div(data-role='collapsible', data-inset='false')
-                h3 MalLo 2
-                form.ui-content.full-width-slider
+    h2#result
+    div(data-role='footer', role='banner', data-position='inline')
+        h1
+            .ui-grid-b
+                .ui-block-a(style='text-align: left;')
+                a#saveButton.ui-block-b.ui-btn-a.ui-btn.ui-corner-all.ui-shadow(data-role="button", style='text-align: center;', input type="submit") Save
+                .ui-block-c(style='text-align: right;')
 
-            div(data-role='collapsible', data-inset='false')
-                h3 MalLo 3
-                form.ui-content.full-width-slider
 
-    div(data-role='footer', role='banner')
-        h1(role='heading', aria-level='1')
-            #mode Change the Channel
-            //h3
-                //.ui-grid-b
-                //    .ui-block-a(style='text-align: left;') COPYRIGHT
-                //    a.ui-block-b.ui-btn.ui-btn-a(href='#', style='text-align: center;') Anchor - Theme swatch A
-                //    .ui-block-c(style='text-align: right;') CONNECTION STATUS
+
 
 
