@@ -1,0 +1,42 @@
+{
+  "i0": {
+    "activeInstrument": 0,
+    "size": 50,
+    "decay": 0,
+    "nDrummers": 2,
+    "drumPitch": 50,
+    "dynamics": 0
+  },
+  "i1": {
+    "activeInstrument": 1,
+    "size": 50,
+    "decay": 0,
+    "range": 0,
+    "vibrato": 0,
+    "trippiness": 0
+  },
+  "i2": {
+    "activeInstrument": 2,
+    "size": 50,
+    "decay": 0,
+    "grunge": 0,
+    "electronicPitch": 0,
+    "fatness": 0
+  },
+  "i3": {
+    "activeInstrument": 2,
+    "size": 50,
+    "decay": 0,
+    "grunge": 0,
+    "electronicPitch": 0,
+    "fatness": 0
+  },
+  "i4": {
+    "activeInstrument": 2,
+    "size": 50,
+    "decay": 0,
+    "grunge": 0,
+    "electronicPitch": 0,
+    "fatness": 0
+  }
+}

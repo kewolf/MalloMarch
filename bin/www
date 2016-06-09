@@ -73,7 +73,6 @@ udpPort.send({
 
 // Emit welcome message on when the socket connects and set up our listeners on this
 io.on('connection', function (socket) {
-    console.log(socket.request.connection);
     // Use socket to communicate with this particular client only, sending it it's own id
     var address = socket.handshake.address;
     socket.emit('welcome', {
@@ -87,18 +86,14 @@ io.on('connection', function (socket) {
             var id = socket.request.connection.remoteAddress;
             var date = dateFormat(new Date(), "dd-mm-yy_hh:MM:ssTT")
             var saveStr = id + "_" + date;
-            console.log(saveStr);
+
             var file = 'public/json/' + saveStr + '.json';
             var data = JSON.parse(newSocket.str);
-            /*
-             fs.writeFile(file, data, function (err) {
-             if (err) return console.log(err);
-             console.log('Hello World > helloworld.txt');
-             });*/
+
+        jsonfile.spaces = 4;
             jsonfile.writeFile(file, data, function (err) {
                 console.error(err)
             })
-
         }
     );
     socket.on('time_req', function (newSocket) {
