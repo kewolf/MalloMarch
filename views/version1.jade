@@ -27,10 +27,11 @@ block content
         var nMarimbaSamples = 61;
         var nPlayers = 3;
         var players = [];
-        var instruments = [];
-        var presets = {};
-        var nPresetChannels;
-        var nPresetInstruments;
+        var instrumentPresets = [];
+        var channelPresets = {};
+        var nPresetChannels = 0;
+        var nPresetInstruments = 0;
+        var currentMode = 0; //make enum for different modes?
 
         //init sound stuff!
         window.addEventListener('load', init, false);
@@ -49,47 +50,33 @@ block content
             waitForBuffers();
 
             //load JSON files:
-            loadInstrumentsfile(function (response) {
+            loadInstrumentsfile(function (response1) {
                 //Parse JSON string into object
-                instruments = JSON.parse(response);
+                instruments = JSON.parse(response1);
                 nPresetInstruments = 0;
                 for (var inst in instruments) {
                     nPresetInstruments++;
                 }
-            });
 
-            loadPresetsfile(function (response) {
-                // Parse JSON string into object
-                var presetsJSON = JSON.parse(response);
-                ch_index = 0;
-                for (var channel in presetsJSON) {
-                    instr_index = 0;
-                    presets[ch_index] = {}
-                    for (var instrument in presetsJSON[channel]) {
-                        //may not have to do this... access using variables names...
-                        presets[ch_index][instr_index] = presetsJSON[channel][instrument];
-                        instr_index++;
+                loadPresetsfile(function (response2) {
+                    // Parse JSON string into object
+                    var presetsJSON = JSON.parse(response2);
+                    ch_index = 0;
+                    for (var channel in presetsJSON) {
+                        instr_index = 0;
+                        channelPresets[ch_index] = {}
+                        for (var instrument in presetsJSON[channel]) {
+                            //may not have to do this... access using variables names...
+                            channelPresets[ch_index][instr_index] = presetsJSON[channel][instrument];
+                            instr_index++;
+                        }
+                        ch_index++;
                     }
-                    ch_index++;
-                }
-                nPresetChannels = ch_index;
+                    nPresetChannels = ch_index;
+                    done();
+                });
             });
 
-            //welcome sound!
-            /*
-             var oscillator = audioContext.createOscillator();
-             oscillator.connect(audioContext.destination);
-             oscillator.type = 'square';
-             oscillator.frequency.value = 3000; // value in hertz
-             //oscillator.start();
-             oscillator.noteOn(1);
-             oscillator.noteOff(1.5);
-             */
-
-            /*setInterval(function () {
-             checkSchedule();
-             }, 5);
-             console.log("after setIntervals"); */
         });
 
         function waitForBuffers() {
@@ -111,6 +98,7 @@ block content
             }
         }
         function loadInstrumentsfile(callback) {
+            console.log("load Instr File");
             var request = new XMLHttpRequest();
             //request.overrideMimeType("application/json");
             request.open('GET', '/json/instruments.json', true); // Replace 'my_data' with the path to your file
@@ -122,9 +110,11 @@ block content
             };
             request.send(null);
         }
+
         function loadPresetsfile(callback) {
+            console.log("load Presets File");
             var request = new XMLHttpRequest();
-            request.open('GET', '/json/presets.json', true);
+            request.open('GET', '/json/channels.json', true);
             request.onreadystatechange = function () {
                 if (request.readyState == 4 && request.status == "200") {
                     // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
@@ -132,6 +122,114 @@ block content
                 }
             };
             request.send(null);
+        }
+
+        function done() {
+            // end
+            console.log("Done");
+            //setup channels slider
+            var $channels_frame = $('#channels');
+            var $channels_wrap = $channels_frame.parent();
+
+            var channels_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $channels_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+            };
+
+            //create our sly for the channels box slider
+            var sly_channels = new Sly('#channels', channels_options);
+
+            //Setup event listener for when a new item has been activated
+            //eventName: Event Name
+            //itemIndex: index of active item.
+
+
+            sly_channels.on('active', function (eventName, itemIndex) {
+                //Change the channel params if the currentMode is 0;
+                if (currentMode == 0) {
+                    var chPresets = channelPresets[itemIndex];
+                    for (var i = 0; i < 1; i++) {
+                        var instr = channelPresets[itemIndex][i];
+                        console.log("New Channel Instrument Preset: " + instr);
+                        params = instrumentPresets['i' + instr]
+                        console.log("Presets: " + params);
+                        players[i].setParameters(params);
+                    }
+                }
+                console.log("Channel Active Item: " + itemIndex);
+
+            });
+
+            //intialize the sly and activate the 0th box
+            sly_channels.init();
+            sly_channels.activate(0);
+
+            console.log("In DONE Channel Presets: " + nPresetChannels + " Instrument Presets: " + nPresetInstruments);
+
+
+            for (var i = 0; i < nPresetChannels; i++) {
+                $('[id="ch_slidee"]').append('<li >' + i + '</div>');
+            }
+            $('#channels').sly('reload');
+
+
+            //Create 3 sliders for mode 2!
+            var slyArray = []; // sly array!
+            for (var i = 1; i < 4; i++) {
+                var $frame = $('#i' + i);
+                var $wrap = $frame.parent();
+
+                var i_options = {
+                    horizontal: 1,
+                    itemNav: 'forceCentered',
+                    smart: 1,
+                    activateMiddle: 1,
+                    activateOn: 'click',
+                    mouseDragging: 1,
+                    touchDragging: 1,
+                    releaseSwing: 1,
+                    startAt: 0,
+                    scrollBar: $wrap.find('.scrollbar'),
+                    scrollBy: 1,
+                    speed: 200,
+                    elasticBounds: 1,
+                    easing: 'swing',
+                    clickBar: 1
+                };
+
+                //create our sly for instrument 1 (box slider)
+
+                sly = new Sly('#i' + i, i_options);
+
+                sly.on('active', function (eventName, itemIndex) {
+                    var id = this.frame.id;
+                    console.log("Instr " + id + " Active Item: " + itemIndex);
+                });
+
+                sly.init();
+                sly.activate(0);
+
+                //console.log("Arrange Presets for " + i + ": " + nPresetInstruments);
+                for (var j = 0; j < nPresetInstruments; j++) {
+                    //console.log("Append: " + j);
+                    $('[id="i' + i + '_slidee"]').append('<li id = i' + i + '_' + j + '>' + j + '</div>');
+                }
+                $('i' + i).sly('reload');
+
+            }
         }
 
 
@@ -268,25 +366,76 @@ block content
          }
          */
 
+
+        //Could use this at some point, but when?
+        $(document).ready(function () {
+            //console.log("Document Ready");
+
+        });
+
         //we are going to run these functions when the window fully loads:
         $(window).load(function () {
 
             //generateSliders();
+
+            //load in json preset files
+            //Synch Version that is probably not right...
+            /*
+             var instrRequest = new XMLHttpRequest();
+             instrRequest.open('GET', '/json/instruments.json', false); // Replace 'my_data' with the path to your file
+             instrRequest.onload = function () {
+             // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+             instrumentPresets = JSON.parse(instrRequest.response);
+             nPresetInstruments = 0;
+             for (var instr in instrumentPresets) {
+
+             console.log(instrumentPresets[instr]);
+             nPresetInstruments++;
+             }
+             };
+             instrRequest.send();
+
+             var chRequest = new XMLHttpRequest();
+             chRequest.open('GET', '/json/channels.json', false); // Replace 'my_data' with the path to your file
+             chRequest.onload = function () {
+             var presetsJSON = JSON.parse(chRequest.response);
+             ch_index = 0;
+             for (var channel in presetsJSON) {
+             instr_index = 0;
+             channelPresets[ch_index] = {}
+             for (var instrument in presetsJSON[channel]) {
+             //may not have to do this... access using variables names...
+             channelPresets[ch_index][instr_index] = presetsJSON[channel][instrument];
+             instr_index++;
+             }
+             ch_index++;
+             }
+             nPresetChannels = ch_index;
+             }
+             chRequest.send();
+             */
+            console.log("In LOAD Channel Presets: " + nPresetChannels + " Instrument Presets: " + nPresetInstruments);
+
 
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     var active = $('#tabs').tabs('option', 'active');
                     if (active == 0) {
                         $('#channels').sly('reload');
+                        currentMode = 0;
                     }
                     else if (active == 1) {
                         $('#i1').sly('reload');
                         $('#i2').sly('reload');
                         $('#i3').sly('reload');
+                        currentMode = 1;
+                    } else {
+                        currentMode = 2;
                     }
 
                     //Change the name of the mode title
                     $("#mode").html($("#tabs ul>li a").eq(active).attr('name'));
+                    console.log("Mode: " + currentMode);
                 }
             });
 
@@ -324,6 +473,7 @@ block content
                 //console.log(str);
                 console.log("Save");
                 var params = [];
+                //TODO:  CHANGE FOR i < 3 once we have other players
                 for (var i = 0; i < 1; i++) {
                     params[i] = players[i].getParameters();
                 }
@@ -440,84 +590,6 @@ block content
             });
         });
 
-        //setup sliders for modes 1 and 2!
-        $(document).ready(function () {
-
-            //setup channels slider
-            var $channels_frame = $('#channels');
-            var $channels_wrap = $channels_frame.parent();
-
-            var channels_options = {
-                horizontal: 1,
-                itemNav: 'forceCentered',
-                smart: 1,
-                activateMiddle: 1,
-                activateOn: 'click',
-                mouseDragging: 1,
-                touchDragging: 1,
-                releaseSwing: 1,
-                startAt: 0,
-                scrollBar: $channels_wrap.find('.scrollbar'),
-                scrollBy: 1,
-                speed: 200,
-                elasticBounds: 1,
-                easing: 'swing',
-                clickBar: 1
-            };
-
-            //create our sly for the channels box slider
-            var sly_channels = new Sly('#channels', channels_options);
-
-            //Setup event listener for when a new item has been activated
-            //eventName: Event Name
-            //itemIndex: index of active item.
-            sly_channels.on('active', function (eventName, itemIndex) {
-                //TODO: Add code to change the channel params
-                console.log("Channel Active Item: " + itemIndex);
-            });
-
-            //intialize the sly and activate the 0th box
-            sly_channels.init();
-            sly_channels.activate(0);
-
-
-            //Create 3 sliders for mode 2!
-            var slyArray = []; // sly array!
-            for (var i = 1; i < 4; i++) {
-                var $frame = $('#i' + i);
-                var $wrap = $frame.parent();
-
-                var i_options = {
-                    horizontal: 1,
-                    itemNav: 'forceCentered',
-                    smart: 1,
-                    activateMiddle: 1,
-                    activateOn: 'click',
-                    mouseDragging: 1,
-                    touchDragging: 1,
-                    releaseSwing: 1,
-                    startAt: 0,
-                    scrollBar: $wrap.find('.scrollbar'),
-                    scrollBy: 1,
-                    speed: 200,
-                    elasticBounds: 1,
-                    easing: 'swing',
-                    clickBar: 1
-                };
-
-                //create our sly for instrument 1 (box slider)
-
-                sly = new Sly('#i' + i, i_options);
-
-                sly.on('active', function (eventName, itemIndex) {
-                    var id = this.frame.id;
-                    console.log("Instr " + id + " Active Item: " + itemIndex);
-                });
-
-                sly.init();
-                sly.activate(0);
-            }
-        });
 
         $(window).resize(function (e) {
             $('#channels').sly('reload');
@@ -544,15 +616,7 @@ block content
                     #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                 #channels.frame(style='overflow; hidden;')
                     ul#ch_slidee.slidee
-                        li#ch1 1
-                        li#ch2 2
-                        li#ch3 3
-                        li 4
-                        li 5
-                        li 6
-                        li 7
-                        li 8
-                        li 9
+
 
 
         #two.ui-content(data-role='main')
@@ -564,15 +628,6 @@ block content
                             #i1_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                         #i1.instr_frame(style='overflow; hidden;')
                             ul#i1_slidee.slidee
-                                li#i1_v1 1
-                                li#i1_v2 2
-                                li#i1_v3 3
-                                li 4
-                                li 5
-                                li 6
-                                li 7
-                                li 8
-                                li 9
                 li(data-icon='false')
                     a(href='#') MalLo 2
                     .form.wrap
@@ -580,15 +635,6 @@ block content
                             #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                         #i2.instr_frame(style='overflow; hidden;')
                             ul#i2_slidee.slidee
-                                li#i2_v1 1
-                                li#i2_v2 2
-                                li#i2_v3 3
-                                li 4
-                                li 5
-                                li 6
-                                li 7
-                                li 8
-                                li 9
                 li(data-icon='false')
                     a(href='#') MalLo 3
                     .form.wrap
@@ -596,15 +642,6 @@ block content
                             #i3_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                         #i3.instr_frame(style='overflow; hidden;')
                             ul#i3_slidee.slidee
-                                li#i3_v1 1
-                                li#i3_v2 2
-                                li#i3_v3 3
-                                li 4
-                                li 5
-                                li 6
-                                li 7
-                                li 8
-                                li 9
         #three.ui-content(data-role='main')
             form#m-form
                 #m0-form.pop_countryBox(data-role='collapsible', data-inset='false')
