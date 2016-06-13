@@ -22,15 +22,14 @@ Drum.prototype.play = function(time, player)
     this.source.start(AudioContext.currentTime);
 };
 
-var Drum_Corp = function (buffers)
+var Drum_Corp = function ()
 {
     this.drums = [];
-    this.nBuffers = buffers.length;
-    for (var i = 0; i < this.nBuffers; i++)
-    {
-        this.drums.push(new Drum(buffers[i]));
-    }
 };
+
+Drum_Corp.prototype.addDrum = function (buffer) {
+    this.drums.push(new Drum(buffer));
+}
 
 Drum_Corp.prototype.play = function (time, player)
 {

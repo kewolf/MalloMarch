@@ -4,7 +4,7 @@ const DRUM_CORP = 0;
 const PITCHED = 1;
 const ELECTRONIC = 2;
 
-var Player = function (drumBuffers, pitchedBuffers, reverbBuffer) {
+var Player = function () {
 
     //common to all
     this.size = 50;
@@ -24,16 +24,23 @@ var Player = function (drumBuffers, pitchedBuffers, reverbBuffer) {
     this.grunge = 0;
     this.electronicPitch = 0;
     this.fatness = 0;
-    
-    //output
+
+    //setup reverb
     this.reverbGain = audioContext.createGain();
     this.reverbGain.connect(audioContext.destination);
     this.reverb = audioContext.createConvolver();
-    this.reverb.buffer = this.reverbBuffer;
-
+    // var tmpBuffer = new ArrayBuffer(16);
+    // var view = new Uint8Array(tmpBuffer);
+    // view[0] = 1;
+    // audioContext.decodeAudioData(tmpBuffer, this.setReverbBuffer,
+    //     function (e) {
+    //         console.log("Error setting up the reverb buffer: " + e.err);
+    //     }
+    // );
     this.dryGain = audioContext.createGain();
     this.dryGain.connect(audioContext.destination);
 
+    //create output for instruments to connect to
     this.out = audioContext.createGain();
     this.out.gain.value = 1;
     this.out.connect(this.reverb);
@@ -41,14 +48,19 @@ var Player = function (drumBuffers, pitchedBuffers, reverbBuffer) {
     this.reverbGain.connect(audioContext.destination);
     this.out.connect(this.dryGain);
 
-    //instruments
-    this.activeInstrument = ELECTRONIC;
-    this.drum_corp = new Drum_Corp(drumBuffers);
-    this.pitched = new Pitched(pitchedBuffers);
+    //create instruments
+    this.activeInstrument = PITCHED;
+    this.drum_corp = new Drum_Corp();
+    this.pitched = new Pitched();
     this.electronic = new Electronic(self);
 };
 
-Player.prototype.play = function (time) {
+Player.prototype.setReverbBuffer = function (buffer) {
+    console.log('got into setReverbBuffer');
+    this.reverb.buffer = buffer;
+};
+
+Player.prototype.schedule = function (time) {
     switch (this.activeInstrument) {
         case DRUM_CORP:
             this.drum_corp.play(time, this);
@@ -63,6 +75,11 @@ Player.prototype.play = function (time) {
             console.log("fell to the bottom of the active instrument switch statement (we should not have)");
     }
 };
+
+// todo: needed for backward compatibility (for now)
+Player.prototype.play = function (time) {
+    this.schedule(time);
+}
 
 Player.prototype.getParameters = function() {
 

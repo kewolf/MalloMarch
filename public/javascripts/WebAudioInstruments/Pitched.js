@@ -18,8 +18,8 @@ PitchedVoice.prototype.play = function (time, player, buffer) {
     this.source.start(AudioContext.currentTime);
 };
 
-var Pitched = function (buffers) {
-    this.buffers = buffers;
+var Pitched = function () {
+    this.buffers = [];
     this.curVoice = 0;
     this.nVoices = 2;
     this.voices = [];
@@ -36,6 +36,10 @@ var Pitched = function (buffers) {
     this.noteSequences[3] = [33, 36, 35, 38, 40, 41, 36];
     this.curNoteIndex = 0;
 };
+
+Pitched.prototype.addAudioSample = function (buffer, index) {
+    this.buffers[index] = buffer;
+}
 
 Pitched.prototype.play = function (time, player) {
     player.reverbGain.gain.value = player.size / 100.0;

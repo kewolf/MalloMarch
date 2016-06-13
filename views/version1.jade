@@ -13,6 +13,7 @@ block content
     script(src='/javascripts/WebAudioInstruments/Electronic.js')
     script(src='/javascripts/WebAudioInstruments/Pitched.js')
     script(src='/javascripts/WebAudioInstruments/Player.js')
+    script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
 
     script.
 
@@ -20,11 +21,6 @@ block content
         var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
         var customServerURL = '10.9.241.208:3000';
-        var reverbBuffer;
-        var snareBuffers = [];
-        var nSnares = 10;
-        var marimbaBuffers = [];
-        var nMarimbaSamples = 61;
         var nPlayers = 3;
         var players = [];
         var instrumentPresets = [];
@@ -46,8 +42,6 @@ block content
 
         socket.on('welcome', function (data) {
             console.log("got welcome message");// create the players
-
-            waitForBuffers();
 
             //load JSON files:
             loadInstrumentsfile(function (response1) {
@@ -77,26 +71,13 @@ block content
                 });
             });
 
+            setInterval(function () {
+                players[0].play(audioContext.currentTime);
+            }, 500);
+
         });
 
-        function waitForBuffers() {
-            console.log("snareBuffers.length: " + snareBuffers.length
-                    + ", reverbBuffer: " + reverbBuffer
-                    + ", marimbaBuffers.length: " + marimbaBuffers.length);
-            if (snareBuffers.length != nSnares || marimbaBuffers.length != nMarimbaSamples || reverbBuffer == undefined) {
-                window.setTimeout(waitForBuffers, 100);
-            } else {
-                for (var i = 0; i < nPlayers; i++) {
-                    console.log("snareBuffers.length: " + snareBuffers.length);
-                    players.push(new Player(snareBuffers, marimbaBuffers), reverbBuffer);
-                }
 
-                setInterval(function () {
-                    players[0].play(audioContext.currentTime);
-                }, 500);
-
-            }
-        }
         function loadInstrumentsfile(callback) {
             console.log("load Instr File");
             var request = new XMLHttpRequest();
@@ -156,7 +137,7 @@ block content
             //eventName: Event Name
             //itemIndex: index of active item.
 
-
+            /*
             sly_channels.on('active', function (eventName, itemIndex) {
                 //Change the channel params if the currentMode is 0;
                 if (currentMode == 0) {
@@ -164,14 +145,16 @@ block content
                     for (var i = 0; i < 1; i++) {
                         var instr = channelPresets[itemIndex][i];
                         console.log("New Channel Instrument Preset: " + instr);
-                        params = instrumentPresets['i' + instr]
+             var params = instrumentPresets['i' + instr];
+             console.log("instrumentPresets: " + instrumentPresets);
                         console.log("Presets: " + params);
-                        players[i].setParameters(params);
+             //players[i].setParameters(params);
                     }
                 }
                 console.log("Channel Active Item: " + itemIndex);
 
             });
+             */
 
             //intialize the sly and activate the 0th box
             sly_channels.init();
@@ -281,64 +264,17 @@ block content
                 if (isAudioContextSupported()) {
                     console.log("Web Audio is supported!");
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-                    // get the snare samples from the server
-                    var requests = [];
-                    for (var i = 0; i < nSnares; i++) {
-                        var url = '/audio/snare' + i + '.wav';
-                        requests[i] = new XMLHttpRequest();
-                        requests[i].open('GET', url, true);
-                        requests[i].responseType = 'arraybuffer';
-                        requests[i].i = i;
-                        requests[i].onload = function () {
-                            var index = this.i;
-                            audioContext.decodeAudioData(requests[index].response, function (buffer) {
-                                var curSnare = "snare" + index;
-                                snareBuffers.push(buffer);
-                            }, function (e) {
-                                console.log("Error in decoding audio data: " + e.err);
-                            });
-                        };
-                        requests[i].send();
-                    }
-
-                    // get reverb impulse
-                    var request = new XMLHttpRequest();
-                    request.open('GET', '/audio/reverb.wav', true);
-                    request.responseType = 'arraybuffer';
-                    request.onload = function () {
-                        audioContext.decodeAudioData(request.response, function (buffer) {
-                            reverbBuffer = buffer;
-                        }, function (e) {
-                            consolde.log("Error setting up the reverb buffer: " + e.err);
-                        });
-                    };
-                    request.send();
-
-                    // get marimba samples
-                    var marimbaRequests = [];
-                    for (var i = 0; i < nMarimbaSamples; i++) {
-                        var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + i) + '.wav';
-                        marimbaRequests[i] = new XMLHttpRequest();
-                        marimbaRequests[i].open('GET', marimbaUrl, true);
-                        marimbaRequests[i].responseType = 'arraybuffer';
-                        marimbaRequests[i].i = i;
-                        marimbaRequests[i].onload = function () {
-                            var index = this.i;
-                            audioContext.decodeAudioData(marimbaRequests[index].response, function (buffer) {
-                                marimbaBuffers.push(buffer);
-                            }, function (e) {
-                                console.log("Error in decoding audio data: " + e.err);
-                            });
-                        };
-                        marimbaRequests[i].send();
-                    }
                 }
             } catch (e) {
                 alert('You need webaudio support - try another browser');
             }
-        }
 
+            for (var i = 0; i < nPlayers; i++) {
+                players.push(new Player());
+            }
+
+            loadAudioFiles();
+        }
 
         function isAudioContextSupported() {
             // This feature is still prefixed in Safari
