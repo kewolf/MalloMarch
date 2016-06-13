@@ -229,15 +229,19 @@ block content
 
 
             sly_channels.on('active', function (eventName, itemIndex) {
-                //Change the channel params if the currentMode is 0;\
+                //Change the channel params if the currentMode is 0;
                 if (currentMode == 0) {
-                    var chPresets = channelPresets[itemIndex];
+
+                    //for each player load in the instrument presets
                     for (var i = 0; i < nPlayers; i++) {
+                        //get the instrument index:
                         var instr = channelPresets[itemIndex][i];
-                        //console.log("New Channel Instrument Preset: " + instr);
+                        //console.log("New Channel " + itemIndex +" Instrument Preset: " + instr);
                         var params = instrumentPresets['i' + instr];
-                        //console.log("instrumentPresets: " + instrumentPresets);
                         players[i].setParameters(params);
+
+                        //update the mode 2 sliders
+                        $('#i' + i).sly('activate', instr);
                     }
                 }
                 //console.log("Channel Active Item: " + itemIndex);
@@ -247,6 +251,7 @@ block content
             //intialize the sly and activate the 0th box
             sly_channels.init();
             sly_channels.activate(0);
+            sly_channels.reload();
 
 
             for (var i = 0; i < nPresetChannels; i++) {
@@ -256,7 +261,6 @@ block content
 
 
             //Create 3 sliders for mode 2!
-            var slyArray = []; // sly array!
             for (var i = 0; i < nPlayers; i++) {
                 var $frame = $('#i' + i);
                 var $wrap = $frame.parent();
@@ -279,19 +283,20 @@ block content
                     clickBar: 1
                 };
 
-                //create our sly for instrument 1 (box slider)
-
-                sly = new Sly('#i' + i, i_options);
+                //create our sly
+                var sly = new Sly('#i' + i, i_options);
 
 
                 sly.on('active', function (eventName, itemIndex) {
                     var id = this.frame.id;
                     var playerNum = parseInt(id.slice(1));
+                    //if we are currently in mode 1 then update the instruments:
                     if (currentMode == 1) {
                         var instr = itemIndex;
                         //console.log("Instrument Preset: " + instr);
                         var params = instrumentPresets['i' + instr];
                         players[playerNum].setParameters(params);
+                        sliderChange(playerNum, params);
                     }
                     //console.log("Instr " + id + " Active Item: " + itemIndex);
                 });
@@ -304,8 +309,7 @@ block content
                     //console.log("Append: " + j);
                     $('[id="i' + i + '_slidee"]').append('<li id = i' + i + '_' + j + '>' + j + '</div>');
                 }
-                $('i' + i).sly('reload');
-
+                $('#i' + i).sly('reload');
 
             }
 
@@ -313,13 +317,8 @@ block content
             $("#m0-select").val('0').trigger('change');
             $("#m1-select").val('0').trigger('change');
             $("#m2-select").val('0').trigger('change');
-        }
 
-        //we are going to run these functions when the window fully loads:
-        //this happens first!
-        $(window).load(function () {
 
-            //generateSliders();
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     var active = $('#tabs').tabs('option', 'active');
@@ -328,12 +327,13 @@ block content
                         currentMode = 0;
                     }
                     else if (active == 1) {
-                        $('#i0').sly('reload');
-                        $('#i1').sly('reload');
-                        $('#i2').sly('reload');
                         currentMode = 1;
+                        for (var i = 0; i < nPlayers; i++) {
+                            $('#i' + i).sly('reload');
+                        }
                     } else {
                         currentMode = 2;
+                        refreshSliders();
                     }
 
                     //Change the name of the mode title
@@ -344,7 +344,76 @@ block content
 
             //set initial open tab
             $('#tabButton1').click();
-        });
+        }
+
+        function sliderChange(playerNum, params) {
+            console.log("CHANGE: " + playerNum + " " + params);
+            //set active Instrument;
+            var activeInstrument = params["activeInstrument"];
+            $('#m' + playerNum + '-select').val(activeInstrument).trigger('change');
+
+            /*
+             switch (activeInstrument) {
+             case DRUM_CORP:
+             ("dc-pitch")
+             params['nDrummers'];
+             params['drumPitch'];
+             params['dynamics'];
+             break;
+             case PITCHED:
+             params['range'] = this.range;
+             params['vibrato'] = this.vibrato;
+             params['trippiness'] = this.trippiness;
+             break;
+             case ELECTRONIC:
+             params['grunge'] = this.grunge;
+             params['electronicPitch'] = this.electronicPitch;
+             params['fatness'] = this.fatness;
+             break;
+             default:
+             console.log("fell to the bottom of the getParameters switch statement (we should not have)");
+             }
+             */
+        }
+
+        function refreshSliders() {
+            for (var i = 0; i < nPlayers; i++) {
+                params = players[i].getParameters();
+
+                console.log("REFRESH: " + i + " " + params);
+                //set active Instrument;
+                var activeInstrument = params["activeInstrument"];
+                $('#m' + i + '-select').val(activeInstrument).trigger('change');
+
+                switch (activeInstrument) {
+                    case DRUM_CORP:
+                        console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
+                        $('#m' + i + '-dc-size').val(params["size"]).trigger('change');
+                        $('#m' + i + '-dc-decay').val(params["decay"]).trigger('change');
+                        $('#m' + i + '-dc-pitch').val(params["drumPitch"]).trigger('change');
+                        $('#m' + i + '-dc-drums').val(params["nDrummers"]).trigger('change');
+                        $('#m' + i + '-dc-dyn').val(params["dynamics"]).trigger('change');
+                        break;
+                    case PITCHED:
+                        $('#m' + i + '-pp-size').val(params["size"]).trigger('change');
+                        $('#m' + i + '-pp-decay').val(params["decay"]).trigger('change');
+                        $('#m' + i + '-pp-scale').val(params["range"]).trigger('change');
+                        $('#m' + i + '-pp-vib').val(params["vibrato"]).trigger('change');
+                        $('#m' + i + '-pp-trip').val(params["trippiness"]).trigger('change');
+                        break;
+                    case ELECTRONIC:
+                        $('#m' + i + '-el-size').val(params["size"]).trigger('change');
+                        $('#m' + i + '-el-decay').val(params["decay"]).trigger('change');
+                        $('#m' + i + '-el-grunge').val(params["grunge"]).trigger('change');
+                        $('#m' + i + '-el-pitch').val(params["electronicPitch"]).trigger('change');
+                        $('#m' + i + '-el-fat').val(params["fatness"]).trigger('change');
+                        break;
+                    default:
+                        console.log("fell to the bottom of the getParameters switch statement (we should not have)");
+                }
+            }
+        }
+
 
         $.fn.serializeObject = function () {
             var o = {};
@@ -404,8 +473,9 @@ block content
                 //show/hide based on the selection.
                 if (nextpage == '0') {
                     console.log("Selected 1!");
-                    //TO DO CHANGE TO CONSTANTS FOR 0, 1, 2
                     players[playerNum].activeInstrument = 0;
+                    $('#' + malloId + '-dc-size').val(players[playerNum].size).trigger('change');
+                    $('#' + malloId + '-dc-decay').val(players[playerNum].decay).trigger('change');
                     $('#' + malloId + '-dc').show();
                     $('#' + malloId + '-pp').hide();
                     $('#' + malloId + '-el').hide();
@@ -413,12 +483,16 @@ block content
                 } else if (nextpage == '1') {
                     console.log("Selected 2!");
                     players[playerNum].activeInstrument = 1;
+                    $('#' + malloId + '-el-size').val(players[playerNum].size).trigger('change');
+                    $('#' + malloId + '-el-decay').val(players[playerNum].decay).trigger('change');
                     $('#' + malloId + '-dc').hide();
                     $('#' + malloId + '-pp').show();
                     $('#' + malloId + '-el').hide();
                 } else {
                     console.log("Selected 3!");
                     players[playerNum].activeInstrument = 2;
+                    $('#' + malloId + '-pp-size').val(players[playerNum].size).trigger('change');
+                    $('#' + malloId + '-pp-decay').val(players[playerNum].decay).trigger('change');
                     $('#' + malloId + '-dc').hide();
                     $('#' + malloId + '-pp').hide();
                     $('#' + malloId + '-el').show();
@@ -434,15 +508,11 @@ block content
                 var playerNumber = parseInt(id.slice(1));
                 var value = $(this).text();
                 console.log(event.target.id + " " + playerNumber + " " + value);
+                var instrType = players[playerNumber].activeInstrument;
                 if (id.indexOf("decay") > -1) {
                     players[playerNumber].decay = value;
-                    console.log("DECAY!");
-                    //TODO
-                    //will need to change all other decays as well...
                 } else if (id.indexOf("size") > -1) {
                     players[playerNumber].size = value;
-                    //TODO
-                    //will need to change all other sizes as well...
                 } else if (id.indexOf("dc-pitch") > -1) {
                     players[playerNumber].drumPitch = value;
                 } else if (id.indexOf("dc-dyn") > -1) {
@@ -545,50 +615,50 @@ block content
                             option(value='1') Pitched Percussion
                             option(value='2') Electronic
                     .ui-content#m0-dc
+                        label.leftItem(for='m0-dc-size') Size:
+                        .rightItem
+                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-decay') Decay:
+                        .rightItem
+                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-dc-pitch') Pitch:
                         .rightItem
                             input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-dc-drums') Drummers:
                         .rightItem
                             input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-dc-decay') Decay:
-                        .rightItem
-                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-dc-dyn') Dynamics:
                         .rightItem
                             input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-dc-size') Size:
-                        .rightItem
-                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m0-pp
+                        label.leftItem(for='m0-pp-size') Size:
+                        .rightItem
+                            input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-pp-scale') Scale:
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-pp-vib') Vibrato:
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-vib(type='range', name='m0-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-pp-decay') Decay:
-                        .rightItem
-                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-pp-size') Size:
-                        .rightItem
-                            input.ui-hidden-accessible#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-pp-trip') Trippiness:
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m0-el
+                        label.leftItem(for='m0-el-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-el-grunge') Grunge:
                         .rightItem
                             input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-el-pitch') Pitch:
                         .rightItem
                             input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-el-decay') Decay:
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-el-size') Size:
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-el-fat') Fatness:
                         .rightItem
                             input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
@@ -601,54 +671,53 @@ block content
                             option(value='1') Pitched Percussion
                             option(value='2') Electronic
                     .ui-content#m1-dc
+                        label.leftItem(for='m1-dc-size') Size:
+                        .rightItem
+                            input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-dc-decay') Decay:
+                        .rightItem
+                            input#m1-dc-decay(type='range', name='m1-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-dc-pitch') Pitch:
                         .rightItem
                             input#m1-dc-pitch(type='range', name='m1-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-dc-drums') Drummers:
                         .rightItem
                             input#m1-dc-drums(type='range', name='m1-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-dc-decay') Decay:
-                        .rightItem
-                            input#m1-dc-decay(type='range', name='m1-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-dc-dyn') Dynamics:
                         .rightItem
                             input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-dc-size') Size:
-                        .rightItem
-                            input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m1-pp
+                        label.leftItem(for='m1-pp-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-pp-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-pp-scale') Scale:
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-scale(type='range', name='m1-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-pp-vib') Vibrato:
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-vib(type='range', name='m1-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-pp-decay') Decay:
-                        .rightItem
-                            input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-pp-size') Size:
-                        .rightItem
-                            input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-pp-trip') Trippiness:
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-trip(type='range', name='m1-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m1-el
+                        label.leftItem(for='m1-el-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-el-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m1-el-decay(type='range', name='m1-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-el-grunge') Grunge:
                         .rightItem
                             input.ui-hidden-accessible#m1-el-grunge(type='range', name='m1-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-el-pitch') Pitch:
                         .rightItem
                             input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-el-decay') Decay:
-                        .rightItem
-                            input.ui-hidden-accessible#m1-el-decay(type='range', name='m1-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-el-size') Size:
-                        .rightItem
-                            input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-el-fat') Fatness:
                         .rightItem
                             input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-
                 #m2-form.pop_countryBox(data-role='collapsible', data-inset='false')
                     h3 MalLo 3
                     .ui-field-contain
@@ -658,50 +727,50 @@ block content
                             option(value='1') Pitched Percussion
                             option(value='2') Electronic
                     .ui-content#m2-dc
+                        label.leftItem(for='m2-dc-size') Size:
+                        .rightItem
+                            input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-dc-decay') Decay:
+                        .rightItem
+                            input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-dc-pitch') Pitch:
                         .rightItem
                             input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-dc-drums') Drummers:
                         .rightItem
                             input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-dc-decay') Decay:
-                        .rightItem
-                            input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-dc-dyn') Dynamics:
                         .rightItem
                             input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-dc-size') Size:
-                        .rightItem
-                            input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m2-pp
+                        label.leftItem(for='m2-pp-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-pp-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-pp-scale') Scale:
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-scale(type='range', name='m2-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-pp-vib') Vibrato:
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-vib(type='range', name='m2-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-pp-decay') Decay:
-                        .rightItem
-                            input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-pp-size') Size:
-                        .rightItem
-                            input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-pp-trip') Trippiness:
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-trip(type='range', name='m2-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m2-el
+                        label.leftItem(for='m2-el-size') Size:
+                        .rightItem
+                            input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-el-decay') Decay:
+                        .rightItem
+                            input.ui-hidden-accessible#m2-el-decay(type='range', name='m2-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-el-grunge') Grunge:
                         .rightItem
                             input.ui-hidden-accessible#m2-el-grunge(type='range', name='m2-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-el-pitch') Pitch:
                         .rightItem
                             input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-el-decay') Decay:
-                        .rightItem
-                            input.ui-hidden-accessible#m2-el-decay(type='range', name='m2-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-el-size') Size:
-                        .rightItem
-                            input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-el-fat') Fatness:
                         .rightItem
                             input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
