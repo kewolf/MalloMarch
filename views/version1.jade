@@ -22,7 +22,9 @@ block content
         var customServerURL = '10.9.241.208:3000';
         var reverbBuffer;
         var snareBuffers = [];
-        var nSnares = 2;
+        var nSnares = 10;
+        var marimbaBuffers = [];
+        var nMarimbaSamples = 61;
         var nPlayers = 3;
         var players = [];
         var instruments = [];
@@ -91,18 +93,20 @@ block content
         });
 
         function waitForBuffers() {
-            console.log("snareBuffers.length: " + snareBuffers.length + ", reverbBuffer: " + reverbBuffer);
-            if (snareBuffers.length != nSnares || reverbBuffer == undefined) {
+            console.log("snareBuffers.length: " + snareBuffers.length
+                    + ", reverbBuffer: " + reverbBuffer
+                    + ", marimbaBuffers.length: " + marimbaBuffers.length);
+            if (snareBuffers.length != nSnares || marimbaBuffers.length != nMarimbaSamples || reverbBuffer == undefined) {
                 window.setTimeout(waitForBuffers, 100);
             } else {
                 for (var i = 0; i < nPlayers; i++) {
                     console.log("snareBuffers.length: " + snareBuffers.length);
-                    players.push(new Player(snareBuffers), reverbBuffer);
+                    players.push(new Player(snareBuffers, marimbaBuffers), reverbBuffer);
                 }
 
                 setInterval(function () {
                     players[0].play(audioContext.currentTime);
-                }, 1000);
+                }, 500);
 
             }
         }
@@ -202,8 +206,7 @@ block content
 
                     // get reverb impulse
                     var request = new XMLHttpRequest();
-                    var url = '/audio/reverb.wav';
-                    request.open('GET', url, true);
+                    request.open('GET', '/audio/reverb.wav', true);
                     request.responseType = 'arraybuffer';
                     request.onload = function () {
                         audioContext.decodeAudioData(request.response, function (buffer) {
@@ -213,6 +216,25 @@ block content
                         });
                     };
                     request.send();
+
+                    // get marimba samples
+                    var marimbaRequests = [];
+                    for (var i = 0; i < nMarimbaSamples; i++) {
+                        var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + i) + '.wav';
+                        marimbaRequests[i] = new XMLHttpRequest();
+                        marimbaRequests[i].open('GET', marimbaUrl, true);
+                        marimbaRequests[i].responseType = 'arraybuffer';
+                        marimbaRequests[i].i = i;
+                        marimbaRequests[i].onload = function () {
+                            var index = this.i;
+                            audioContext.decodeAudioData(marimbaRequests[index].response, function (buffer) {
+                                marimbaBuffers.push(buffer);
+                            }, function (e) {
+                                console.log("Error in decoding audio data: " + e.err);
+                            });
+                        };
+                        marimbaRequests[i].send();
+                    }
                 }
             } catch (e) {
                 alert('You need webaudio support - try another browser');
