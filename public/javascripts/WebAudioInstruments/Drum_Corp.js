@@ -5,7 +5,7 @@ var Drum = function(buffer)
     this.amp.gain.value = 1.0;
     this.env = new WebAHDSR(audioContext, this.amp.gain);
     this.env.attackTime = 0.001;
-    this.env.decayTime = 0.01;
+    this.env.decayTime = 0.5;
     this.env.sustainValue = 0.0;
 };
 

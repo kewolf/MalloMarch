@@ -24,12 +24,7 @@ var Player = function (drumBuffers, pitchedBuffers, reverbBuffer) {
     this.grunge = 0;
     this.electronicPitch = 0;
     this.fatness = 0;
-
-    //other stuff
-    this.activeInstrument = PITCHED;
-    this.drum_corp = new Drum_Corp(drumBuffers);
-    this.pitched = new Pitched(pitchedBuffers);
-
+    
     //output
     this.reverbGain = audioContext.createGain();
     this.reverbGain.connect(audioContext.destination);
@@ -45,6 +40,12 @@ var Player = function (drumBuffers, pitchedBuffers, reverbBuffer) {
     this.reverb.connect(this.reverbGain);
     this.reverbGain.connect(audioContext.destination);
     this.out.connect(this.dryGain);
+
+    //instruments
+    this.activeInstrument = ELECTRONIC;
+    this.drum_corp = new Drum_Corp(drumBuffers);
+    this.pitched = new Pitched(pitchedBuffers);
+    this.electronic = new Electronic(self);
 };
 
 Player.prototype.play = function (time) {
