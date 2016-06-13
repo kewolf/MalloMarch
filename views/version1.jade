@@ -46,9 +46,9 @@ block content
             //load JSON files:
             loadInstrumentsfile(function (response1) {
                 //Parse JSON string into object
-                instruments = JSON.parse(response1);
+                instrumentPresets = JSON.parse(response1);
                 nPresetInstruments = 0;
-                for (var inst in instruments) {
+                for (var inst in instrumentPresets) {
                     nPresetInstruments++;
                 }
 
@@ -67,7 +67,7 @@ block content
                         ch_index++;
                     }
                     nPresetChannels = ch_index;
-                    done();
+                    loadDOMStuff();
                 });
             });
 
@@ -103,116 +103,6 @@ block content
                 }
             };
             request.send(null);
-        }
-
-        function done() {
-            // end
-            console.log("Done");
-            //setup channels slider
-            var $channels_frame = $('#channels');
-            var $channels_wrap = $channels_frame.parent();
-
-            var channels_options = {
-                horizontal: 1,
-                itemNav: 'forceCentered',
-                smart: 1,
-                activateMiddle: 1,
-                activateOn: 'click',
-                mouseDragging: 1,
-                touchDragging: 1,
-                releaseSwing: 1,
-                startAt: 0,
-                scrollBar: $channels_wrap.find('.scrollbar'),
-                scrollBy: 1,
-                speed: 200,
-                elasticBounds: 1,
-                easing: 'swing',
-                clickBar: 1
-            };
-
-            //create our sly for the channels box slider
-            var sly_channels = new Sly('#channels', channels_options);
-
-            //Setup event listener for when a new item has been activated
-            //eventName: Event Name
-            //itemIndex: index of active item.
-
-            /*
-            sly_channels.on('active', function (eventName, itemIndex) {
-                //Change the channel params if the currentMode is 0;
-                if (currentMode == 0) {
-                    var chPresets = channelPresets[itemIndex];
-                    for (var i = 0; i < 1; i++) {
-                        var instr = channelPresets[itemIndex][i];
-                        console.log("New Channel Instrument Preset: " + instr);
-             var params = instrumentPresets['i' + instr];
-             console.log("instrumentPresets: " + instrumentPresets);
-                        console.log("Presets: " + params);
-             //players[i].setParameters(params);
-                    }
-                }
-                console.log("Channel Active Item: " + itemIndex);
-
-            });
-             */
-
-            //intialize the sly and activate the 0th box
-            sly_channels.init();
-            sly_channels.activate(0);
-
-            console.log("In DONE Channel Presets: " + nPresetChannels + " Instrument Presets: " + nPresetInstruments);
-
-
-            for (var i = 0; i < nPresetChannels; i++) {
-                $('[id="ch_slidee"]').append('<li >' + i + '</div>');
-            }
-            $('#channels').sly('reload');
-
-
-            //Create 3 sliders for mode 2!
-            var slyArray = []; // sly array!
-            for (var i = 1; i < 4; i++) {
-                var $frame = $('#i' + i);
-                var $wrap = $frame.parent();
-
-                var i_options = {
-                    horizontal: 1,
-                    itemNav: 'forceCentered',
-                    smart: 1,
-                    activateMiddle: 1,
-                    activateOn: 'click',
-                    mouseDragging: 1,
-                    touchDragging: 1,
-                    releaseSwing: 1,
-                    startAt: 0,
-                    scrollBar: $wrap.find('.scrollbar'),
-                    scrollBy: 1,
-                    speed: 200,
-                    elasticBounds: 1,
-                    easing: 'swing',
-                    clickBar: 1
-                };
-
-                //create our sly for instrument 1 (box slider)
-
-                sly = new Sly('#i' + i, i_options);
-
-                sly.on('active', function (eventName, itemIndex) {
-                    var id = this.frame.id;
-                    console.log("Instr " + id + " Active Item: " + itemIndex);
-                });
-
-                sly.init();
-                sly.activate(0);
-
-                //console.log("Arrange Presets for " + i + ": " + nPresetInstruments);
-                for (var j = 0; j < nPresetInstruments; j++) {
-                    //console.log("Append: " + j);
-                    $('[id="i' + i + '_slidee"]').append('<li id = i' + i + '_' + j + '>' + j + '</div>');
-                }
-                $('i' + i).sly('reload');
-
-            }
         }
 
 
@@ -272,7 +162,6 @@ block content
             for (var i = 0; i < nPlayers; i++) {
                 players.push(new Player());
             }
-
             loadAudioFiles();
         }
 
@@ -306,53 +195,131 @@ block content
         //Could use this at some point, but when?
         $(document).ready(function () {
             //console.log("Document Ready");
-
         });
 
+        function loadDOMStuff() {
+            //setup channels slider
+            var $channels_frame = $('#channels');
+            var $channels_wrap = $channels_frame.parent();
+
+            var channels_options = {
+                horizontal: 1,
+                itemNav: 'forceCentered',
+                smart: 1,
+                activateMiddle: 1,
+                activateOn: 'click',
+                mouseDragging: 1,
+                touchDragging: 1,
+                releaseSwing: 1,
+                startAt: 0,
+                scrollBar: $channels_wrap.find('.scrollbar'),
+                scrollBy: 1,
+                speed: 200,
+                elasticBounds: 1,
+                easing: 'swing',
+                clickBar: 1
+            };
+
+            //create our sly for the channels box slider
+            var sly_channels = new Sly('#channels', channels_options);
+
+            //Setup event listener for when a new item has been activated
+            //eventName: Event Name
+            //itemIndex: index of active item.
+
+
+            sly_channels.on('active', function (eventName, itemIndex) {
+                //Change the channel params if the currentMode is 0;\
+                if (currentMode == 0) {
+                    var chPresets = channelPresets[itemIndex];
+                    for (var i = 0; i < nPlayers; i++) {
+                        var instr = channelPresets[itemIndex][i];
+                        //console.log("New Channel Instrument Preset: " + instr);
+                        var params = instrumentPresets['i' + instr];
+                        //console.log("instrumentPresets: " + instrumentPresets);
+                        players[i].setParameters(params);
+                    }
+                }
+                //console.log("Channel Active Item: " + itemIndex);
+            });
+
+
+            //intialize the sly and activate the 0th box
+            sly_channels.init();
+            sly_channels.activate(0);
+
+
+            for (var i = 0; i < nPresetChannels; i++) {
+                $('[id="ch_slidee"]').append('<li >' + i + '</div>');
+            }
+            $('#channels').sly('reload');
+
+
+            //Create 3 sliders for mode 2!
+            var slyArray = []; // sly array!
+            for (var i = 0; i < nPlayers; i++) {
+                var $frame = $('#i' + i);
+                var $wrap = $frame.parent();
+
+                var i_options = {
+                    horizontal: 1,
+                    itemNav: 'forceCentered',
+                    smart: 1,
+                    activateMiddle: 1,
+                    activateOn: 'click',
+                    mouseDragging: 1,
+                    touchDragging: 1,
+                    releaseSwing: 1,
+                    startAt: 0,
+                    scrollBar: $wrap.find('.scrollbar'),
+                    scrollBy: 1,
+                    speed: 200,
+                    elasticBounds: 1,
+                    easing: 'swing',
+                    clickBar: 1
+                };
+
+                //create our sly for instrument 1 (box slider)
+
+                sly = new Sly('#i' + i, i_options);
+
+
+                sly.on('active', function (eventName, itemIndex) {
+                    var id = this.frame.id;
+                    var playerNum = parseInt(id.slice(1));
+                    if (currentMode == 1) {
+                        var instr = itemIndex;
+                        //console.log("Instrument Preset: " + instr);
+                        var params = instrumentPresets['i' + instr];
+                        players[playerNum].setParameters(params);
+                    }
+                    //console.log("Instr " + id + " Active Item: " + itemIndex);
+                });
+
+                sly.init();
+                sly.activate(0);
+
+                //console.log("Arrange Presets for " + i + ": " + nPresetInstruments);
+                for (var j = 0; j < nPresetInstruments; j++) {
+                    //console.log("Append: " + j);
+                    $('[id="i' + i + '_slidee"]').append('<li id = i' + i + '_' + j + '>' + j + '</div>');
+                }
+                $('i' + i).sly('reload');
+
+
+            }
+
+            //set initial select boxes for mode 2
+            $("#m0-select").val('0').trigger('change');
+            $("#m1-select").val('0').trigger('change');
+            $("#m2-select").val('0').trigger('change');
+        }
+
         //we are going to run these functions when the window fully loads:
+        //this happens first!
         $(window).load(function () {
 
             //generateSliders();
-
-            //load in json preset files
-            //Synch Version that is probably not right...
-            /*
-             var instrRequest = new XMLHttpRequest();
-             instrRequest.open('GET', '/json/instruments.json', false); // Replace 'my_data' with the path to your file
-             instrRequest.onload = function () {
-             // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-             instrumentPresets = JSON.parse(instrRequest.response);
-             nPresetInstruments = 0;
-             for (var instr in instrumentPresets) {
-
-             console.log(instrumentPresets[instr]);
-             nPresetInstruments++;
-             }
-             };
-             instrRequest.send();
-
-             var chRequest = new XMLHttpRequest();
-             chRequest.open('GET', '/json/channels.json', false); // Replace 'my_data' with the path to your file
-             chRequest.onload = function () {
-             var presetsJSON = JSON.parse(chRequest.response);
-             ch_index = 0;
-             for (var channel in presetsJSON) {
-             instr_index = 0;
-             channelPresets[ch_index] = {}
-             for (var instrument in presetsJSON[channel]) {
-             //may not have to do this... access using variables names...
-             channelPresets[ch_index][instr_index] = presetsJSON[channel][instrument];
-             instr_index++;
-             }
-             ch_index++;
-             }
-             nPresetChannels = ch_index;
-             }
-             chRequest.send();
-             */
-            console.log("In LOAD Channel Presets: " + nPresetChannels + " Instrument Presets: " + nPresetInstruments);
-
-
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     var active = $('#tabs').tabs('option', 'active');
@@ -361,9 +328,9 @@ block content
                         currentMode = 0;
                     }
                     else if (active == 1) {
+                        $('#i0').sly('reload');
                         $('#i1').sly('reload');
                         $('#i2').sly('reload');
-                        $('#i3').sly('reload');
                         currentMode = 1;
                     } else {
                         currentMode = 2;
@@ -375,15 +342,8 @@ block content
                 }
             });
 
-
             //set initial open tab
             $('#tabButton1').click();
-
-            //set initial select boxes
-            $("#m0-select").val('0').trigger('change');
-            $("#m1-select").val('0').trigger('change');
-            $("#m2-select").val('0').trigger('change');
-
         });
 
         $.fn.serializeObject = function () {
@@ -408,13 +368,14 @@ block content
                 //var str = JSON.stringify($('#m-form').serializeObject());
                 //console.log(str);
                 console.log("Save");
-                var params = [];
-                //TODO:  CHANGE FOR i < 3 once we have other players
-                for (var i = 0; i < 1; i++) {
+                var params = {};
+                for (var i = 0; i < nPlayers; i++) {
                     params[i] = players[i].getParameters();
                 }
-                console.log(params[0]);
-                var str = JSON.stringify({'i1': params[0]});
+
+                var str = JSON.stringify(params);
+                //console.log(params[0]);
+                //var str = JSON.stringify({'i1': params[0]});
                 console.log(str);
 
                 $('#result').text(str);
@@ -444,20 +405,20 @@ block content
                 if (nextpage == '0') {
                     console.log("Selected 1!");
                     //TO DO CHANGE TO CONSTANTS FOR 0, 1, 2
-                    //players[playerNum].activeInstrument = 0;
+                    players[playerNum].activeInstrument = 0;
                     $('#' + malloId + '-dc').show();
                     $('#' + malloId + '-pp').hide();
                     $('#' + malloId + '-el').hide();
 
                 } else if (nextpage == '1') {
                     console.log("Selected 2!");
-                    //players[playerNum].activeInstrument = 1;
+                    players[playerNum].activeInstrument = 1;
                     $('#' + malloId + '-dc').hide();
                     $('#' + malloId + '-pp').show();
                     $('#' + malloId + '-el').hide();
                 } else {
                     console.log("Selected 3!");
-                    //players[playerNum].activeInstrument = 2;
+                    players[playerNum].activeInstrument = 2;
                     $('#' + malloId + '-dc').hide();
                     $('#' + malloId + '-pp').hide();
                     $('#' + malloId + '-el').show();
@@ -505,8 +466,6 @@ block content
         });
 
 
-
-
         //creates the animation and activation for the navigation bar
         $(function () {
             $(document).delegate('[data-role="navbar"] a', 'click', function () {
@@ -529,9 +488,9 @@ block content
 
         $(window).resize(function (e) {
             $('#channels').sly('reload');
+            $('#i0').sly('reload');
             $('#i1').sly('reload');
             $('#i2').sly('reload');
-            $('#i3').sly('reload');
         });
 
     #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
@@ -551,33 +510,30 @@ block content
                 #scrollbar.scrollbar
                     #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                 #channels.frame(style='overflow; hidden;')
-                    ul#ch_slidee.slidee
-
-
-
+                    ul#ch_slidee.slide
         #two.ui-content(data-role='main')
             ul(data-role='listview', data-inset='true')
                 li(data-icon='false')
                     a(href='#') MalLo 1
+                    .form.wrap
+                        #i0_scrollbar.scrollbar
+                            #i0_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i0.instr_frame(style='overflow; hidden;')
+                            ul#i0_slidee.slidee
+                li(data-icon='false')
+                    a(href='#') MalLo 2
                     .form.wrap
                         #i1_scrollbar.scrollbar
                             #i1_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                         #i1.instr_frame(style='overflow; hidden;')
                             ul#i1_slidee.slidee
                 li(data-icon='false')
-                    a(href='#') MalLo 2
+                    a(href='#') MalLo 3
                     .form.wrap
                         #i2_scrollbar.scrollbar
                             #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                         #i2.instr_frame(style='overflow; hidden;')
                             ul#i2_slidee.slidee
-                li(data-icon='false')
-                    a(href='#') MalLo 3
-                    .form.wrap
-                        #i3_scrollbar.scrollbar
-                            #i3_handle.handle(style='transform: translateZ(0px) translateX(228px);')
-                        #i3.instr_frame(style='overflow; hidden;')
-                            ul#i3_slidee.slidee
         #three.ui-content(data-role='main')
             form#m-form
                 #m0-form.pop_countryBox(data-role='collapsible', data-inset='false')
@@ -749,7 +705,6 @@ block content
                         label.leftItem(for='m2-el-fat') Fatness:
                         .rightItem
                             input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-
     h2#result
     div(data-role='footer', role='banner', data-position='inline')
         h1
