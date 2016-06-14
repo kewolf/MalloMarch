@@ -103,7 +103,7 @@ function WebAHDSR(context, param) {
         } else {
             _self.param.linearRampToValueAtTime(parseFloat(_self.sustainValue), time);
         }
-    }
+    };
 
     this.off = function () {
         // Cancel scheduled values:

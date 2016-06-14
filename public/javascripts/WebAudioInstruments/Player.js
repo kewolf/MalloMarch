@@ -13,11 +13,11 @@ var Player = function () {
     //drummers
     this.nDrummers = 2;
     this.drumPitch = 50;
-    this.dynamics = 0;
+    this.dynamics = 0; 
 
     //pitched percussion
     this.range = 0;
-    this.vibrato = 0;
+    this.vibrato = 0;  
     this.trippiness = 0;
 
     //electronic
@@ -29,14 +29,6 @@ var Player = function () {
     this.reverbGain = audioContext.createGain();
     this.reverbGain.connect(audioContext.destination);
     this.reverb = audioContext.createConvolver();
-    // var tmpBuffer = new ArrayBuffer(16);
-    // var view = new Uint8Array(tmpBuffer);
-    // view[0] = 1;
-    // audioContext.decodeAudioData(tmpBuffer, this.setReverbBuffer,
-    //     function (e) {
-    //         console.log("Error setting up the reverb buffer: " + e.err);
-    //     }
-    // );
     this.dryGain = audioContext.createGain();
     this.dryGain.connect(audioContext.destination);
 
@@ -49,18 +41,22 @@ var Player = function () {
     this.out.connect(this.dryGain);
 
     //create instruments
-    this.activeInstrument = PITCHED;
+    this.activeInstrument = DRUM_CORP;
     this.drum_corp = new Drum_Corp();
     this.pitched = new Pitched();
     this.electronic = new Electronic(self);
 };
 
 Player.prototype.setReverbBuffer = function (buffer) {
-    console.log('got into setReverbBuffer');
+    console.log('loaded reverb impulse');
     this.reverb.buffer = buffer;
 };
 
 Player.prototype.schedule = function (time) {
+
+    this.reverbGain.gain.value = this.size / 100.0;
+    this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
+
     switch (this.activeInstrument) {
         case DRUM_CORP:
             this.drum_corp.play(time, this);
@@ -79,7 +75,23 @@ Player.prototype.schedule = function (time) {
 // todo: needed for backward compatibility (for now)
 Player.prototype.play = function (time) {
     this.schedule(time);
-}
+};
+
+Player.prototype.unschedule = function () {
+    switch (this.activeInstrument) {
+        case DRUM_CORP:
+            this.drum_corp.unschedule(this);
+            break;
+        case PITCHED:
+            this.pitched.unschedule();
+            break;
+        case ELECTRONIC:
+            this.electronic.unschedule();
+            break;
+        default:
+            console.log("fell to the bottom of the active instrument switch statement (we should not have)");
+    }
+};
 
 Player.prototype.getParameters = function() {
 

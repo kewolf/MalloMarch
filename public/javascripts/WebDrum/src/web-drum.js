@@ -111,6 +111,15 @@ function WebDrum(context) {
         _self.noiseAmpEnv.on();
     }
 
+    this.stop = function () {
+        _self.tonePitchEnv.off();
+        _self.toneFilterEnv.off();
+        _self.toneAmpEnv.off();
+        _self.noiseFilterEnv.off();
+        _self.noiseAmpEnv.off();
+        _self.mix.gain.value = 0.0;
+    }
+
     this.connect = function (node) {
         _self.disconnect();
         if (typeof node == 'object' && node) {

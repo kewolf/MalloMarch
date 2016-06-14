@@ -7,8 +7,14 @@ ElectronicVoice.prototype.play = function (time, param) {
 
     // todo: apply parameters e.g. envelope and param
     // todo: how to deal with time?
+    this.source.noiseAmpEnv.decayTime = 0.01 + (player.decay / 100.0) * 2;
+    this.source.toneAmpEnv.decayTime = 0.01 + (player.decay / 100.0) * 2;
     this.source.trigger();
 };
+
+ElectronicVoice.prototype.stop = function () {
+    this.source.stop();
+}
 
 var Electronic = function (player) {
     this.curVoice = 0;
@@ -29,11 +35,13 @@ var Electronic = function (player) {
 };
 
 Electronic.prototype.play = function (time, player) {
-    player.reverbGain.gain.value = player.size / 100.0;
-    player.dryGain.gain.value = 1 - (player.size / 100.0) * 0.25;
 
     this.voices[this.curVoice].play(time,
         this.sequences[this.curSequence][this.curNoteIndex]);
     this.curVoice = (this.curVoice + 1) % this.nVoices;
     this.curNoteIndex = (this.curNoteIndex + 1) % this.sequences[this.curSequence].length;
 };
+
+Electronic.prototype.unschedule = function () {
+    this.voices[this.curVoice + (this.nVoices - 1) % nVoices].stop();
+}

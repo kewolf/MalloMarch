@@ -14,9 +14,14 @@ PitchedVoice.prototype.play = function (time, player, buffer) {
     this.amp.connect(player.out);
 
     // apply parameters
+    this.env.attackTime = 0.01 + (player.decay / 100.0) * 2;
     this.env.on();
     this.source.start(AudioContext.currentTime);
 };
+
+PitchedVoice.prototype.stop = function () {
+    this.source.stop();
+}
 
 var Pitched = function () {
     this.buffers = [];
@@ -42,8 +47,6 @@ Pitched.prototype.addAudioSample = function (buffer, index) {
 }
 
 Pitched.prototype.play = function (time, player) {
-    player.reverbGain.gain.value = player.size / 100.0;
-    player.dryGain.gain.value = 1 - (player.size / 100.0) * 0.25;
 
     this.voices[this.curVoice].play(time,
         player,
@@ -51,4 +54,8 @@ Pitched.prototype.play = function (time, player) {
     this.curVoice = (this.curVoice + 1) % this.nVoices;
     this.curNoteIndex = (this.curNoteIndex + 1) % this.noteSequences[this.curSequence].length;
 };
+
+Pitched.prototype.unschedule = function () {
+    this.voices[this.curVoice + (this.nVoices - 1) % nVoices].stop();
+}
 

@@ -11,7 +11,6 @@ function loadAudioFiles() {
         requests[i].responseType = 'arraybuffer';
         requests[i].i = i;
         requests[i].onload = function () {
-            console.log('loaded snare ' + i);
             var index = this.i;
             audioContext.decodeAudioData(requests[index].response, function (buffer) {
                 var curSnare = "snare" + index;
@@ -30,7 +29,6 @@ function loadAudioFiles() {
     request.open('GET', '/audio/reverb.wav', true);
     request.responseType = 'arraybuffer';
     request.onload = function () {
-        console.log('loaded reverb impulse');
         audioContext.decodeAudioData(request.response, function (buffer) {
             for (var j = 0; j < nPlayers; j++) {
                 players[j].setReverbBuffer(buffer);
@@ -43,24 +41,23 @@ function loadAudioFiles() {
 
 // get marimba samples
     var marimbaRequests = [];
-    for (var i = 0; i < nMarimbaSamples; i++) {
-        var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + i) + '.wav';
-        marimbaRequests[i] = new XMLHttpRequest();
-        marimbaRequests[i].open('GET', marimbaUrl, true);
-        marimbaRequests[i].responseType = 'arraybuffer';
-        marimbaRequests[i].i = i;
-        marimbaRequests[i].onload = function () {
-            console.log('loaded marimba ' + i);
-            var index = this.i;
+    for (var k = 0; k < nMarimbaSamples; k++) {
+        var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + k) + '.wav';
+        marimbaRequests[k] = new XMLHttpRequest();
+        marimbaRequests[k].open('GET', marimbaUrl, true);
+        marimbaRequests[k].responseType = 'arraybuffer';
+        marimbaRequests[k].k = k;
+        marimbaRequests[k].onload = function () {
+            var index = this.k;
             audioContext.decodeAudioData(marimbaRequests[index].response, function (buffer) {
                 for (var j = 0; j < nPlayers; j++) {
-                    players[j].pitched.addAudioSample(buffer, i);
+                    players[j].pitched.addAudioSample(buffer, index);
                 }
             }, function (e) {
                 console.log("Error in decoding audio data: " + e.err);
             });
         };
-        marimbaRequests[i].send();
+        marimbaRequests[k].send();
     }
 }
 
