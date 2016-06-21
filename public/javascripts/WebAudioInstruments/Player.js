@@ -41,7 +41,7 @@ var Player = function () {
     this.out.connect(this.dryGain);
 
     //create instruments
-    this.activeInstrument = DRUM_CORP;
+    this.activeInstrument = PITCHED;
     this.drum_corp = new Drum_Corp();
     this.pitched = new Pitched();
     this.electronic = new Electronic(self);

@@ -46,14 +46,19 @@ var udpPort = new osc.UDPPort({
 
 // Listen for incoming OSC Messages
 udpPort.on("bundle", function (oscBundle, timeTag, info) {
-    //console.log("An OSC bundle just arrived for time tag" + timeTag + " : " +  oscBundle);
-    //console.log("Remote info objct is: " + info);
-    //console.log("IP Address of Sender: " + info.address);
+    console.log("An OSC bundle just arrived for time tag" + timeTag + " : " + oscBundle);
+    console.log("Remote info objct is: " + info);
+    console.log("IP Address of Sender: " + info.address);
 
     var path = oscBundle.packets[0].address;
     if (path == '/time_req') {
-        //DO CLOCK SYNC STUFF
         var arg1 = oscBundle.packets[0].args[0];
+        // Send an OSC message back to performer
+        // udpPort.send({
+        //     address: "/time_res",
+        //     args: [100]
+        // }, "127.0.0.1", 57110);
+        // send time response back to MalLo via OSC
     } else {
         var time = oscBundle.packets[0].args[0];
         var velocity = oscBundle.packets[0].args[1];
@@ -63,12 +68,6 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
 
 // Open the socket for listening
 udpPort.open();
-
-// Send an OSC message back to performer
-udpPort.send({
-    address: "/time_res",
-    args: [100]
-}, "127.0.0.1", 57110);
 
 
 // Emit welcome message on when the socket connects and set up our listeners on this

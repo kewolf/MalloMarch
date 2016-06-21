@@ -14,6 +14,7 @@ block content
     script(src='/javascripts/WebAudioInstruments/Pitched.js')
     script(src='/javascripts/WebAudioInstruments/Player.js')
     script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
+    script(src='/javascripts/MalloTools/TimeTools.js')
 
     script.
 
@@ -28,6 +29,8 @@ block content
         var nPresetChannels = 0;
         var nPresetInstruments = 0;
         var currentMode = 0; //make enum for different modes?
+        var scheduler;
+        var networkTimer;
 
         //init sound stuff!
         window.addEventListener('load', init, false);
@@ -71,9 +74,14 @@ block content
                 });
             });
 
+            networkTimer = new NetworkTimer();
+            scheduler = new Scheduler(players);
+            var intervalTime = 500
             setInterval(function () {
-                players[0].play(audioContext.currentTime);
-            }, 500);
+                //players[0].schedule(audioContext.currentTime+.5);
+                scheduler.setPrediction(networkTimer.getTime() + 0.01, 0);
+                scheduler.checkSchedule();
+            }, intervalTime);
 
         });
 

@@ -3,7 +3,7 @@ var ElectronicVoice = function (player) {
     this.source.connect(player.out);
 };
 
-ElectronicVoice.prototype.play = function (time, param) {
+ElectronicVoice.prototype.play = function (time, param, player) {
 
     // todo: apply parameters e.g. envelope and param
     // todo: how to deal with time?
@@ -14,7 +14,7 @@ ElectronicVoice.prototype.play = function (time, param) {
 
 ElectronicVoice.prototype.stop = function () {
     this.source.stop();
-}
+};
 
 var Electronic = function (player) {
     this.curVoice = 0;
@@ -37,11 +37,11 @@ var Electronic = function (player) {
 Electronic.prototype.play = function (time, player) {
 
     this.voices[this.curVoice].play(time,
-        this.sequences[this.curSequence][this.curNoteIndex]);
+        this.sequences[this.curSequence][this.curNoteIndex], player);
     this.curVoice = (this.curVoice + 1) % this.nVoices;
     this.curNoteIndex = (this.curNoteIndex + 1) % this.sequences[this.curSequence].length;
 };
 
 Electronic.prototype.unschedule = function () {
     this.voices[this.curVoice + (this.nVoices - 1) % nVoices].stop();
-}
+};

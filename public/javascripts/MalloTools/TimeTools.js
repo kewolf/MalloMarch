@@ -61,17 +61,16 @@ var Scheduler = function (players) {
     this.checkSchedule = function () {
         var curTime = audioContext.currentTime;
         for (var i = 0; i < players.length; i++) {
-            if (i == 0) {
+            if (i == 0 && false) {
                 console.log('time diff: ' + (this.curPredictions[i] - audioContext.currentTime));
                 console.log("curTime < this.curPredictions[i] + this.postThreshold: " + (curTime < (this.curPredictions[i] + this.postThreshold)));
                 console.log("curTime: " + curTime + ", this.curPredictions[i] + this.postThreshold: " + (this.curPredictions[i] + this.postThreshold));
                 console.log("curTime > this.curPredictions[i] - this.preThreshold: " + (curTime > (this.curPredictions[i] - this.preThreshold)));
                 console.log("curTime < this.lastPlayTime[i]: " + (curTime < this.lastPlayTime[i]));
                 console.log("curTime > this.lastPlayTime[i] + this.waitPeriod: " + (curTime > (this.lastPlayTime[i] + this.waitPeriod)));
+                console.log("#########################################################");
             }
 
-
-            console.log("#########################################################");
             if (curTime < this.curPredictions[i] + this.postThreshold
                 && curTime > this.curPredictions[i] - this.preThreshold
                 && (curTime < this.lastPlayTime[i]
