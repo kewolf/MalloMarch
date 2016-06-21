@@ -14,6 +14,7 @@ block content
     script(src='/javascripts/WebAudioInstruments/Pitched.js')
     script(src='/javascripts/WebAudioInstruments/Player.js')
     script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
+    script(src='/javascripts/Logger/jsnlog.min.js')
     script(src='/javascripts/MalloTools/TimeTools.js')
 
     script.
@@ -32,6 +33,18 @@ block content
         var scheduler;
         var networkTimer;
 
+
+        //init the logging stuff
+        var logger = JL("Version1-Logger");
+        var appender = JL.createAjaxAppender("Appender");
+        appender.setOptions({
+            "batchSize": 5 //the number of logs that are acquired before they get sent
+        });
+        logger.setOptions({
+            "appenders": [appender]
+        });
+
+
         //init sound stuff!
         window.addEventListener('load', init, false);
 
@@ -44,7 +57,7 @@ block content
 
 
         socket.on('welcome', function (data) {
-            console.log("got welcome message");// create the players
+            logger.info("setup");
 
             //load JSON files:
             loadInstrumentsfile(function (response1) {
@@ -87,7 +100,7 @@ block content
 
 
         function loadInstrumentsfile(callback) {
-            console.log("load Instr File");
+            //console.log("load Instr File");
             var request = new XMLHttpRequest();
             //request.overrideMimeType("application/json");
             request.open('GET', '/json/instruments.json', true); // Replace 'my_data' with the path to your file
@@ -101,7 +114,7 @@ block content
         }
 
         function loadPresetsfile(callback) {
-            console.log("load Presets File");
+            //console.log("load Presets File");
             var request = new XMLHttpRequest();
             request.open('GET', '/json/channels.json', true);
             request.onreadystatechange = function () {
@@ -201,9 +214,12 @@ block content
 
 
         //Could use this at some point, but when?
+        /*
         $(document).ready(function () {
-            //console.log("Document Ready");
-        });
+         console.log("Document Ready");
+         //set initial open tab
+
+         });*/
 
         function loadDOMStuff() {
             //setup channels slider
@@ -239,7 +255,6 @@ block content
             sly_channels.on('active', function (eventName, itemIndex) {
                 //Change the channel params if the currentMode is 0;
                 if (currentMode == 0) {
-
                     //for each player load in the instrument presets
                     for (var i = 0; i < nPlayers; i++) {
                         //get the instrument index:
@@ -248,11 +263,18 @@ block content
                         var params = instrumentPresets['i' + instr];
                         players[i].setParameters(params);
 
-                        //update the mode 2 sliders
+                        //update the channel sliders
                         $('#i' + i).sly('activate', instr);
                     }
                 }
                 //console.log("Channel Active Item: " + itemIndex);
+            });
+
+            sly_channels.on('moveEnd', function (eventName) {
+                if (currentMode == 0) {
+                    var el = document.querySelector(".active");
+                    logger.info("{ \"channel\" : " + el.id + "}");
+                }
             });
 
 
@@ -263,7 +285,7 @@ block content
 
 
             for (var i = 0; i < nPresetChannels; i++) {
-                $('[id="ch_slidee"]').append('<li >' + i + '</div>');
+                $('[id="ch_slidee"]').append('<li id = ' + 'ch_' + i + '>' + i + '</div>');
             }
             $('#channels').sly('reload');
 
@@ -305,8 +327,18 @@ block content
                         var params = instrumentPresets['i' + instr];
                         players[playerNum].setParameters(params);
                         sliderChange(playerNum, params);
+                        //logger.info("Active:" + id);
                     }
                     //console.log("Instr " + id + " Active Item: " + itemIndex);
+                });
+
+                sly.on('moveEnd', function (eventName) {
+                    if (currentMode == 1) {
+                        var el = this.frame.querySelector(".active");
+                        var playerNum = parseInt(el.id.slice(1));
+                        var instrNum = parseInt(el.id.slice(3));
+                        logger.info("{ \"player_" + playerNum + "\" : " + instrNum + "}");
+                    }
                 });
 
                 sly.init();
@@ -330,6 +362,7 @@ block content
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     var active = $('#tabs').tabs('option', 'active');
+                    logger.info("{ \"tab\" : " + $("#tabs ul>li a").eq(active).attr('id') + "}");
                     if (active == 0) {
                         $('#channels').sly('reload');
                         currentMode = 0;
@@ -346,12 +379,14 @@ block content
 
                     //Change the name of the mode title
                     $("#mode").html($("#tabs ul>li a").eq(active).attr('name'));
-                    console.log("Mode: " + currentMode);
+                    //console.log("Mode: " + currentMode);
+
+
                 }
             });
 
-            //set initial open tab
             $('#tabButton1').click();
+
         }
 
         function sliderChange(playerNum, params) {
@@ -395,7 +430,7 @@ block content
 
                 switch (activeInstrument) {
                     case DRUM_CORP:
-                        console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
+                        //console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
                         $('#m' + i + '-dc-size').val(params["size"]).trigger('change');
                         $('#m' + i + '-dc-decay').val(params["decay"]).trigger('change');
                         $('#m' + i + '-dc-pitch').val(params["drumPitch"]).trigger('change');
@@ -444,22 +479,25 @@ block content
             $('#saveButton').click(function () {
                 //var str = JSON.stringify($('#m-form').serializeObject());
                 //console.log(str);
-                console.log("Save");
+                //console.log("Save");
+                var dateTime = Date.now();
                 var params = {};
                 for (var i = 0; i < nPlayers; i++) {
                     params[i] = players[i].getParameters();
                 }
 
                 var str = JSON.stringify(params);
-                //console.log(params[0]);
-                //var str = JSON.stringify({'i1': params[0]});
-                console.log(str);
+                //console.log(str);
 
-                $('#result').text(str);
+                // Add string to the result element
+                // $('#result').text(str);
 
                 socket.emit('saveJSON', {
                     str: str,
+                    dateTime: dateTime
                 });
+
+                logger.info("{ \"save\" : " + dateTime + "}");
 
                 return false;
             });
@@ -478,9 +516,17 @@ block content
                 //get the value for the child that is selected
                 var nextpage = $(this).children('option:selected').attr('value');
 
+
+                var active = $('#tabs').tabs('option', 'active');
+
+                //if we are in mode 3 - then log the change!
+                if (active == 2) {
+                    logger.info("{ \"" + id + "\" : " + nextpage + "}");
+                }
+
                 //show/hide based on the selection.
                 if (nextpage == '0') {
-                    console.log("Selected 1!");
+                    //console.log("Selected 1!");
                     players[playerNum].activeInstrument = 0;
                     $('#' + malloId + '-dc-size').val(players[playerNum].size).trigger('change');
                     $('#' + malloId + '-dc-decay').val(players[playerNum].decay).trigger('change');
@@ -489,7 +535,7 @@ block content
                     $('#' + malloId + '-el').hide();
 
                 } else if (nextpage == '1') {
-                    console.log("Selected 2!");
+                    //console.log("Selected 2!");
                     players[playerNum].activeInstrument = 1;
                     $('#' + malloId + '-el-size').val(players[playerNum].size).trigger('change');
                     $('#' + malloId + '-el-decay').val(players[playerNum].decay).trigger('change');
@@ -497,7 +543,7 @@ block content
                     $('#' + malloId + '-pp').show();
                     $('#' + malloId + '-el').hide();
                 } else {
-                    console.log("Selected 3!");
+                    //console.log("Selected 3!");
                     players[playerNum].activeInstrument = 2;
                     $('#' + malloId + '-pp-size').val(players[playerNum].size).trigger('change');
                     $('#' + malloId + '-pp-decay').val(players[playerNum].decay).trigger('change');
@@ -555,6 +601,13 @@ block content
             });
         });
 
+        $(window).resize(function (e) {
+            $('#channels').sly('reload');
+            $('#i0').sly('reload');
+            $('#i1').sly('reload');
+            $('#i2').sly('reload');
+        });
+
         $(document).on("tabsbeforeactivate", "#tabs", function (e, ui) {
             var reverse = ui.newPanel.index() < ui.oldPanel.index() ? " reverse" : "",
                     classes = "in slide" + reverse;
@@ -563,13 +616,15 @@ block content
             });
         });
 
-
-        $(window).resize(function (e) {
-            $('#channels').sly('reload');
-            $('#i0').sly('reload');
-            $('#i1').sly('reload');
-            $('#i2').sly('reload');
+        //log when sliders stop (either by clicking, dragging, or selecting the handle
+        $(function () {
+            $(".ui-slider").on('slidestop', function (event) {
+                logger.info("{ \"" + event.target.id + "\" : " + event.target.value + "}");
+            });
         });
+
+
+
 
     #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
         div(data-role='navbar')
@@ -582,10 +637,9 @@ block content
                     a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', name = 'Build the Instrument') Mode 3
         div.ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
             h7#mode Change the Channel
-
         #one.ui-content(data-role='main')
             .form.wrap
-                #scrollbar.scrollbar
+                #ch_scrollbar.scrollbar
                     #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                 #channels.frame(style='overflow; hidden;')
                     ul#ch_slidee.slide
