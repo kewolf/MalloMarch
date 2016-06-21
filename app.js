@@ -8,6 +8,23 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
+
+//other logging stuff:
+var JL = require('jsnlog').JL;
+var winston = require('winston');
+
+var clientLogger = new winston.Logger({
+    level: 'info',
+    transports: [
+        new (winston.transports.File)({
+            name: 'somefile.log',
+            filename: 'logs/ICADperformanceTest.log',
+            maxFiles: 100,
+            maxsize: 100000,
+            colorize: true
+        })]
+});
+
 var app = express();
 
 // view engine setup
@@ -31,6 +48,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', routes);
 app.use('/users', users);
 
+
+// jsnlog.js on the client by default sends log messages to /jsnlog.logger, using POST.
+app.post('*.logger', function (req, res) {
+    //console.log(JSON.parse(JSON.stringify(req.body)));
+    //console.log("Lenght of Arrray: " + req.body.lg.length);
+    var numLogs = req.body.lg.length;
+    for (var i = 0; i < numLogs; i++) {
+        var aLog = req.body.lg[i];
+        var msg = aLog["m"];
+        var loggerName = aLog["n"];
+        var time = new Date(aLog["t"]);
+        var clientIP = req.connection.remoteAddress;
+
+        // could also incorporate level
+        var lvl = parseInt(aLog["l"]);
+
+        // Create JSON message from the parameters and send that to our Winston logger
+        clientLogger.log('info', msg, {clientTimestamp: time, clientIP: clientIP, loggerName: loggerName});
+    }
+    res.send('');
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

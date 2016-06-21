@@ -82,9 +82,10 @@ io.on('connection', function (socket) {
         numInstruments: 3
     });
     socket.on('saveJSON', function (newSocket) {
-            var id = socket.request.connection.remoteAddress;
-            var date = dateFormat(new Date(), "dd-mm-yy_hh:MM:ssTT")
-            var saveStr = id + "_" + date;
+        var id = socket.request.connection.remoteAddress;
+        //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
+        var date = newSocket.dateTime;
+        var saveStr = id + "_" + date;
 
             var file = 'public/json/' + saveStr + '.json';
             var data = JSON.parse(newSocket.str);
