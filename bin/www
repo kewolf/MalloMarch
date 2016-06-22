@@ -11,6 +11,7 @@ var url = require('url');
 var osc = require('osc');
 var jsonfile = require('jsonfile');
 var dateFormat = require('dateformat');
+var Long = require("long");
 
 /**
  * Get port from environment and store in Express.
@@ -46,23 +47,30 @@ var udpPort = new osc.UDPPort({
 
 // Listen for incoming OSC Messages
 udpPort.on("bundle", function (oscBundle, timeTag, info) {
-    console.log("An OSC bundle just arrived for time tag" + timeTag + " : " + oscBundle);
-    console.log("Remote info objct is: " + info);
-    console.log("IP Address of Sender: " + info.address);
 
     var path = oscBundle.packets[0].address;
     if (path == '/time_req') {
-        var arg1 = oscBundle.packets[0].args[0];
+        var client_send_time = oscBundle.packets[0].args[0];
+        var return_port = oscBundle.packets[0].args[1];
         // Send an OSC message back to performer
-        // udpPort.send({
-        //     address: "/time_res",
-        //     args: [100]
-        // }, "127.0.0.1", 57110);
-        // send time response back to MalLo via OSC
+        var server_time = Long.fromValue((new Date).getTime());
+        udpPort.send({
+            address: "/time_res",
+
+            args: [client_send_time, server_time]
+        }, info.address, 6448);
+
+        // console.log("client_send_time: " + client_send_time);
+        // console.log("return_port: " + return_port);
+        // console.log("IP Address of Sender: " + info.address);
+        // console.log("server_time: " + server_time);
+        // console.log("client_send_time: " + JSON.stringify(client_send_time, null, 4));
+        // console.log("server_time: " + JSON.stringify(server_time, null, 4));
     } else {
         var time = oscBundle.packets[0].args[0];
         var velocity = oscBundle.packets[0].args[1];
         sendPrediction(path, time, velocity);
+        console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
     }
 });
 
