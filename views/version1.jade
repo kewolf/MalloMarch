@@ -272,8 +272,9 @@ block content
 
             sly_channels.on('moveEnd', function (eventName) {
                 if (currentMode == 0) {
-                    var el = document.querySelector(".active");
-                    logger.info("{ \"channel\" : " + el.id + "}");
+                    var el = document.querySelector(".active").id;
+                    var ch_number = parseInt(el.slice(3));
+                    logger.info("{ \"channel\" : " + ch_number + "}");
                 }
             });
 
@@ -362,7 +363,7 @@ block content
             $("#tabs").tabs({
                 activate: function (event, ui) {
                     var active = $('#tabs').tabs('option', 'active');
-                    logger.info("{ \"tab\" : " + $("#tabs ul>li a").eq(active).attr('id') + "}");
+                    logger.info("{ \"tab\" : " + active + "}");
                     if (active == 0) {
                         $('#channels').sly('reload');
                         currentMode = 0;
