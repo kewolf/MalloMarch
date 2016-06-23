@@ -34,7 +34,6 @@ Drum.prototype.play = function(time, player)
     var decayBase = 100.0;
     var decayScaling = 3.0;
     this.env.decayTime = Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
-    console.log('decayTime: ' + this.env.decayTime);
 
 
 
@@ -55,7 +54,6 @@ Drum_Corp.prototype.addDrum = function (buffer) {
 Drum_Corp.prototype.play = function (time, player)
 {
     var nDrummers = Math.ceil(player.nDrummers / 10.0)
-    console.log('nDrummers: ' + nDrummers);
     for (var i = 0; i < Math.min(nDrummers, this.drums.length); i++)
     {
         var offset = 0;
@@ -69,8 +67,12 @@ Drum_Corp.prototype.play = function (time, player)
 
 Drum_Corp.prototype.unschedule = function (player) {
     console.log('cancelling drum');
-    for (var i = 0; i < Math.min(player.nDrummers, this.drums.length); i++) {
-        this.drums[i].source.stop();
+    if (this.drums != undefined) {
+        for (var i = 0; i < Math.min(player.nDrummers, this.drums.length); i++) {
+            if (this.drums[i].source != undefined)
+                this.drums[i].source.stop();
+        }
+
     }
 }
 

@@ -31,7 +31,7 @@ block content
         var nPresetInstruments = 0;
         var currentMode = 0; //make enum for different modes?
         var scheduler;
-        var networkTimer;
+        var syncClient;
 
 
         //init the logging stuff
@@ -64,14 +64,27 @@ block content
             $('#consent').hide();
 
 
-            networkTimer = new NetworkTimer();
-            scheduler = new Scheduler(players);
-            var intervalTime = 500
+            syncClient = new SyncClient();
+            scheduler = new Scheduler(players, syncClient);
+
+            var timeSyncInterval = 500;
+            // starts time sync
+            setInterval(function () {
+                socket.emit('time_req', {
+                    clientTime: audioContext.currentTime,
+                });
+            }, timeSyncInterval);
+
+            var schedulerInterval = 20;
+            // checks scheduler
             setInterval(function () {
                 //players[0].schedule(audioContext.currentTime+.5);
-                scheduler.setPrediction(networkTimer.getTime() + 0.01, 0);
                 scheduler.checkSchedule();
-            }, intervalTime);
+            }, schedulerInterval);
+
+            setInterval(function () {
+                scheduler.setPrediction(syncClient.getTime() + 0.01, 0);
+            }, 500);
 
         });
 
@@ -107,6 +120,7 @@ block content
 
 
 
+
         function loadInstrumentsfile(callback) {
             //console.log("load Instr File");
             var request = new XMLHttpRequest();
@@ -135,39 +149,32 @@ block content
         }
 
 
-        //when we receive a time response - do the time sync stuff
-        var process_variance = 1; // todo: set to better value
-        var est_measure_variance = 1; // todo: set to a better value
-        var kalman_initialized = false;
-        var kalman_filter;
+
 
         socket.on('time_res', function (data) {
             var receive_time = audioContext.currentTime;
-            var smoothed_offset = 0;
             var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
-            if (!kalman_initialized) {
-                kalman_filter = new KalmanFilter(process_variance, est_measure_variance, instant_offset);
-                kalman_initialized = true;
-            } else {
-                kalman_filter.input_a_measurement(instant_offset);
-            }
-            smoothed_offset = kalman_filter.posteri_est;
-            // var text = data.message + " Server Time: " + data.serverTime/1000.0 + " send Time: " + data.clientTime + " received time: " + receive_time;
-            // var text = "kalman offset: " + smoothed_offset + ", instant offset: " + instant_offset;
-            //add message to console
+            syncClient.addTimeOffset(instant_offset);
+            // console.log("instant_offset: " + instant_offset + ", syncClient.getOffset(): " + syncClient.getOffset());
         });
 
-        //when we receive OSC infromation, make sound!
-        socket.on('oscInfo', function (data) {
-            var currentTime = audioContext.currentTime;
+        //when we receive predictions, schedule them
+        socket.on('note_prediction', function (data) {
+            //todo: schedule the event
+            var currentTime = syncClient.getTime();
             var instr;
             if (data.address == "/left") {
+                instr = 0;
+            }
+            if (data.address == "/middle") {
                 instr = 1;
             }
             if (data.address == "/right") {
                 instr = 2;
             }
-            var text = "Instrument " + instr + " at " + currentTime;
+            scheduler.curPredictions[instr] = data.time / 1000.0;
+            console.log("diff: " + (scheduler.curPredictions[instr] - currentTime));
+            console.log("currentTime: " + currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
         });
 
         socket.on('error', console.error.bind(console));

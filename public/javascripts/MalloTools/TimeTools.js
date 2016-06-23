@@ -21,7 +21,7 @@ var KalmanFilter = function (the_process_variance, the_est_measure_variance, the
     }
 };
 
-var NetworkTimer = function () {
+var SyncClient = function () {
     this.kalmanInitialized = false;
     this.instantOffset = 0;
 
@@ -40,12 +40,19 @@ var NetworkTimer = function () {
         if (!this.kalman_initialized)
             return audioContext.currentTime + this.instantOffset;
         else
-            return kalman_filter.posteri_est;
-    }
+            return audioContext.currentTime + this.kalman_filter.posteri_est;
+    };
+
+    this.getOffset = function () {
+        if (!this.kalman_initialized)
+            return this.instantOffset;
+        else
+            return this.kalman_filter.posteri_est;
+    };
 };
 
-var Scheduler = function (players) {
-    this.preThreshold = 0.75; //schedule 20 ms in advance
+var Scheduler = function (players, syncClient) {
+    this.preThreshold = 0.02; //schedule 20 ms in advance
     this.postThreshold = 0.03; //30 ms after
     this.waitPeriod = 0.2; //
     this.players = players;
@@ -59,29 +66,25 @@ var Scheduler = function (players) {
     }
 
     this.checkSchedule = function () {
-        var curTime = audioContext.currentTime;
         for (var i = 0; i < players.length; i++) {
-            if (i == 0 && false) {
-                console.log('time diff: ' + (this.curPredictions[i] - audioContext.currentTime));
-                console.log("curTime < this.curPredictions[i] + this.postThreshold: " + (curTime < (this.curPredictions[i] + this.postThreshold)));
-                console.log("curTime: " + curTime + ", this.curPredictions[i] + this.postThreshold: " + (this.curPredictions[i] + this.postThreshold));
-                console.log("curTime > this.curPredictions[i] - this.preThreshold: " + (curTime > (this.curPredictions[i] - this.preThreshold)));
-                console.log("curTime < this.lastPlayTime[i]: " + (curTime < this.lastPlayTime[i]));
-                console.log("curTime > this.lastPlayTime[i] + this.waitPeriod: " + (curTime > (this.lastPlayTime[i] + this.waitPeriod)));
-                console.log("#########################################################");
-            }
+            var diff = this.curPredictions[i] - syncClient.getTime();
 
-            if (curTime < this.curPredictions[i] + this.postThreshold
-                && curTime > this.curPredictions[i] - this.preThreshold
-                && (curTime < this.lastPlayTime[i]
-                || curTime > this.lastPlayTime[i] + this.waitPeriod)) {
-                if (curTime < this.lastPlayTime[i]) {
-                    players[i].unschedule();
-                    console.log('unscheduled');
+            if (diff > -this.postThreshold && diff < this.preThreshold
+                && this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod) {
+                console.log("diff: " + diff);
+                console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
+                console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
+                console.log("#########################################################");
+
+                if (diff < 0) {
+                    this.players[i].play();
+                    this.lastPlayTime[i] = syncClient.getTime();
+                } else {
+                    players[i].schedule(this.curPredictions[i]);
+                    this.lastPlayTime[i] = this.curPredictions[i];
                 }
                 console.log('scheduled audio');
-                players[i].schedule(this.curPredictions[i]);
-                this.lastPlayTime[i] = this.curPredictions[i];
+                this.curPredictions[i] = -1;
             }
         }
     };

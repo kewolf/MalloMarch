@@ -69,8 +69,11 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
     } else {
         var time = oscBundle.packets[0].args[0];
         var velocity = oscBundle.packets[0].args[1];
-        sendPrediction(path, time, velocity);
+        sendPrediction(path, time.toNumber(), velocity);
+        console.log("time: " + JSON.stringify(time));
+        console.log("got a note message from malLo " + path);
         console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
+        console.log("prediction_time: " + time.toNumber());
     }
 });
 
@@ -105,23 +108,19 @@ io.on('connection', function (socket) {
         }
     );
     socket.on('time_req', function (newSocket) {
-        console.log("Received Time Request: " + newSocket.clientTime + " Sending Response");
-        var serverTime = (new Date).getTime();
-
-        // Use socket to communicate with this particular client only, sending it it's own id
         socket.emit('time_res', {
-            message: 'Response',
-            serverTime: serverTime,
+            serverTime: (new Date).getTime(),
             clientTime: newSocket.clientTime,
             id: newSocket.id
         });
+        //console.log("Received Time Request from browswer: " + newSocket.clientTime + ", Sending Response");
     });
 });
 
 
 //function for passing the osc messages onto our
 function sendPrediction(address, time, velocity) {
-    io.emit('oscInfo', {
+    io.emit('note_prediction', {
         address: address,
         time: time,
         velocity: velocity
