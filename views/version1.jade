@@ -84,7 +84,7 @@ block content
             }
 
             syncClient = new SyncClient();
-            scheduler = new Scheduler(players, syncClient);
+            scheduler = new Scheduler(players, audioContext);
 
             var timeSyncInterval = 500;
             // starts time sync
@@ -101,9 +101,9 @@ block content
                 scheduler.checkSchedule();
             }, schedulerInterval);
 
-            setInterval(function () {
-                scheduler.setPrediction(syncClient.getTime() + 0.01, 0);
-            }, 500);
+            //setInterval(function () {
+            //    scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
+            //}, 500);
 
         });
 
@@ -195,7 +195,7 @@ block content
         //when we receive predictions, schedule them
         socket.on('note_prediction', function (data) {
             //todo: schedule the event
-            var currentTime = syncClient.getTime();
+            var offset = syncClient.getOffset();
             var instr;
             if (data.address == "/left") {
                 instr = 0;
@@ -206,9 +206,9 @@ block content
             if (data.address == "/right") {
                 instr = 2;
             }
-            scheduler.curPredictions[instr] = data.time / 1000.0;
-            console.log("diff: " + (scheduler.curPredictions[instr] - currentTime));
-            console.log("currentTime: " + currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
+            scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
+            console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+            console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
         });
 
         socket.on('error', console.error.bind(console));

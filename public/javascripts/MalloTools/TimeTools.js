@@ -51,7 +51,8 @@ var SyncClient = function () {
     };
 };
 
-var Scheduler = function (players, syncClient) {
+var Scheduler = function (players, audioContext) {
+    this.audioContext = audioContext;
     this.preThreshold = 0.02; //schedule 20 ms in advance
     this.postThreshold = 0.03; //30 ms after
     this.waitPeriod = 0.2; //
@@ -67,18 +68,18 @@ var Scheduler = function (players, syncClient) {
 
     this.checkSchedule = function () {
         for (var i = 0; i < players.length; i++) {
-            var diff = this.curPredictions[i] - syncClient.getTime();
+            var diff = this.curPredictions[i] - this.audioContext.currentTime;
 
             if (diff > -this.postThreshold && diff < this.preThreshold
                 && this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod) {
-                console.log("diff: " + diff);
-                console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
-                console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
-                console.log("#########################################################");
+                // console.log("diff: " + diff);
+                // console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
+                // console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
+                // console.log("#########################################################");
 
                 if (diff < 0) {
-                    this.players[i].play();
-                    this.lastPlayTime[i] = syncClient.getTime();
+                    this.players[i].schedule(this.audioContext.currentTime);
+                    this.lastPlayTime[i] = this.audioContext.currentTime;
                 } else {
                     players[i].schedule(this.curPredictions[i]);
                     this.lastPlayTime[i] = this.curPredictions[i];

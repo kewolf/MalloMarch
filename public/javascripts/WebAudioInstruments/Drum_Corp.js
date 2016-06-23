@@ -7,39 +7,36 @@ var Drum = function(buffer)
     this.env.attackTime = 0.001;
     this.env.decayTime = 0.5;
     this.env.sustainValue = 0.0;
-};
 
-Drum.prototype.play = function(time, player)
-{
-    this.source = audioContext.createBufferSource();
-    this.source.buffer = this.buffer;
-    this.source.connect(this.amp);
-    this.amp.connect(player.out);
+    this.play = function (time, player) {
+        this.source = audioContext.createBufferSource();
+        this.source.buffer = this.buffer;
+        this.source.connect(this.amp);
+        this.amp.connect(player.out);
 
-    var randNum = Math.random();
-    // apply parameters
-    var randDetune = 0;
-    var nDrummers = Math.ceil(player.nDrummers / 10.0)
-    if (nDrummers > 1) {
-        var range = player.nDrummers;
-        randDetune = randNum * 2 * range - range;
+        var randNum = Math.random();
+        // apply parameters
+        var randDetune = 0;
+        var nDrummers = Math.ceil(player.nDrummers / 10.0);
+        if (nDrummers > 1) {
+            var range = player.nDrummers;
+            randDetune = randNum * 2 * range - range;
+        }
+
+        //console.log('(player.drumPitch - 50)/100.0 * 2000 + randDetune: ' + ((player.drumPitch - 50)/100.0 * 2000 + randDetune));
+        this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000 + randDetune;
+
+        var dynamicsRatio = player.dynamics / 100.0;
+        this.amp.gain.value = dynamicsRatio * randNum + (1 - dynamicsRatio);
+
+        var decayBase = 100.0;
+        var decayScaling = 3.0;
+        this.env.decayTime = Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
+
+        this.env.on();
+        console.log("time: " + time);
+        this.source.start(time);
     }
-
-    //console.log('(player.drumPitch - 50)/100.0 * 2000 + randDetune: ' + ((player.drumPitch - 50)/100.0 * 2000 + randDetune));
-    this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000 + randDetune;
-
-    var dynamicsRatio = player.dynamics / 100.0
-    this.amp.gain.value = dynamicsRatio * randNum + (1 - dynamicsRatio);
-
-    var decayBase = 100.0;
-    var decayScaling = 3.0;
-    this.env.decayTime = Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
-
-
-
-
-    this.env.on();
-    this.source.start(time);
 };
 
 var Drum_Corp = function ()
@@ -53,7 +50,7 @@ Drum_Corp.prototype.addDrum = function (buffer) {
 
 Drum_Corp.prototype.play = function (time, player)
 {
-    var nDrummers = Math.ceil(player.nDrummers / 10.0)
+    var nDrummers = Math.ceil(player.nDrummers / 10.0);
     for (var i = 0; i < Math.min(nDrummers, this.drums.length); i++)
     {
         var offset = 0;
@@ -74,5 +71,4 @@ Drum_Corp.prototype.unschedule = function (player) {
         }
 
     }
-}
-
+};
