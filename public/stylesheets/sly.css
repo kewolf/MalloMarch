@@ -1,3 +1,26 @@
+/*
+To change these colors - search and replace for the new ones.
+player 1 color: #a3ff29 //#006837
+player 2 color: #29abe2 //#014675
+player 3 color: #d82c80 //#5f072e
+
+slider backgound: #333;
+*/
+.player1_color {
+    color: #a3ff29
+}
+
+.player2_color {
+    color: #29abe2
+}
+
+.player3_color {
+    color: #d82c80
+}
+
+label {
+    color: #ddd;
+}
 /* Example wrapper */
 .wrap {
     position: relative;
@@ -39,26 +62,62 @@
     cursor: pointer;
 }
 
-.instr_frame ul li.active,
 .frame ul li.active {
-    color: #fff;
-    background: #0a62a9; /* change to match the active button color from testtheme.min.css */
+    color: #000000;
+    background: #fff;
+}
+
+.player1_frame ul li.active {
+    color: #000000;
+    background: #a3ff29; /* change to match the active button color from testtheme.min.css */
+}
+
+.player2_frame ul li.active {
+    color: #000000;
+    background: #29abe2; /* change to match the active button color from testtheme.min.css */
+}
+
+.player3_frame ul li.active {
+    color: #000000;
+    background: #d82c80; /* change to match the active button color from testtheme.min.css */
 }
 
 /* Scrollbar */
 .scrollbar {
     margin: 0 0 1em 0;
     height: 2px;
-    background: #ccc;
+    background: #333;
     line-height: 0;
 }
 
 .scrollbar .handle {
     width: 100px;
     height: 100%;
-    background: #292a33;
+    background: #fff;
     cursor: pointer;
 }
+
+.player1_scrollbar .handle {
+    width: 100px;
+    height: 100%;
+    background: #a3ff29;
+    cursor: pointer;
+}
+
+.player2_scrollbar .handle {
+    width: 100px;
+    height: 100%;
+    background: #29abe2;
+    cursor: pointer;
+}
+
+.player3_scrollbar .handle {
+    width: 100px;
+    height: 100%;
+    background: #d82c80;
+    cursor: pointer;
+}
+
 
 .scrollbar .handle .mousearea {
     position: absolute;

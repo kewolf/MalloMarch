@@ -22,7 +22,7 @@ block content
         var audioContext;
         var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
-        var customServerURL = '10.9.241.208:3000';
+        var customServerURL = '192.168.1.6:3000';
         var nPlayers = 3;
         var players = [];
         var instrumentPresets = [];
@@ -53,13 +53,29 @@ block content
         }
 
         //socket to send/receive stuff from
-        var socket = io(serverURL);//init the sound system
+        var socket = io(serverURL);
 
 
         socket.on('welcome', function (data) {
             logger.info("setup");
 
-            //load JSON files:
+            loadJSONfiles();
+            //$('#tabs').hide();
+            $('#consent').hide();
+
+
+            networkTimer = new NetworkTimer();
+            scheduler = new Scheduler(players);
+            var intervalTime = 500
+            setInterval(function () {
+                //players[0].schedule(audioContext.currentTime+.5);
+                scheduler.setPrediction(networkTimer.getTime() + 0.01, 0);
+                scheduler.checkSchedule();
+            }, intervalTime);
+
+        });
+
+        function loadJSONfiles() {
             loadInstrumentsfile(function (response1) {
                 //Parse JSON string into object
                 instrumentPresets = JSON.parse(response1);
@@ -86,17 +102,9 @@ block content
                     loadDOMStuff();
                 });
             });
+        }
 
-            networkTimer = new NetworkTimer();
-            scheduler = new Scheduler(players);
-            var intervalTime = 500
-            setInterval(function () {
-                //players[0].schedule(audioContext.currentTime+.5);
-                scheduler.setPrediction(networkTimer.getTime() + 0.01, 0);
-                scheduler.checkSchedule();
-            }, intervalTime);
 
-        });
 
 
         function loadInstrumentsfile(callback) {
@@ -354,10 +362,6 @@ block content
 
             }
 
-            //set initial select boxes for mode 2
-            $("#m0-select").val('0').trigger('change');
-            $("#m1-select").val('0').trigger('change');
-            $("#m2-select").val('0').trigger('change');
 
 
             $("#tabs").tabs({
@@ -386,8 +390,12 @@ block content
                 }
             });
 
-            $('#tabButton1').click();
+            //set initial select boxes for mode 2
+            $("#m0-select").val('0').trigger('change');
+            $("#m1-select").val('0').trigger('change');
+            $("#m2-select").val('0').trigger('change');
 
+            //$('#tabButton1').click();
         }
 
         function sliderChange(playerNum, params) {
@@ -395,29 +403,6 @@ block content
             //set active Instrument;
             var activeInstrument = params["activeInstrument"];
             $('#m' + playerNum + '-select').val(activeInstrument).trigger('change');
-
-            /*
-             switch (activeInstrument) {
-             case DRUM_CORP:
-             ("dc-pitch")
-             params['nDrummers'];
-             params['drumPitch'];
-             params['dynamics'];
-             break;
-             case PITCHED:
-             params['range'] = this.range;
-             params['vibrato'] = this.vibrato;
-             params['trippiness'] = this.trippiness;
-             break;
-             case ELECTRONIC:
-             params['grunge'] = this.grunge;
-             params['electronicPitch'] = this.electronicPitch;
-             params['fatness'] = this.fatness;
-             break;
-             default:
-             console.log("fell to the bottom of the getParameters switch statement (we should not have)");
-             }
-             */
         }
 
         function refreshSliders() {
@@ -626,18 +611,20 @@ block content
 
 
 
-
+    #consent.ui-content(data-role='main')
+        .ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
+            h2 Data Collection Consent Form
     #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
         div(data-role='navbar')
             ul
                 li
-                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Channel') Mode 1
+                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Channel') Channels
                 li
-                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Instrument') Mode 2
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change Each Player') Players
                 li
-                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', name = 'Build the Instrument') Mode 3
-        div.ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
-            h7#mode Change the Channel
+                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', name = 'Change Parameters') Parameters
+        .ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
+            h2#mode Change the Channel
         #one.ui-content(data-role='main')
             .form.wrap
                 #ch_scrollbar.scrollbar
@@ -646,204 +633,207 @@ block content
                     ul#ch_slidee.slide
         #two.ui-content(data-role='main')
             ul(data-role='listview', data-inset='true')
-                li(data-icon='false')
-                    a(href='#') MalLo 1
-                    .form.wrap
-                        #i0_scrollbar.scrollbar
+                li(data-icon='false', data-theme='b')
+                    h2 MalLo 1
+                li.form.wrap
+                    #i0_scrollbar.scrollbar.player1_scrollbar
                             #i0_handle.handle(style='transform: translateZ(0px) translateX(228px);')
-                        #i0.instr_frame(style='overflow; hidden;')
+                    #i0.instr_frame.player1_frame(style='overflow; hidden;')
                             ul#i0_slidee.slidee
-                li(data-icon='false')
-                    a(href='#') MalLo 2
-                    .form.wrap
-                        #i1_scrollbar.scrollbar
-                            #i1_handle.handle(style='transform: translateZ(0px) translateX(228px);')
-                        #i1.instr_frame(style='overflow; hidden;')
-                            ul#i1_slidee.slidee
-                li(data-icon='false')
-                    a(href='#') MalLo 3
-                    .form.wrap
-                        #i2_scrollbar.scrollbar
+                li(data-icon='false', data-theme='c')
+                    h2 MalLo 2
+                li.form.wrap
+                    #i1_scrollbar.scrollbar.player2_scrollbar
+                        #i1_handle.handle(style='transform: translateZ(0px) translateX(228px);', data-theme='c')
+                    #i1.instr_frame.player2_frame(style='overflow; hidden;', data-theme='c')
+                        ul#i1_slidee.slidee(data-theme='c')
+                li(data-icon='false', data-theme='d')
+                    h2 MalLo 3
+                li.form.wrap
+                    #i2_scrollbar.scrollbar.player3_scrollbar
                             #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
-                        #i2.instr_frame(style='overflow; hidden;')
+                    #i2.instr_frame.player3_frame(style='overflow; hidden;')
                             ul#i2_slidee.slidee
         #three.ui-content(data-role='main')
             form#m-form
-                #m0-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                #m0-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='b')
                     h3 MalLo 1
-                    .ui-field-contain
-                        label(for='m0-select') Type:
-                        select#m0-select(name='m0-select', data-mini='true', data-iconpos='left')
-                            option(value='0') Drum Corp
-                            option(value='1') Pitched Percussion
-                            option(value='2') Electronic
+                    .ui-content
+                        label.leftItem(for='m0-select') Type
+                        .rightItem
+                            select#m0-select(name='m0-select', data-mini='true', data-theme='b', data-iconpos='left')
+                                option(value='0') Drum Corp
+                                option(value='1') Pitched Percussion
+                                option(value='2') Electronic
                     .ui-content#m0-dc
-                        label.leftItem(for='m0-dc-size') Size:
+                        label.leftItem(for='m0-dc-size') Size
                         .rightItem
-                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-dc-decay') Decay:
+                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-decay') Decay
                         .rightItem
-                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-dc-pitch') Pitch:
+                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-pitch') Pitch
                         .rightItem
-                            input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-dc-drums') Drummers:
+                            input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-drums') # o'Drums
                         .rightItem
-                            input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-dc-dyn') Dynamics:
+                            input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-dc-dyn') Dynamics
                         .rightItem
-                            input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m0-pp
-                        label.leftItem(for='m0-pp-size') Size:
+                        label.leftItem(for='m0-pp-size') Size
                         .rightItem
-                            input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-pp-decay') Decay:
+                            input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-decay') Decay
                         .rightItem
-                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-pp-scale') Scale:
+                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-scale') Scale
                         .rightItem
-                            input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-pp-vib') Vibrato:
+                            input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-vib') Vibrato
                         .rightItem
-                            input.ui-hidden-accessible#m0-pp-vib(type='range', name='m0-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-pp-trip') Trippiness:
+                            input.ui-hidden-accessible#m0-pp-vib(type='range', name='m0-pp-vib', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-pp-trip') Trippiness
                         .rightItem
-                            input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m0-el
-                        label.leftItem(for='m0-el-size') Size:
+                        label.leftItem(for='m0-el-size') Size
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-el-decay') Decay:
+                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-decay') Decay
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-el-grunge') Grunge:
+                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-grunge') Grunge
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-el-pitch') Pitch:
+                            input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-pitch') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m0-el-fat') Fatness:
+                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m0-el-fat') Fatness
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                #m1-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='b', data-theme='b',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                #m1-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='c')
                     h3 MalLo 2
-                    .ui-field-contain
-                        label(for='m1-select') Type:
-                        select#m1-select(name='m1-select', data-mini='true', data-iconpos='left')
-                            option(value='0') Drum Corp
-                            option(value='1') Pitched Percussion
-                            option(value='2') Electronic
+                    .ui-content
+                        label.leftItem(for='m1-select') Type
+                        .rightItem
+                            select#m1-select(name='m1-select', data-mini='true', data-theme='c', data-iconpos='left')
+                                option(value='0') Drum Corp
+                                option(value='1') Pitched Percussion
+                                option(value='2') Electonic
                     .ui-content#m1-dc
-                        label.leftItem(for='m1-dc-size') Size:
+                        label.leftItem(for='m1-dc-size') Size
                         .rightItem
-                            input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-dc-decay') Decay:
+                            input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-dc-decay') Decay
                         .rightItem
-                            input#m1-dc-decay(type='range', name='m1-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-dc-pitch') Pitch:
+                            input#m1-dc-decay(type='range', name='m1-dc-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-dc-pitch') Pitch
                         .rightItem
-                            input#m1-dc-pitch(type='range', name='m1-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-dc-drums') Drummers:
+                            input#m1-dc-pitch(type='range', name='m1-dc-pitch', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-dc-drums') # o'Drums
                         .rightItem
-                            input#m1-dc-drums(type='range', name='m1-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-dc-dyn') Dynamics:
+                            input#m1-dc-drums(type='range', name='m1-dc-drums', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-dc-dyn') Dynamics
                         .rightItem
-                            input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m1-pp
-                        label.leftItem(for='m1-pp-size') Size:
+                        label.leftItem(for='m1-pp-size') Size
                         .rightItem
-                            input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-pp-decay') Decay:
+                            input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-pp-decay') Decay
                         .rightItem
-                            input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-pp-scale') Scale:
+                            input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-pp-scale') Scale
                         .rightItem
-                            input.ui-hidden-accessible#m1-pp-scale(type='range', name='m1-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-pp-vib') Vibrato:
+                            input.ui-hidden-accessible#m1-pp-scale(type='range', name='m1-pp-scale', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-pp-vib') Vibrato
                         .rightItem
-                            input.ui-hidden-accessible#m1-pp-vib(type='range', name='m1-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-pp-trip') Trippiness:
+                            input.ui-hidden-accessible#m1-pp-vib(type='range', name='m1-pp-vib', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-pp-trip') Trippiness
                         .rightItem
-                            input.ui-hidden-accessible#m1-pp-trip(type='range', name='m1-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m1-pp-trip(type='range', name='m1-pp-trip', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m1-el
-                        label.leftItem(for='m1-el-size') Size:
+                        label.leftItem(for='m1-el-size') Size
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-el-decay') Decay:
+                            input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-el-decay') Decay
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-decay(type='range', name='m1-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-el-grunge') Grunge:
+                            input.ui-hidden-accessible#m1-el-decay(type='range', name='m1-el-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-el-grunge') Grunge
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-grunge(type='range', name='m1-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-el-pitch') Pitch:
+                            input.ui-hidden-accessible#m1-el-grunge(type='range', name='m1-el-grunge', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-el-pitch') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m1-el-fat') Fatness:
+                            input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m1-el-fat') Fatness
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                #m2-form.pop_countryBox(data-role='collapsible', data-inset='false')
+                            input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                #m2-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='d')
                     h3 MalLo 3
-                    .ui-field-contain
-                        label(for='m2-select') Type:
-                        select#m2-select(name='m2-select', data-mini='true', data-iconpos='left')
-                            option(value='0') Drum Corp
-                            option(value='1') Pitched Percussion
-                            option(value='2') Electronic
+                    .ui-content
+                        label.leftItem(for='m2-select') Type
+                        .rightItem
+                            select#m2-select(name='m2-select', data-mini='true', data-theme='d', data-iconpos='left')
+                                option(value='0') Drum Corp
+                                option(value='1') Pitched Percussion
+                                option(value='2') Electronic
                     .ui-content#m2-dc
-                        label.leftItem(for='m2-dc-size') Size:
+                        label.leftItem(for='m2-dc-size') Size
                         .rightItem
-                            input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-dc-decay') Decay:
+                            input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-dc-decay') Decay
                         .rightItem
-                            input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-dc-pitch') Pitch:
+                            input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-dc-pitch') Pitch
                         .rightItem
-                            input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-dc-drums') Drummers:
+                            input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-dc-drums') # o'Drums
                         .rightItem
-                            input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-dc-dyn') Dynamics:
+                            input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-dc-dyn') Dynamics
                         .rightItem
-                            input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m2-pp
-                        label.leftItem(for='m2-pp-size') Size:
+                        label.leftItem(for='m2-pp-size') Size
                         .rightItem
-                            input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-pp-decay') Decay:
+                            input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-pp-decay') Decay
                         .rightItem
-                            input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-pp-scale') Scale:
+                            input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-pp-scale') Scale
                         .rightItem
-                            input.ui-hidden-accessible#m2-pp-scale(type='range', name='m2-pp-scale', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-pp-vib') Vibrato:
+                            input.ui-hidden-accessible#m2-pp-scale(type='range', name='m2-pp-scale', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-pp-vib') Vibrato
                         .rightItem
-                            input.ui-hidden-accessible#m2-pp-vib(type='range', name='m2-pp-vib', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-pp-trip') Trippiness:
+                            input.ui-hidden-accessible#m2-pp-vib(type='range', name='m2-pp-vib', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-pp-trip') Trippiness
                         .rightItem
-                            input.ui-hidden-accessible#m2-pp-trip(type='range', name='m2-pp-trip', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input.ui-hidden-accessible#m2-pp-trip(type='range', name='m2-pp-trip', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
                     .ui-content#m2-el
-                        label.leftItem(for='m2-el-size') Size:
+                        label.leftItem(for='m2-el-size') Size
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-el-decay') Decay:
+                            input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-el-decay') Decay
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-decay(type='range', name='m2-el-decay', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-el-grunge') Grunge:
+                            input.ui-hidden-accessible#m2-el-decay(type='range', name='m2-el-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-el-grunge') Grunge
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-grunge(type='range', name='m2-el-grunge', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-el-pitch') Pitch:
+                            input.ui-hidden-accessible#m2-el-grunge(type='range', name='m2-el-grunge', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-el-pitch') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='a', data-theme='a', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-                        label.leftItem(for='m2-el-fat') Fatness:
+                            input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                        label.leftItem(for='m2-el-fat') Fatness
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='a', data-theme='a',min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
-    h2#result
-    div(data-role='footer', role='banner', data-position='inline')
-        h1
-            .ui-grid-b
-                .ui-block-a(style='text-align: left;')
-                a#saveButton.ui-block-b.ui-btn-a.ui-btn.ui-corner-all.ui-shadow(data-role="button", style='text-align: center;', input type="submit") Save
-                .ui-block-c(style='text-align: right;')
+                            input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='d', data-theme='d', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+        h2#result
+        div(data-role='footer', role='banner', data-position='inline')
+            h1
+                .ui-grid-b
+                    .ui-block-a(style='text-align: left;')
+                    a#saveButton.ui-block-b.ui-btn-a.ui-btn.ui-corner-all.ui-shadow(data-role="button", style='text-align: center;', input type="submit") Save
+                    .ui-block-c(style='text-align: right;')
 
 
 
