@@ -16,34 +16,49 @@ block content
     script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
     script(src='/javascripts/Logger/jsnlog.min.js')
     script(src='/javascripts/MalloTools/TimeTools.js')
+    script(src='/javascripts/Cookies/cookies.js')
 
     script.
 
         var audioContext;
-        var customIPflag = 0;
-        var serverURL = 'http://localhost:3000';
-        var customServerURL = '192.168.1.6:3000';
         var nPlayers = 3;
         var players = [];
         var instrumentPresets = [];
         var channelPresets = {};
         var nPresetChannels = 0;
         var nPresetInstruments = 0;
-        var currentMode = 0; //make enum for different modes?
+
+        var ModeEnum = Object.freeze({"CHANNELS": 0, "PLAYERS": 1, "PARAMETERS": 2});
+        var currentMode = ModeEnum.CHANNELS;
+
+        var InterfaceEnum = Object.freeze({"INFO": 0, "M1": 1, "M2": 2, "SURVEY": 3});
+        var currentInterface;
+
         var scheduler;
         var syncClient;
+
+        const CONSENT_COOKIE_NAME = "consentFormAggreement";
+        const DAYS_TO_KEEP_COOKIE = 1;
+
+
+
+
+        //FLAGS THAT CAN BE CONTROLLED BY SERVER INTERFACE:
+        // Should the consent form be displayed?
+        // If it is displayed, then user selection can turn logging off
+        // otherwise logger will default to the loggerOn value
+        var displayConsent = 1;
+        // Users response of consent form can change this value.
+        var loggerOn = 1;
+
+        var customIPflag = 0;
+
+        var serverURL = 'http://localhost:3000';
+        var customServerURL = '10.227.24.98:3000';
 
 
         //init the logging stuff
         var logger = JL("Version1-Logger");
-        var appender = JL.createAjaxAppender("Appender");
-        appender.setOptions({
-            "batchSize": 5 //the number of logs that are acquired before they get sent
-        });
-        logger.setOptions({
-            "appenders": [appender]
-        });
-
 
         //init sound stuff!
         window.addEventListener('load', init, false);
@@ -55,14 +70,18 @@ block content
         //socket to send/receive stuff from
         var socket = io(serverURL);
 
-
         socket.on('welcome', function (data) {
-            logger.info("setup");
+            currentInterface = parseInt(data.mode);
 
-            loadJSONfiles();
-            //$('#tabs').hide();
-            $('#consent').hide();
+            console.log("Welcome Mode: " + currentInterface + " host " + location.host);
 
+            //if we aren't showing the consent form - then we should load the page based on the interface mode
+            if (!displayConsent || getCookie(CONSENT_COOKIE_NAME)) {
+                if (loggerOn) {
+                    initLogger();
+                }
+                loadInterface();
+            }
 
             syncClient = new SyncClient();
             scheduler = new Scheduler(players, syncClient);
@@ -88,7 +107,22 @@ block content
 
         });
 
-        function loadJSONfiles() {
+        // function that inits logger - called within the consentButton click action
+        function initLogger() {
+            var appender = JL.createAjaxAppender("Appender");
+            appender.setOptions({
+                "batchSize": 5 //the number of logs that are acquired before they get sent
+            });
+            logger.setOptions({
+                "appenders": [appender]
+            });
+            var dateTime = Date.now();
+            if (loggerOn) {
+                logger.info("{ \"consent\" : " + dateTime + "}");
+            }
+        }
+
+        function loadJSONandDOM() {
             loadInstrumentsfile(function (response1) {
                 //Parse JSON string into object
                 instrumentPresets = JSON.parse(response1);
@@ -198,7 +232,9 @@ block content
             for (var i = 0; i < nPlayers; i++) {
                 players.push(new Player());
             }
+
             loadAudioFiles();
+
         }
 
         function isAudioContextSupported() {
@@ -228,13 +264,52 @@ block content
          */
 
 
-        //Could use this at some point, but when?
-        /*
+        // Load the initial display
         $(document).ready(function () {
-         console.log("Document Ready");
-         //set initial open tab
+            // hide all visuals
+            $('#consent').hide();
+            $('#welcome').hide();
+            $('#movement1').hide();
+            $('#movement2').hide();
+            $('#survey').hide();
 
-         });*/
+            // check if they have already consented
+            // if this is "" then they have not
+            var alreadyConsented = getCookie(CONSENT_COOKIE_NAME);
+
+            //check if we should display the consent form
+            if (displayConsent && (alreadyConsented == "")) {
+                $('#consent').show();
+            } else if (alreadyConsented == 1) {
+                initLogger();
+            }
+            // otherwise we wait for the welcome message to figure out what page to show
+
+        });
+
+        function loadInterface() {
+            loadJSONandDOM();
+            switch (currentInterface) {
+
+                case InterfaceEnum.INFO:
+                    break;
+
+                case InterfaceEnum.M1:
+                    break;
+
+                case InterfaceEnum.M2:
+                    $('#movement2').show();
+                    $('#tabButton1').click();
+                    break;
+
+                case InterfaceEnum.SURVEY:
+                    break
+                default:
+                    break;
+
+            }
+        }
+
 
         function loadDOMStuff() {
             //setup channels slider
@@ -268,8 +343,8 @@ block content
 
 
             sly_channels.on('active', function (eventName, itemIndex) {
-                //Change the channel params if the currentMode is 0;
-                if (currentMode == 0) {
+                //Change the channel params
+                if (currentMode == ModeEnum.channels) {
                     //for each player load in the instrument presets
                     for (var i = 0; i < nPlayers; i++) {
                         //get the instrument index:
@@ -286,10 +361,12 @@ block content
             });
 
             sly_channels.on('moveEnd', function (eventName) {
-                if (currentMode == 0) {
+                if (currentMode == ModeEnum.CHANNELS) {
                     var el = document.querySelector(".active").id;
                     var ch_number = parseInt(el.slice(3));
-                    logger.info("{ \"channel\" : " + ch_number + "}");
+                    if (loggerOn) {
+                        logger.info("{ \"channel\" : " + ch_number + "}");
+                    }
                 }
             });
 
@@ -336,24 +413,26 @@ block content
                 sly.on('active', function (eventName, itemIndex) {
                     var id = this.frame.id;
                     var playerNum = parseInt(id.slice(1));
-                    //if we are currently in mode 1 then update the instruments:
-                    if (currentMode == 1) {
+                    //if we are currently in mode 1 then update the players:
+                    if (currentMode == ModeEnum.PLAYERS) {
                         var instr = itemIndex;
                         //console.log("Instrument Preset: " + instr);
                         var params = instrumentPresets['i' + instr];
                         players[playerNum].setParameters(params);
                         sliderChange(playerNum, params);
-                        //logger.info("Active:" + id);
+                        //if(loggerOn){ logger.info("Active:" + id); }
                     }
                     //console.log("Instr " + id + " Active Item: " + itemIndex);
                 });
 
                 sly.on('moveEnd', function (eventName) {
-                    if (currentMode == 1) {
+                    if (currentMode == ModeEnum.PLAYERS) {
                         var el = this.frame.querySelector(".active");
                         var playerNum = parseInt(el.id.slice(1));
                         var instrNum = parseInt(el.id.slice(3));
-                        logger.info("{ \"player_" + playerNum + "\" : " + instrNum + "}");
+                        if (loggerOn) {
+                            logger.info("{ \"player_" + playerNum + "\" : " + instrNum + "}");
+                        }
                     }
                 });
 
@@ -370,29 +449,29 @@ block content
             }
 
 
-
-            $("#tabs").tabs({
+            $("#movement2").tabs({
                 activate: function (event, ui) {
-                    var active = $('#tabs').tabs('option', 'active');
-                    logger.info("{ \"tab\" : " + active + "}");
+                    var active = $('#movement2').tabs('option', 'active');
+                    if (loggerOn) {
+                        logger.info("{ \"tab\" : " + active + "}");
+                    }
                     if (active == 0) {
                         $('#channels').sly('reload');
-                        currentMode = 0;
+                        currentMode = ModeEnum.CHANNELS;
                     }
                     else if (active == 1) {
-                        currentMode = 1;
+                        currentMode = ModeEnum.PLAYERS;
                         for (var i = 0; i < nPlayers; i++) {
                             $('#i' + i).sly('reload');
                         }
                     } else {
-                        currentMode = 2;
+                        currentMode = ModeEnum.PARAMETERS;
                         refreshSliders();
                     }
 
                     //Change the name of the mode title
-                    $("#mode").html($("#tabs ul>li a").eq(active).attr('name'));
+                    $("#mode").html($("#movement2 ul>li a").eq(active).attr('name'));
                     //console.log("Mode: " + currentMode);
-
 
                 }
             });
@@ -402,8 +481,10 @@ block content
             $("#m1-select").val('0').trigger('change');
             $("#m2-select").val('0').trigger('change');
 
-            //$('#tabButton1').click();
+            //
         }
+
+
 
         function sliderChange(playerNum, params) {
             console.log("CHANGE: " + playerNum + " " + params);
@@ -490,7 +571,9 @@ block content
                     dateTime: dateTime
                 });
 
-                logger.info("{ \"save\" : " + dateTime + "}");
+                if (loggerOn) {
+                    logger.info("{ \"save\" : " + dateTime + "}");
+                }
 
                 return false;
             });
@@ -510,11 +593,13 @@ block content
                 var nextpage = $(this).children('option:selected').attr('value');
 
 
-                var active = $('#tabs').tabs('option', 'active');
+                var active = $('#movement2').tabs('option', 'active');
 
                 //if we are in mode 3 - then log the change!
                 if (active == 2) {
-                    logger.info("{ \"" + id + "\" : " + nextpage + "}");
+                    if (loggerOn) {
+                        logger.info("{ \"" + id + "\" : " + nextpage + "}");
+                    }
                 }
 
                 //show/hide based on the selection.
@@ -601,7 +686,7 @@ block content
             $('#i2').sly('reload');
         });
 
-        $(document).on("tabsbeforeactivate", "#tabs", function (e, ui) {
+        $(document).on("tabsbeforeactivate", "#movement2", function (e, ui) {
             var reverse = ui.newPanel.index() < ui.oldPanel.index() ? " reverse" : "",
                     classes = "in slide" + reverse;
             $(ui.newPanel).addClass(classes).one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function () {
@@ -612,16 +697,47 @@ block content
         //log when sliders stop (either by clicking, dragging, or selecting the handle
         $(function () {
             $(".ui-slider").on('slidestop', function (event) {
-                logger.info("{ \"" + event.target.id + "\" : " + event.target.value + "}");
+                if (loggerOn) {
+                    logger.info("{ \"" + event.target.id + "\" : " + event.target.value + "}");
+                }
+            });
+        });
+
+        $(function () {
+            $(".consentButton").on("click", function (event, ui) {
+                //if we can log data:
+                didConsent = event.target.id;
+                if (didConsent) {
+                    initLogger();
+                    loggerOn = 1;
+                } else {
+                    loggerOn = 0;
+                }
+                //set cookies for whether the consent form was answered
+                setCookie(CONSENT_COOKIE_NAME, didConsent, DAYS_TO_KEEP_COOKIE);
+                $('#consent').hide();
+                //TODO: Decide which page to show next
+                loadInterface();
             });
         });
 
 
 
-    #consent.ui-content(data-role='main')
-        .ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
-            h2 Data Collection Consent Form
-    #tabs(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
+    #consent.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Data Collection Consent Form
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                        | The composers of the performance you are about to listen to are interested in gathering the data from your interactions with this interface to be analyzed for research purposes.
+            .ui-block-c(style='width:10%')
+
+            a.consentButton.ui-btn.ui-btn-inline(id='1') Yes - You Can Use My Data
+            a.consentButton.ui-btn.ui-btn-inline(id='0') No - Do not Use My Data
+    #welcome.center.ui-content(data-role='main')
+    #movement1.center.ui-content(data-role='main')
+    #movement2(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
         div(data-role='navbar')
             ul
                 li
@@ -842,7 +958,6 @@ block content
                     a#saveButton.ui-block-b.ui-btn-a.ui-btn.ui-corner-all.ui-shadow(data-role="button", style='text-align: center;', input type="submit") Save
                     .ui-block-c(style='text-align: right;')
 
-
-
+    #survey.center.ui-content(data-role='main')
 
 

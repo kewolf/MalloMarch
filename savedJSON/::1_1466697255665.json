@@ -1,0 +1,26 @@
+{
+  "0": {
+    "activeInstrument": 0,
+    "size": "50",
+    "decay": "0",
+    "nDrummers": 2,
+    "drumPitch": 50,
+    "dynamics": 0
+  },
+  "1": {
+    "activeInstrument": 0,
+    "size": "50",
+    "decay": "0",
+    "nDrummers": 2,
+    "drumPitch": 50,
+    "dynamics": 0
+  },
+  "2": {
+    "activeInstrument": 0,
+    "size": "50",
+    "decay": "0",
+    "nDrummers": 2,
+    "drumPitch": 50,
+    "dynamics": 0
+  }
+}

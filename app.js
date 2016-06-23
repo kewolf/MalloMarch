@@ -20,7 +20,7 @@ var clientLogger = new winston.Logger({
             name: 'somefile.log',
             filename: 'logs/ICADperformanceTest.log',
             maxFiles: 100,
-            maxsize: 100000,
+            maxsize: 1000000,
             colorize: true
         })]
 });

@@ -16,7 +16,6 @@ var Long = require("long");
 /**
  * Get port from environment and store in Express.
  */
-
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
@@ -24,13 +23,11 @@ app.set('port', port);
 /**
  * Create HTTP server.
  */
-
 var server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
  */
-
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
@@ -77,9 +74,11 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
     }
 });
 
-// Open the socket for listening
+// Open the osc socket for listening
 udpPort.open();
 
+// Setup the mode for our interface
+var interfaceMode = '2';
 
 // Emit welcome message on when the socket connects and set up our listeners on this
 io.on('connection', function (socket) {
@@ -90,7 +89,8 @@ io.on('connection', function (socket) {
         id: socket.id,
         ip: address.address,
         port: address.port,
-        numInstruments: 3
+        numInstruments: 3,
+        mode: interfaceMode
     });
     socket.on('saveJSON', function (newSocket) {
         var id = socket.request.connection.remoteAddress;
@@ -98,7 +98,7 @@ io.on('connection', function (socket) {
         var date = newSocket.dateTime;
         var saveStr = id + "_" + date;
 
-            var file = 'public/json/' + saveStr + '.json';
+        var file = 'savedJSON/' + saveStr + '.json';
             var data = JSON.parse(newSocket.str);
 
         jsonfile.spaces = 4;

@@ -1,37 +1,27 @@
 doctype html
 html
     head
-        title= "MalLo March"
+        title= "Server for MalLo March"
         meta(charset='utf-8')
         meta(name='viewport', content='width=device-width, initial-scale=1')
         //these dependencies need to be in this specific order!
         link(rel='stylesheet', href='/stylesheets/themes/colors.min.css')
         link(rel='stylesheet', href='/stylesheets/themes/jquery.mobile.icons.min.css')
         link(rel='stylesheet', href='/javascripts/jquery/jquery.mobile.structure-1.4.5.min.css')
+
         //link(rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css')
         script(src='/javascripts/jquery/jquery-1.12.4.js')
         script(src='/javascripts/jquery/jquery.mobile-1.4.5.min.js')
 
+        script(src='/socket.io/socket.io.js')
+        script(src='/javascripts/Logger/jsnlog.min.js')
 
 
     body(class="ui-mobile-viewport")
-        script.
-
 
 
 
         div(data-role='page', data-theme='a')
-            //div(data-role='header', data-theme='a', data-position='inline', role='banner')
-            //    h3 MalLo March: Movement 2
-            //.ui-content.ui-body-a(role='main', data-theme='a')
-            block content
-            //div(data-role='footer', data-theme='a') FOOTER
-
-
-
-
-
-
-
-        //#ui-page-start.ui-page.ui-body-a.ui-page-active(data-role='page', data-theme='a')
-        //block content
+            div(data-role='header', data-theme='a', data-position='inline', role='banner')
+                h3 MalLo March Server
+            .ui-content.ui-body-a

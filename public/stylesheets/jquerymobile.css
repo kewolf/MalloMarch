@@ -49,3 +49,23 @@
 .pop_countryBox .ui-content .ui-listview {
     margin: 0px !important;
 }
+
+/* Basic styles */
+.rwd-example .ui-body {
+        text-align: left;
+        border-color: #333;
+}
+
+.rwd-example p {
+        color: #777;
+        line-height: 140%
+}
+
+/* Stack all blocks to start */
+.rwd-example .ui-block-a,
+.rwd-example .ui-block-b,
+.rwd-example .ui-block-c {
+        width: 100%;
+        float: none;
+}
+
