@@ -176,6 +176,14 @@ protected:
         
         // if the polynomial meets certain criteria, solve and return the larger root
         if (poly(2) < 0 &&
+//            heights[1] - heights[0] <= 0 &&
+//            heights[2] - heights[1] <= 0 &&
+//            heights[3] - heights[2] <= 0 &&
+//            heights[4] - heights[3] <= 0 &&
+//            heights[5] - heights[4] <= 0 &&
+//            heights[6] - heights[5] <= 0 &&
+//            heights[7] - heights[6] <= 0 &&
+//            heights[8] - heights[7] <= 0 &&
             heights[9] - heights[8] < 0 &&
             heights[10] - heights[9] < 0 &&
             heights[11] - heights[10] < 0 &&

@@ -187,20 +187,21 @@ void ofApp::sendOsc(float & scheduled_time)
     int64_t send_value;
     if (scheduled_time == -1)
     {
-        if (last_message_was_unschedule)
-        {
-            return;
-        }
+        if (last_message_was_unschedule) { return; }
         send_value = -1;
         last_message_was_unschedule = true;
+        last_message_was_nada = false;
         
     } else if (scheduled_time == 0)
     {
+        if (last_message_was_nada) { return; }
         cout << "*** sent nothing ***" << endl;
+        last_message_was_nada = true;
         return;
     } else {
         send_value = sync_client->get_offset() + (int64_t) scheduled_time;
         last_message_was_unschedule = false;
+        last_message_was_nada = false;
     }
     
     msg.clear();

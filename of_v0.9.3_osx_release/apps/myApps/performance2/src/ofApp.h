@@ -73,10 +73,11 @@ public:
     ofxOscSender osc_sender;
     ofxOscReceiver osc_receiver;
     ofxOscMessage msg;
-    string ip_address = "10.9.243.82";
+    string ip_address = "127.0.0.1";
     bool ip_set = false;
     string osc_path = "/left";
     bool last_message_was_unschedule = false;
+    bool last_message_was_nada = false;
     
     // GUI
     ofxPanel gui;
