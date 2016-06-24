@@ -18,47 +18,77 @@ html
 
         script(src='/socket.io/socket.io.js')
         script(src='/javascripts/Logger/jsnlog.min.js')
+        script(src='/javascripts/interfaceConstants.js')
 
 
     body(class="ui-mobile-viewport")
         script.
+            var serverURL = 'http://localhost:3000';
+            var isConsentFormOn;
+            var isLoggerOn;
+
             //socket to send/receive stuff from
             var socket = io(serverURL);
 
             socket.on('welcome', function (data) {
+                currentInterface = parseInt(data.mode);
+                isConsentFormOn = data.isConsentFormOn;
+                isLoggerOn = data.isLoggerOn;
 
+
+                $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');
+                $('#flipLogger').val(isLoggerOn).flipswitch('refresh');
+
+                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn);
+            });
+
+            function saveEmails() {
+                console.log("Send SaveEmail Message");
+                socket.emit('saveEmails', {
+                    from: "server"
+                });
             }
 
-}
-div(data-role='page')
-    h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
-    .ui-body.ui-body-a.ui-corner-all
-        .ui-block-a(style='width:10%')
-        .ui-block-b(style='width:80%')
-            .ui-body.ui-body-a.ui-corner-all.center
-                .ui-block-a(style='width:50%')
-                    label(for='flip1') Consent Form:
-                    select#flip1(name='flip1', data-role='flipswitch', data-theme='b', data-track-theme='b')
-                        option(value='off') Off
-                        option(value='on') On
-                .ui-block-b(style='width:50%')
-                    label(for='flip2') Logger:
-                    select#flip2(name='flip2', data-role='flipswitch', data-theme='b', data-track-theme='b')
-                        option(value='off') Off
-                        option(value='on') On
-            fieldset(data-role='controlgroup', data-theme='d' )
-                h2.center Interface Modes
-                input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
-                label(for='radio-choice-1') Welcome
-                input#radio-choice-2(type='radio', name='radio-choice-1', value='0')
-                label(for='radio-choice-2') Movement 1
-                input#radio-choice-3(type='radio', name='radio-choice-1', value='0')
-                label(for='radio-choice-3') Movement 2
-                input#radio-choice-4(type='radio', name='radio-choice-1', value='0')
-                label(for='radio-choice-4') Survey
-        .ui-field-contain
-            label(for='saveEmail')
-            button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmail()", ) Save Emails
+            $(function () {
+                $("input[name='radio-choice-1']").on("click", function () {
+                    var interfaceSelected = $("input[name='radio-choice-1']:checked").val();
+                    console.log("Interface Selected Changed: " + interfaceSelected);
+                    socket.emit('serverChangedInterface', {
+                        newInterface: interfaceSelected
+                    });
+                });
+            });
 
-        .ui-block-c(style='width:10%')
+
+        div(data-role='page')
+            h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
+            .ui-body.ui-body-a.ui-corner-all
+                .ui-block-a(style='width:10%')
+                .ui-block-b(style='width:80%')
+                    .ui-body.ui-body-a.ui-corner-all.center
+                        .ui-block-a(style='width:50%')
+                            label(for='flipConsent') Consent Form:
+                            select#flipConsent(name='flipConsent', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                                option(value='0') Off
+                                option(value='1') On
+                        .ui-block-b(style='width:50%')
+                            label(for='flipLogger') Logger:
+                            select#flipLogger(name='flipLogger', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                                option(value='0') Off
+                                option(value='1') On
+                    fieldset(data-role='controlgroup', data-theme='d' )
+                        h2.center Interface Modes
+                        input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
+                        label(for='radio-choice-1') Welcome
+                        input#radio-choice-2(type='radio', name='radio-choice-1', value='1')
+                        label(for='radio-choice-2') Movement 1
+                        input#radio-choice-3(type='radio', name='radio-choice-1', value='2')
+                        label(for='radio-choice-3') Movement 2
+                        input#radio-choice-4(type='radio', name='radio-choice-1', value='3')
+                        label(for='radio-choice-4') Survey
+                .ui-field-contain
+                    label(for='saveEmail')
+                    button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmails()", ) Save Emails
+
+                .ui-block-c(style='width:10%')
 

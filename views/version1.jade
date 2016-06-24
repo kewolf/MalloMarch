@@ -17,7 +17,7 @@ block content
     script(src='/javascripts/Logger/jsnlog.min.js')
     script(src='/javascripts/MalloTools/TimeTools.js')
     script(src='/javascripts/Cookies/cookies.js')
-
+    script(src='/javascripts/interfaceConstants.js')
     script.
 
         var audioContext;
@@ -30,8 +30,8 @@ block content
 
         var ModeEnum = Object.freeze({"CHANNELS": 0, "PLAYERS": 1, "PARAMETERS": 2});
         var currentMode = ModeEnum.CHANNELS;
+        var isJSONloaded = false;
 
-        var InterfaceEnum = Object.freeze({"INFO": 0, "M1": 1, "M2": 2, "SURVEY": 3});
         var currentInterface;
 
         var scheduler;
@@ -41,19 +41,19 @@ block content
         const DAYS_TO_KEEP_COOKIE = 1;
 
 
-        //FLAGS THAT CAN BE CONTROLLED BY SERVER INTERFACE:
+        //FLAGS THAT ARE CONTROLLED BY SERVER and SERVER INTERFACE
+        //Initialized in the onWelcome function
+
         // Should the consent form be displayed?
         // If it is displayed, then user selection can turn logging off
         // otherwise logger will default to the loggerOn value
-        var displayConsent = 1;
-        // Users response of consent form can change this value.
-        var loggerOn = 1;
+        var displayConsent;
+        var loggerOn; // Users response of consent form can change this value.
+
 
         var customIPflag = 0;
-
         var serverURL = 'http://localhost:3000';
-        var customServerURL = '10.227.24.98:3000';
-
+        var customServerURL = '192.168.1.3:3000';
 
         //init the logging stuff
         var logger = JL("Version1-Logger");
@@ -70,14 +70,29 @@ block content
 
         socket.on('welcome', function (data) {
             currentInterface = parseInt(data.mode);
+            displayConsent = parseInt(data.isConsentFormOn);
+            loggerOn = parseInt(data.isLoggerOn);
 
             console.log("Welcome Mode: " + currentInterface + " host " + location.host);
+            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn);
 
-            //if we aren't showing the consent form - then we should load the page based on the interface mode
-            if (!displayConsent || getCookie(CONSENT_COOKIE_NAME)) {
+            // check if they have already consented
+            var alreadyConsented = getCookie(CONSENT_COOKIE_NAME);
+
+            // check if we should display the consent form
+            // if so we will init logger and display in the click action of the ".consentButton" button
+            if (displayConsent && (alreadyConsented == "")) {
+                $('#consent').show();
+            }
+            //if we aren't showing the consent form
+            // - then we should init the logger(if we are using it)
+            // - load the page based on the interface mode
+            else if ((alreadyConsented == 1) || !displayConsent) {
                 if (loggerOn) {
                     initLogger();
                 }
+                loadInterface();
+            } else if ((alreadyConsented == 0)) {
                 loadInterface();
             }
 
@@ -99,11 +114,22 @@ block content
                 scheduler.checkSchedule();
             }, schedulerInterval);
 
+            /*
             setInterval(function () {
                 scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
             }, 500);
+             */
 
         });
+
+        socket.on('changeInterface', function (data) {
+            console.log("RECEIVED CHANGED INTERFACE");
+            console.log("Interface Changed: " + data.newMode);
+            currentInterface = data.newMode;
+            loadInterface();
+        });
+
+
 
         // function that inits logger - called within the consentButton click action
         function initLogger() {
@@ -227,7 +253,6 @@ block content
             }
 
             loadAudioFiles();
-
         }
 
         function isAudioContextSupported() {
@@ -267,42 +292,58 @@ block content
             $('#survey').hide();
             $('#credits').hide();
 
-            // check if they have already consented
-            // if this is "" then they have not
-            var alreadyConsented = getCookie(CONSENT_COOKIE_NAME);
-
-            //check if we should display the consent form
-            if (displayConsent && (alreadyConsented == "")) {
-                $('#consent').show();
-            } else if (alreadyConsented == 1) {
-                initLogger();
-            }
-            // otherwise we wait for the welcome message to figure out what page to show
-
         });
 
         function loadInterface() {
-            loadJSONandDOM();
-            switch (currentInterface) {
+            if (!isJSONloaded) {
+                loadJSONandDOM();
+                isJSONloaded = true;
+            }
 
+
+            console.log("Current Mode " + currentInterface);
+            $('#credits').hide();
+            switch (currentInterface) {
                 case InterfaceEnum.INFO:
+                    $('#welcome').show();
+
+                    $('#consent').hide();
+                    $('#movement1').hide();
+                    $('#movement2').hide();
+                    $('#survey').hide();
                     break;
 
                 case InterfaceEnum.M1:
+                    $('#movement1').show();
+
+                    $('#consent').hide();
+                    $('#welcome').hide();
+                    $('#movement2').hide();
+                    $('#survey').hide();
                     break;
 
                 case InterfaceEnum.M2:
                     $('#movement2').show();
                     $('#tabButton1').click();
+
+                    $('#consent').hide();
+                    $('#welcome').hide();
+                    $('#movement1').hide();
+                    $('#survey').hide();
                     break;
 
                 case InterfaceEnum.SURVEY:
                     $('#movenment2').hide();
                     $('#survey').show();
+
+                    $('#consent').hide();
+                    $('#welcome').hide();
+                    $('#movement1').hide();
+                    $('#movement2').hide();
                     break
+
                 default:
                     break;
-
             }
         }
 
@@ -716,8 +757,6 @@ block content
             });
         });
 
-
-
         function submitButton() {
             var randCode = generateRandomCode(10);
             var params = {};
@@ -779,7 +818,7 @@ block content
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                        | The piece should begin shorly. MORE INFORMATION ABOUT THE PIECE!
+                        | The piece should begin shorlty. MORE INFORMATION ABOUT THE PIECE!
             .ui-block-c(style='width:10%')
     #movement1.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
@@ -1045,7 +1084,7 @@ block content
                     p
                     p    Composers:                   Katie Wolf and Reid Oda
                     p    Interface Development:       Katie Wolf
-                    p    Audio Engineering:           Reid Oda
+                    p    Sound Design:                Reid Oda
                     p    MalLo Creator and Developer: Reid Oda
             .ui-block-c(style='width:10%')
 

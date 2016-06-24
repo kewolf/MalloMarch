@@ -13,6 +13,8 @@ var jsonfile = require('jsonfile');
 var dateFormat = require('dateformat');
 var Long = require("long");
 
+var interfaceConstants = require('../public/javascripts/interfaceConstants.js');
+
 /**
  * Get port from environment and store in Express.
  */
@@ -78,7 +80,11 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
 udpPort.open();
 
 // Setup the mode for our interface
-var interfaceMode = '3';
+// Initial Values
+var interfaceMode = interfaceConstants.InterfaceEnum.M2;
+var isLoggerOn = 1;
+var isConsentFormOn = 0;
+
 
 // Setup the storgat for the audience email addresses
 var emails = {};
@@ -99,13 +105,15 @@ function saveEmails() {
 io.on('connection', function (socket) {
     // Use socket to communicate with this particular client only, sending it it's own id
     var address = socket.handshake.address;
+    console.log("SEND WELCOME AND OPEN PAGE: " + interfaceMode);
     socket.emit('welcome', {
         message: 'Welcome!',
         id: socket.id,
         ip: address.address,
         port: address.port,
-        numInstruments: 3,
-        mode: interfaceMode
+        mode: interfaceMode,
+        isLoggerOn: isLoggerOn,
+        isConsentFormOn: isConsentFormOn
     });
     socket.on('saveJSON', function (newSocket) {
         var id = socket.request.connection.remoteAddress;
@@ -143,7 +151,46 @@ io.on('connection', function (socket) {
         //console.log("Received Time Request from browswer: " + newSocket.clientTime + ", Sending Response");
     });
 
+    //for server mastercontroller!
+    socket.on('serverChangedInterface', function (newSocket) {
+        console.log("CHANGE INTERFACE: " + newSocket.newInterface);
+        interfaceMode = parseInt(newSocket.newInterface);
+        changeInterface(interfaceMode);
+    });
+
+    socket.on('flipLogger', function (newSocket) {
+        isLoggerOn = parseInt(newSocket.loggerOn);
+        flipLogger(newSocket.loggerOn);
+    });
+
+    socket.on('flipConsentForm', function (newSocket) {
+        isConsentFormOn = parseInt(newSocket.displayConsent);
+        flipConsent(newSocket.displayConsent);
+    });
+
+    socket.on('saveEmails', function (newSocket) {
+        console.log("Server Saved Emails!");
+        saveEmails();
+    });
+
 });
+
+function changeInterface(newMode) {
+    io.emit('changeInterface', {
+        newMode: newMode
+    });
+}
+function flipLogger(newLogger) {
+    io.emit('flipLogger', {
+        loggerOn: newLogger
+    });
+}
+
+function flipConsent(newConsent) {
+    io.emit('flipConsent', {
+        displayConsent: newConsent
+    });
+}
 
 
 //function for passing the osc messages onto our
