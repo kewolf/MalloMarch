@@ -46,8 +46,6 @@ protected:
         ourMutex.lock();
         const Frame & curFrame	= contr.frame();
         const ToolList & toolList = curFrame.tools();
-        Tool curTool;
-        float now;
         
         LeapHeight leap_height((float) toolList[0].tipPosition().y,
                    (float) ofGetElapsedTimeMillis());
@@ -59,10 +57,12 @@ protected:
         }
         
         currentFrameID = curFrame.id();
-        this->markFrameAsOld();
+//        this->markFrameAsOld();
         ourMutex.unlock();
     }
 };
+
+/** multi version **/
 
 class LeapToolTrackerMulti : public ofxLeapMotion
 {
@@ -83,8 +83,6 @@ protected:
         ourMutex.lock();
         const Frame & curFrame	= contr.frame();
         const ToolList & toolList = curFrame.tools();
-        Tool curTool;
-        float now;
         
         LeapHeight leap_height1((float) toolList[0].tipPosition().y,
                                (float) ofGetElapsedTimeMillis());
@@ -105,7 +103,7 @@ protected:
         }
         
         currentFrameID = curFrame.id();
-        this->markFrameAsOld();
+//        this->markFrameAsOld();
         ourMutex.unlock();
     }
 };

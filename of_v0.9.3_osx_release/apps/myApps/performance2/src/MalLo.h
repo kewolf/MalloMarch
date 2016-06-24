@@ -30,6 +30,8 @@ using Poco::TimerCallback;
  * Message
  *****************/
 
+/** TODO: I think this message object is no longer used for this version of Mallo **/
+
 class MalloMessage
 {
     
@@ -88,14 +90,8 @@ public:
             times.pop_front();
             
             float prediction_time = predict();
-            messages.push_back(new MalloMessage(prediction_time, receiver));
-            timers.push_back(new Timer(latency, 0));
-                
-            timers.back()->start(TimerCallback<MalloMessage>(*messages.back(),
-                                 &MalloMessage::schedule),
-                                 Thread::PRIO_HIGHEST);
-
-            
+            // send the message
+            ofNotifyEvent(*receiver, prediction_time);
         }
     }
     
@@ -192,9 +188,23 @@ protected:
             float root2 = companion.eigenvalues()(1,0).real();
             float the_root = (root1 > root2) ? root1 : root2;
             return the_root + offset;
-        } else
+        } else if (heights[1] - heights[0] > 0 &&
+                   heights[2] - heights[1] > 0 &&
+                   heights[3] - heights[2] > 0 &&
+                   heights[4] - heights[3] > 0 &&
+                   heights[5] - heights[4] > 0 &&
+                   heights[6] - heights[5] > 0 &&
+                   heights[7] - heights[6] > 0 &&
+                   heights[8] - heights[7] > 0 &&
+                   heights[9] - heights[8] > 0 &&
+                   heights[10] - heights[9] > 0 &&
+                   heights[11] - heights[10] > 0 &&
+                   heights[12] - heights[11] > 0)
         {
             return -1;
+        } else
+        {
+            return 0;
         }
         
     }

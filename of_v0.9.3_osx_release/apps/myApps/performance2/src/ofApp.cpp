@@ -27,7 +27,7 @@ void ofApp::setup(){
     
     ofAddListener(leapHeightEvent1, mallo_predictor1, &MalLoPredictor::onEvent);
     ofAddListener(leapHeightEvent2, mallo_predictor2, &MalLoPredictor::onEvent);
-    ofAddListener(receiverEvent, this, &ofApp::schedule);
+    //ofAddListener(receiverEvent, this, &ofApp::schedule);
     ofAddListener(receiverEvent, this, &ofApp::sendOsc);
     // ofAddListener(leapHeightEvent, this, &ofApp::set_height);
     
@@ -40,7 +40,6 @@ void ofApp::setup(){
     /****** OSC Setup******/
     
     osc_sender.setup(ip_address, 6449);
-    time_last_msg = ofGetElapsedTimeMillis();
     
     /****** Time Sync *****/
     sync_client =  new SyncClient(&osc_sender);
@@ -65,7 +64,6 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    toolTrackerMulti->markFrameAsOld();
     if (ofGetElapsedTimeMillis() - last_time_query > time_query_interval)
     {
         sync_client->query_timeserver();
@@ -73,6 +71,7 @@ void ofApp::update(){
         last_time_query = ofGetElapsedTimeMillis();
     }
     sync_client->get_timeserver_response();
+    toolTrackerMulti->markFrameAsOld();
 }
 
 //--------------------------------------------------------------
@@ -160,28 +159,28 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 //    this->mallet_height = height_event.height;
 //}
 
-void ofApp::schedule(float & scheduled_time)
-{
-    
-    float diff = scheduled_time - ofGetElapsedTimeMillis();
-    if (scheduled_time > 0 &&
-        diff < alpha &&
-        -diff < beta)
-    {
-        if (diff < 0) {
-            //                printf("Now\n");
-            inputReceived();
-        }
-        else
-        {
-            TimerCallback<ofApp> callback(*this, &ofApp::playDrum);
-            timers.push_back(new Timer(diff, 0));
-            timers.back()->start(callback, Thread::PRIO_HIGHEST);
-            //                printf("Scheduled in: %f\n",diff);
-        }
-        scheduled_time = -1;
-    }
-}
+//void ofApp::schedule(float & scheduled_time)
+//{
+//    
+//    float diff = scheduled_time - ofGetElapsedTimeMillis();
+//    if (scheduled_time > 0 &&
+//        diff < alpha &&
+//        -diff < beta)
+//    {
+//        if (diff < 0) {
+//            //                printf("Now\n");
+//            inputReceived();
+//        }
+//        else
+//        {
+//            TimerCallback<ofApp> callback(*this, &ofApp::playDrum);
+//            timers.push_back(new Timer(diff, 0));
+//            timers.back()->start(callback, Thread::PRIO_HIGHEST);
+//            //                printf("Scheduled in: %f\n",diff);
+//        }
+//        scheduled_time = -1;
+//    }
+//}
 
 void ofApp::sendOsc(float & scheduled_time)
 {
@@ -195,6 +194,10 @@ void ofApp::sendOsc(float & scheduled_time)
         send_value = -1;
         last_message_was_unschedule = true;
         
+    } else if (scheduled_time == 0)
+    {
+        cout << "*** sent nothing ***" << endl;
+        return;
     } else {
         send_value = sync_client->get_offset() + (int64_t) scheduled_time;
         last_message_was_unschedule = false;
@@ -206,30 +209,29 @@ void ofApp::sendOsc(float & scheduled_time)
     msg.addFloatArg(1.f);
     
     osc_sender.sendMessage(msg);
-    time_last_msg = ofGetElapsedTimeMillis();
     cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
 }
 
-void ofApp::inputReceived()
-{
-    
-    float now = ofGetElapsedTimeMillis();
-    if (now - last_drum_time > waiting_period) {
-        last_drum_time = now;
-        if (play_tom1) {
-            tom_sound1.play();
-            play_tom1 = false;
-        } else {
-            tom_sound2.play();
-            play_tom1 = true;
-        }
-    }
-}
+//void ofApp::inputReceived()
+//{
+//    
+//    float now = ofGetElapsedTimeMillis();
+//    if (now - last_drum_time > waiting_period) {
+//        last_drum_time = now;
+//        if (play_tom1) {
+//            tom_sound1.play();
+//            play_tom1 = false;
+//        } else {
+//            tom_sound2.play();
+//            play_tom1 = true;
+//        }
+//    }
+//}
 
-void ofApp::playDrum(Timer& timer)
-{
-    inputReceived();
-}
+//void ofApp::playDrum(Timer& timer)
+//{
+//    inputReceived();
+//}
 
 // callbacks for the gui. it was necessary to have 3 functions.
 void ofApp::leftChanged(bool & param)

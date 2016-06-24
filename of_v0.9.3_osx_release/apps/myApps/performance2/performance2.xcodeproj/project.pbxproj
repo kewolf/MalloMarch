@@ -632,7 +632,7 @@
 					../../../addons/ofxLeapMotion2/libs/lib/osx/libLeap.dylib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)Debug";
-				"USER_HEADER_SEARCH_PATHS[arch=*]" = /usr/local/Cellar/eigen/3.2.5/include/eigen3/;
+				"USER_HEADER_SEARCH_PATHS[arch=*]" = /usr/local/Cellar/eigen/3.2.8/include/eigen3/;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -679,7 +679,7 @@
 					../../../addons/ofxLeapMotion2/libs/lib/osx/libLeap.dylib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"USER_HEADER_SEARCH_PATHS[arch=*]" = /usr/local/Cellar/eigen/3.2.5/include/eigen3/;
+				"USER_HEADER_SEARCH_PATHS[arch=*]" = /usr/local/Cellar/eigen/3.2.8/include/eigen3/;
 				WRAPPER_EXTENSION = app;
 				baseConfigurationReference = E4EB6923138AFD0F00A09F29;
 			};

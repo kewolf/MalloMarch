@@ -58,21 +58,12 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
 
             args: [client_send_time, server_time]
         }, info.address, 6448);
-
-        // console.log("client_send_time: " + client_send_time);
-        // console.log("return_port: " + return_port);
-        // console.log("IP Address of Sender: " + info.address);
-        // console.log("server_time: " + server_time);
-        // console.log("client_send_time: " + JSON.stringify(client_send_time, null, 4));
-        // console.log("server_time: " + JSON.stringify(server_time, null, 4));
     } else {
         var time = oscBundle.packets[0].args[0];
         var velocity = oscBundle.packets[0].args[1];
         sendPrediction(path, time.toNumber(), velocity);
-        console.log("time: " + JSON.stringify(time));
-        console.log("got a note message from malLo " + path);
         console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
-        console.log("prediction_time: " + time.toNumber());
+
     }
 });
 

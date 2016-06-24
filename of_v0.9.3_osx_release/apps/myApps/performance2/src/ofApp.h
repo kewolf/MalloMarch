@@ -72,7 +72,6 @@ public:
     // OSC
     ofxOscSender osc_sender;
     ofxOscReceiver osc_receiver;
-    uint64_t time_last_msg;
     ofxOscMessage msg;
     string ip_address = "10.9.243.82";
     bool ip_set = false;
