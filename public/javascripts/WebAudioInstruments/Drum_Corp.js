@@ -1,37 +1,36 @@
 var Drum = function(buffer)
 {
     this.buffer = buffer;
-    this.amp = audioContext.createGain();
-    this.amp.gain.value = 1.0;
-    this.env = new WebAHDSR(audioContext, this.amp.gain);
+    this.envAmp = audioContext.createGain();
+    this.envAmp.gain.value = 1.0;
+    this.env = new WebAHDSR(audioContext, this.envAmp.gain);
     this.env.attackTime = 0.001;
     this.env.decayTime = 0.5;
     this.env.sustainValue = 0.0;
 
-    this.play = function (time, player) {
+    this.dynamicsAmp = audioContext.createGain();
+    this.nDrummersAmp = audioContext.createGain();
+
+    this.play = function (time, drum_corp, player) {
         this.source = audioContext.createBufferSource();
         this.source.buffer = this.buffer;
-        this.source.connect(this.amp);
-        this.amp.connect(player.out);
+        this.source.connect(this.envAmp);
+        this.envAmp.connect(this.dynamicsAmp);
+        this.dynamicsAmp.connect(this.nDrummersAmp);
+        this.nDrummersAmp.connect(player.out);
 
-        var randNum = Math.random();
         // apply parameters
-        var randDetune = 0;
-        var nDrummers = Math.ceil(player.nDrummers / 10.0);
-        if (nDrummers > 1) {
-            var range = player.nDrummers;
-            randDetune = randNum * 2 * range - range;
-        }
-
-        //console.log('(player.drumPitch - 50)/100.0 * 2000 + randDetune: ' + ((player.drumPitch - 50)/100.0 * 2000 + randDetune));
-        this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000 + randDetune;
-
-        var dynamicsRatio = player.dynamics / 100.0;
-        this.amp.gain.value = dynamicsRatio * randNum + (1 - dynamicsRatio);
+        var randNum = Math.random();
+        this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000;
 
         var decayBase = 100.0;
         var decayScaling = 3.0;
-        this.env.decayTime = Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
+        var minDecay = 0.01;
+        this.env.decayTime = minDecay + Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
+
+        var randVolRatio = 0.20;
+        this.dynamicsAmp.gain.value = randVolRatio * randNum + (1 - randVolRatio);
+        this.nDrummersAmp.gain.value = 1 - (drum_corp.nDrummers - 1) / 40;
 
         this.env.on();
         console.log("time: " + time);
@@ -50,22 +49,39 @@ Drum_Corp.prototype.addDrum = function (buffer) {
 
 Drum_Corp.prototype.play = function (time, player)
 {
-    var nDrummers = Math.ceil(player.nDrummers / 10.0);
-    for (var i = 0; i < Math.min(nDrummers, this.drums.length); i++)
+    // if(player.dynamics > 1) {
+    //     var range = Math.ceil(player.dynamics / 10.0);
+    //     var high;
+    //     var low;
+    //     if (player.nDrummers + range / 2.0 > 10.0) {
+    //         high = 10;
+    //         low = 10 - (range - 1);
+    //     } else if (player.nDrummers - range / 2.0 < 0) {
+    //         high = 1 + (range - 1);
+    //         low = 0;
+    //     } else {
+    //         high = Math.floor(player.nDrummers + range / 2.0);
+    //         low = Math.ceil(nDrummer - range / 2.0);
+    //     }
+    //     this.nDrummers = low + Math.floor(Math.random() * (high - low));
+    // } else {
+    this.nDrummers = Math.ceil(player.nDrummers / 10.0);
+    // }
+    for (var i = 0; i < Math.min(this.nDrummers, this.drums.length); i++)
     {
         var offset = 0;
-        if (nDrummers > 1 && i > 0) {
-            var range = nDrummers / 500.0;
+        if (this.nDrummers > 1 && i > 0) {
+            var range = this.nDrummers / 500.0;
             offset = Math.random() * 2 * range - range;
         }
-        this.drums[i].play(time + offset, player);
+        this.drums[i].play(time + offset, this, player);
     }
 };
 
 Drum_Corp.prototype.unschedule = function (player) {
     console.log('cancelling drum');
     if (this.drums != undefined) {
-        for (var i = 0; i < Math.min(player.nDrummers, this.drums.length); i++) {
+        for (var i = 0; i < Math.min(this.nDrummers, this.drums.length); i++) {
             if (this.drums[i].source != undefined)
                 this.drums[i].source.stop();
         }

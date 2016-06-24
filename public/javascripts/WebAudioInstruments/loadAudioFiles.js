@@ -1,5 +1,6 @@
 var nSnares = 10;
 var nMarimbaSamples = 61;
+var nVibraphoneSamples = 37;
 
 function loadAudioFiles() {
     // get the snare samples from the server
@@ -40,16 +41,36 @@ function loadAudioFiles() {
     request.send();
 
 // get marimba samples
-    var marimbaRequests = [];
-    for (var k = 0; k < nMarimbaSamples; k++) {
-        var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + k) + '.wav';
-        marimbaRequests[k] = new XMLHttpRequest();
-        marimbaRequests[k].open('GET', marimbaUrl, true);
-        marimbaRequests[k].responseType = 'arraybuffer';
-        marimbaRequests[k].k = k;
-        marimbaRequests[k].onload = function () {
+//     var marimbaRequests = [];
+//     for (var k = 0; k < nMarimbaSamples; k++) {
+//         var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + k) + '.wav';
+//         marimbaRequests[k] = new XMLHttpRequest();
+//         marimbaRequests[k].open('GET', marimbaUrl, true);
+//         marimbaRequests[k].responseType = 'arraybuffer';
+//         marimbaRequests[k].k = k;
+//         marimbaRequests[k].onload = function () {
+//             var index = this.k;
+//             audioContext.decodeAudioData(marimbaRequests[index].response, function (buffer) {
+//                 for (var j = 0; j < nPlayers; j++) {
+//                     players[j].pitched.addAudioSample(buffer, index);
+//                 }
+//             }, function (e) {
+//                 console.log("Error in decoding audio data: " + e.err);
+//             });
+//         };
+//         marimbaRequests[k].send();
+//     }
+
+    var vibraphoneRequests = [];
+    for (var k = 0; k < nVibraphoneSamples; k++) {
+        var vibraphoneUrl = '/audio/Vibraphone/vibraphone_' + (53 + k) + '.wav';
+        vibraphoneRequests[k] = new XMLHttpRequest();
+        vibraphoneRequests[k].open('GET', vibraphoneUrl, true);
+        vibraphoneRequests[k].responseType = 'arraybuffer';
+        vibraphoneRequests[k].k = k;
+        vibraphoneRequests[k].onload = function () {
             var index = this.k;
-            audioContext.decodeAudioData(marimbaRequests[index].response, function (buffer) {
+            audioContext.decodeAudioData(vibraphoneRequests[index].response, function (buffer) {
                 for (var j = 0; j < nPlayers; j++) {
                     players[j].pitched.addAudioSample(buffer, index);
                 }
@@ -57,7 +78,7 @@ function loadAudioFiles() {
                 console.log("Error in decoding audio data: " + e.err);
             });
         };
-        marimbaRequests[k].send();
+        vibraphoneRequests[k].send();
     }
 }
 
