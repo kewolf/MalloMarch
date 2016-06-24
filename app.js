@@ -52,7 +52,7 @@ app.use('/users', users);
 // jsnlog.js on the client by default sends log messages to /jsnlog.logger, using POST.
 app.post('*.logger', function (req, res) {
     //console.log(JSON.parse(JSON.stringify(req.body)));
-    //console.log("Lenght of Arrray: " + req.body.lg.length);
+    //console.log("Length of Arrray: " + req.body.lg.length);
     var numLogs = req.body.lg.length;
     for (var i = 0; i < numLogs; i++) {
         var aLog = req.body.lg[i];

@@ -78,7 +78,22 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
 udpPort.open();
 
 // Setup the mode for our interface
-var interfaceMode = '2';
+var interfaceMode = '3';
+
+// Setup the storgat for the audience email addresses
+var emails = {};
+var numEmails = 0;
+var numEmailsBeforeSaving = 5;
+
+function saveEmails() {
+    var str = JSON.stringify(emails);
+    var obj = JSON.parse(str);
+    var file = 'savedJSON/emails.json';
+    jsonfile.spaces = 4;
+    jsonfile.writeFile(file, obj, function (err) {
+        console.error(err)
+    })
+}
 
 // Emit welcome message on when the socket connects and set up our listeners on this
 io.on('connection', function (socket) {
@@ -96,17 +111,29 @@ io.on('connection', function (socket) {
         var id = socket.request.connection.remoteAddress;
         //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
         var date = newSocket.dateTime;
-        var saveStr = id + "_" + date;
+        var data = JSON.parse(newSocket.str);
+        data["ip"] = id;
 
-        var file = 'savedJSON/' + saveStr + '.json';
-            var data = JSON.parse(newSocket.str);
 
-        jsonfile.spaces = 4;
+        if (newSocket.type == "email") {
+            emails["email" + numEmails] = data;
+            numEmails++;
+            if (numEmails % numEmailsBeforeSaving == 0) {
+                //overwrite the emails file
+                saveEmails();
+            }
+        }
+        else if (newSocket.type == "params") {
+            var saveStr = id + "_" + date;
+            var file = 'savedJSON/' + saveStr + '.json';
+
+            jsonfile.spaces = 4;
             jsonfile.writeFile(file, data, function (err) {
                 console.error(err)
             })
         }
-    );
+
+    });
     socket.on('time_req', function (newSocket) {
         socket.emit('time_res', {
             serverTime: (new Date).getTime(),
@@ -115,6 +142,7 @@ io.on('connection', function (socket) {
         });
         //console.log("Received Time Request from browswer: " + newSocket.clientTime + ", Sending Response");
     });
+
 });
 
 

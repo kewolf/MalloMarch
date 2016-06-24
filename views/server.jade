@@ -4,11 +4,14 @@ html
         title= "Server for MalLo March"
         meta(charset='utf-8')
         meta(name='viewport', content='width=device-width, initial-scale=1')
+
+        script(src='/socket.io/socket.io.js')
+
         //these dependencies need to be in this specific order!
         link(rel='stylesheet', href='/stylesheets/themes/colors.min.css')
         link(rel='stylesheet', href='/stylesheets/themes/jquery.mobile.icons.min.css')
         link(rel='stylesheet', href='/javascripts/jquery/jquery.mobile.structure-1.4.5.min.css')
-
+        link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
         //link(rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css')
         script(src='/javascripts/jquery/jquery-1.12.4.js')
         script(src='/javascripts/jquery/jquery.mobile-1.4.5.min.js')
@@ -18,10 +21,44 @@ html
 
 
     body(class="ui-mobile-viewport")
+        script.
+            //socket to send/receive stuff from
+            var socket = io(serverURL);
 
+            socket.on('welcome', function (data) {
 
+            }
 
-        div(data-role='page', data-theme='a')
-            div(data-role='header', data-theme='a', data-position='inline', role='banner')
-                h3 MalLo March Server
-            .ui-content.ui-body-a
+}
+div(data-role='page')
+    h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
+    .ui-body.ui-body-a.ui-corner-all
+        .ui-block-a(style='width:10%')
+        .ui-block-b(style='width:80%')
+            .ui-body.ui-body-a.ui-corner-all.center
+                .ui-block-a(style='width:50%')
+                    label(for='flip1') Consent Form:
+                    select#flip1(name='flip1', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                        option(value='off') Off
+                        option(value='on') On
+                .ui-block-b(style='width:50%')
+                    label(for='flip2') Logger:
+                    select#flip2(name='flip2', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                        option(value='off') Off
+                        option(value='on') On
+            fieldset(data-role='controlgroup', data-theme='d' )
+                h2.center Interface Modes
+                input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
+                label(for='radio-choice-1') Welcome
+                input#radio-choice-2(type='radio', name='radio-choice-1', value='0')
+                label(for='radio-choice-2') Movement 1
+                input#radio-choice-3(type='radio', name='radio-choice-1', value='0')
+                label(for='radio-choice-3') Movement 2
+                input#radio-choice-4(type='radio', name='radio-choice-1', value='0')
+                label(for='radio-choice-4') Survey
+        .ui-field-contain
+            label(for='saveEmail')
+            button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmail()", ) Save Emails
+
+        .ui-block-c(style='width:10%')
+

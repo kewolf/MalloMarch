@@ -37,10 +37,8 @@ block content
         var scheduler;
         var syncClient;
 
-        const CONSENT_COOKIE_NAME = "consentFormAggreement";
+        const CONSENT_COOKIE_NAME = "consentFormAgreement";
         const DAYS_TO_KEEP_COOKIE = 1;
-
-
 
 
         //FLAGS THAT CAN BE CONTROLLED BY SERVER INTERFACE:
@@ -152,9 +150,6 @@ block content
         }
 
 
-
-
-
         function loadInstrumentsfile(callback) {
             //console.log("load Instr File");
             var request = new XMLHttpRequest();
@@ -181,8 +176,6 @@ block content
             };
             request.send(null);
         }
-
-
 
 
         socket.on('time_res', function (data) {
@@ -272,6 +265,7 @@ block content
             $('#movement1').hide();
             $('#movement2').hide();
             $('#survey').hide();
+            $('#credits').hide();
 
             // check if they have already consented
             // if this is "" then they have not
@@ -303,6 +297,8 @@ block content
                     break;
 
                 case InterfaceEnum.SURVEY:
+                    $('#movenment2').hide();
+                    $('#survey').show();
                     break
                 default:
                     break;
@@ -531,7 +527,6 @@ block content
             }
         }
 
-
         $.fn.serializeObject = function () {
             var o = {};
             var a = this.serializeArray();
@@ -547,7 +542,6 @@ block content
             });
             return o;
         };
-
 
         $(function () {
             $('#saveButton').click(function () {
@@ -567,12 +561,13 @@ block content
                 // $('#result').text(str);
 
                 socket.emit('saveJSON', {
+                    type: "params",
                     str: str,
                     dateTime: dateTime
                 });
 
                 if (loggerOn) {
-                    logger.info("{ \"save\" : " + dateTime + "}");
+                    logger.info("{ \"save_params\" : " + dateTime + "}");
                 }
 
                 return false;
@@ -723,6 +718,48 @@ block content
 
 
 
+        function submitButton() {
+            var randCode = generateRandomCode(10);
+            var params = {};
+            var email = document.getElementById("emailTextBox").value;
+            console.log("EMAIL: " + email);
+            params["email"] = email;
+            params["code"] = randCode;
+
+            var str = JSON.stringify(params);
+            console.log(str);
+
+            var dateTime = Date.now();
+
+            socket.emit('saveJSON', {
+                type: "email",
+                str: str,
+                dateTime: dateTime
+            });
+
+            if (loggerOn) {
+                logger.info("{ \"save_email\" : " + dateTime + "}");
+                logger.info("{ \"save_email\" : " + dateTime + "}");
+                logger.info("{ \"save_email\" : " + dateTime + "}");
+                logger.info("{ \"save_email\" : " + dateTime + "}");
+                logger.info("{ \"save_email\" : " + dateTime + "}");
+            }
+
+            //load the credits!
+            $('#survey').hide();
+            $('#credits').show();
+
+        }
+
+        function generateRandomCode(num) {
+            var s = "";
+            while (s.length < num && num > 0) {
+                var r = Math.random();
+                s += (r < 0.1 ? Math.floor(r * 100) : String.fromCharCode(Math.floor(r * 26) + (r > 0.5 ? 97 : 65)));
+            }
+            return s;
+        }
+
     #consent.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
             h3(role='banner') Data Collection Consent Form
@@ -736,7 +773,24 @@ block content
             a.consentButton.ui-btn.ui-btn-inline(id='1') Yes - You Can Use My Data
             a.consentButton.ui-btn.ui-btn-inline(id='0') No - Do not Use My Data
     #welcome.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Welcome!
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                        | The piece should begin shorly. MORE INFORMATION ABOUT THE PIECE!
+            .ui-block-c(style='width:10%')
     #movement1.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Movement 1
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                        | Movement 1 requires no interaction. Please put on headphones, and simply listen to this part of the piece.
+            .ui-block-c(style='width:10%')
+
     #movement2(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
         div(data-role='navbar')
             ul
@@ -959,5 +1013,44 @@ block content
                     .ui-block-c(style='text-align: right;')
 
     #survey.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Data Collection Survey
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                        | Thank you for participating in our performance! Please enter you email address below to receive a survey on your experience. The survey will be sent after the concert and will be available for the next 48 hours.
+            .ui-block-c(style='width:10%')
+
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                .ui-field-contain()
+                    label(for='emailTextBox', data-theme='b') Email:
+                    input#emailTextBox(type='text', name='text-basic', data-theme='b', value='')
+                .ui-field-contain
+                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:50%', onclick="submitButton()") Submit
+                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:25%',) No Thanks
+            .ui-block-c(style='width:10%')
+
+    #credits.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Performance Credits
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                    p    Green Player:               Katie  Wolf
+                    p    Blue  Player:               Steven Landry
+                    p    Pink  Player:               Daniel Verona
+                    p
+                    p    Composers:                   Katie Wolf and Reid Oda
+                    p    Interface Development:       Katie Wolf
+                    p    Audio Engineering:           Reid Oda
+                    p    MalLo Creator and Developer: Reid Oda
+            .ui-block-c(style='width:10%')
+
+
+
+
 
 
