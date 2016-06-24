@@ -36,3 +36,10 @@ node_modules
 # Because youtube told us
 # For WebStorm Settings and Configurations
 .idea
+
+# openframeworks
+openFrameworks.a
+openFrameworksDebug.a
+openFrameworksUniversal.a
+libs/openFrameworksCompiled/lib/*/*
+!libs/openFrameworksCompiled/lib/*/.gitkeep
