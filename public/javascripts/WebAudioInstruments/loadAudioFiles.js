@@ -1,13 +1,13 @@
 var nSnares = 10;
 // var nMarimbaSamples = 61;
 var nVibraphoneSamples = 37;
-var reverbPath = '/audio/reverbImpulses/Chateau_de_Logne_Outside.wav';
+var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
 
 function loadAudioFiles() {
     // get the snare samples from the server
     var requests = [];
     for (var i = 0; i < nSnares; i++) {
-        var url = '/audio/snare' + i + '.wav';
+        var url = '/audio/snaresWav/snare' + i + '.wav';
         requests[i] = new XMLHttpRequest();
         requests[i].open('GET', url, true);
         requests[i].responseType = 'arraybuffer';
@@ -64,7 +64,7 @@ function loadAudioFiles() {
 
     var vibraphoneRequests = [];
     for (var k = 0; k < nVibraphoneSamples; k++) {
-        var vibraphoneUrl = '/audio/Vibraphone/vibraphone_' + (53 + k) + '.wav';
+        var vibraphoneUrl = '/audio/VibraphoneMp3/vibraphone_' + (53 + k) + '.mp3';
         vibraphoneRequests[k] = new XMLHttpRequest();
         vibraphoneRequests[k].open('GET', vibraphoneUrl, true);
         vibraphoneRequests[k].responseType = 'arraybuffer';
@@ -80,6 +80,26 @@ function loadAudioFiles() {
             });
         };
         vibraphoneRequests[k].send();
+    }
+
+    var vibraphoneRevRequests = [];
+    for (var k = 0; k < nVibraphoneSamples; k++) {
+        var vibraphoneRevUrl = '/audio/reverseVibMp3/vibraphone_' + (53 + k) + '_rev.mp3';
+        vibraphoneRevRequests[k] = new XMLHttpRequest();
+        vibraphoneRevRequests[k].open('GET', vibraphoneRevUrl, true);
+        vibraphoneRevRequests[k].responseType = 'arraybuffer';
+        vibraphoneRevRequests[k].k = k;
+        vibraphoneRevRequests[k].onload = function () {
+            var index = this.k;
+            audioContext.decodeAudioData(vibraphoneRevRequests[index].response, function (buffer) {
+                for (var j = 0; j < nPlayers; j++) {
+                    players[j].pitched.addReverseAudioSample(buffer, index);
+                }
+            }, function (e) {
+                console.log("Error in decoding audio data: " + e.err);
+            });
+        };
+        vibraphoneRevRequests[k].send();
     }
 }
 

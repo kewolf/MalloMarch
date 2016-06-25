@@ -49,24 +49,24 @@ Drum_Corp.prototype.addDrum = function (buffer) {
 
 Drum_Corp.prototype.play = function (time, player)
 {
-    // if(player.dynamics > 1) {
-    //     var range = Math.ceil(player.dynamics / 10.0);
-    //     var high;
-    //     var low;
-    //     if (player.nDrummers + range / 2.0 > 10.0) {
-    //         high = 10;
-    //         low = 10 - (range - 1);
-    //     } else if (player.nDrummers - range / 2.0 < 0) {
-    //         high = 1 + (range - 1);
-    //         low = 0;
-    //     } else {
-    //         high = Math.floor(player.nDrummers + range / 2.0);
-    //         low = Math.ceil(nDrummer - range / 2.0);
-    //     }
-    //     this.nDrummers = low + Math.floor(Math.random() * (high - low));
-    // } else {
+    if(player.dynamics > 1) {
+        var range = Math.ceil(player.dynamics / 10.0);
+        var high;
+        var low;
+        if (player.nDrummers + range / 2.0 > 10.0) {
+            high = 10;
+            low = 10 - (range - 1);
+        } else if (player.nDrummers - range / 2.0 < 0) {
+            high = 1 + (range - 1);
+            low = 0;
+        } else {
+            high = Math.floor(player.nDrummers + range / 2.0);
+            low = Math.ceil(nDrummer - range / 2.0);
+        }
+        this.nDrummers = low + Math.floor(Math.random() * (high - low));
+    } else {
     this.nDrummers = Math.ceil(player.nDrummers / 10.0);
-    // }
+    }
     for (var i = 0; i < Math.min(this.nDrummers, this.drums.length); i++)
     {
         var offset = 0;

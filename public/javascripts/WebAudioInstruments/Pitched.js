@@ -15,10 +15,13 @@ var PitchedVoice = function () {
     this.dryAmp = audioContext.createGain();
     this.dryAmp.gain.value = 0.0;
 
-    this.play = function (time, pitched, player, buffer) {
+    this.play = function (time, pitched, player, buffer, reverseBuffer) {
         this.source = audioContext.createBufferSource();
         this.source.buffer = buffer;
         this.source.connect(this.adsrAmp);
+        this.reverseSource = audioContext.createBufferSource();
+        this.reverseSource.buffer = reverseBuffer;
+        this.reverseSource.connect(this.adsrAmp);
         this.adsrAmp.connect(this.routeToLfoAmp);
         this.routeToLfoAmp.connect(this.lfoAmp);
         this.lfoAmp.connect(player.out);
@@ -36,7 +39,8 @@ var PitchedVoice = function () {
         this.env.decayTime = minDecay + Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
 
         this.env.on();
-        this.source.start(AudioContext.currentTime);
+        this.source.start(time);
+        this.reverseSource.start(time);
     };
 
     this.stop = function () {
@@ -49,6 +53,7 @@ var Pitched = function () {
     this.lfoOsc.frequency.value = 5.0;
     this.lfoOsc.start();
     this.buffers = [];
+    this.reverseBuffers = [];
     this.curVoice = 0;
     this.nVoices = 2;
     this.voices = [];
@@ -68,9 +73,13 @@ var Pitched = function () {
 
     this.addAudioSample = function (buffer, index) {
         this.buffers[index] = buffer;
-    }
+    };
 
-    Pitched.prototype.play = function (time, player) {
+    this.addReverseAudioSample = function (buffer, index) {
+        this.reverseBuffers[index] = buffer;
+    };
+
+    this.play = function (time, player) {
 
         this.curSequence = Math.floor(player.range / 25);
         console.log("curSequence: " + this.curSequence);
@@ -79,7 +88,8 @@ var Pitched = function () {
         this.voices[this.curVoice].play(time,
             this,
             player,
-            this.buffers[this.noteSequences[this.curSequence][this.curNoteIndex]]);
+            this.buffers[this.noteSequences[this.curSequence][this.curNoteIndex]],
+            this.reverseBuffers[this.noteSequences[this.curSequence][this.curNoteIndex]]);
         this.curVoice = (this.curVoice + 1) % this.nVoices;
     };
 
