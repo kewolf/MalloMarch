@@ -1,6 +1,7 @@
 var nSnares = 10;
-var nMarimbaSamples = 61;
+// var nMarimbaSamples = 61;
 var nVibraphoneSamples = 37;
+var reverbPath = '/audio/reverbImpulses/Chateau_de_Logne_Outside.wav';
 
 function loadAudioFiles() {
     // get the snare samples from the server
@@ -27,7 +28,7 @@ function loadAudioFiles() {
 
 // get reverb impulse
     var request = new XMLHttpRequest();
-    request.open('GET', '/audio/reverb.wav', true);
+    request.open('GET', reverbPath, true);
     request.responseType = 'arraybuffer';
     request.onload = function () {
         audioContext.decodeAudioData(request.response, function (buffer) {
