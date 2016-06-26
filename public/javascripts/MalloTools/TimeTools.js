@@ -84,7 +84,7 @@ var Scheduler = function (players, audioContext) {
                     players[i].schedule(this.curPredictions[i]);
                     this.lastPlayTime[i] = this.curPredictions[i];
                 }
-                console.log('scheduled audio');
+                //console.log('scheduled audio');
                 this.curPredictions[i] = -1;
             }
         }

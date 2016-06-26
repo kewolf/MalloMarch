@@ -31,8 +31,7 @@ block content
         var ModeEnum = Object.freeze({"CHANNELS": 0, "PLAYERS": 1, "PARAMETERS": 2});
         var currentMode = ModeEnum.CHANNELS;
         var isJSONloaded = false;
-
-        var currentInterface;
+        var isAudioSetup = false;
 
         var scheduler;
         var syncClient;
@@ -41,25 +40,28 @@ block content
         const DAYS_TO_KEEP_COOKIE = 1;
 
 
+        var customIPflag = 1;
+        var serverURL = 'http://localhost:3000';
+        var customServerURL = '192.168.1.9:3000';
+        //var customServerURL = '10.227.28.178:3000';
+        //var customServerURL = '10.8.65.195:3000';
+
         //FLAGS THAT ARE CONTROLLED BY SERVER and SERVER INTERFACE
         //Initialized in the onWelcome function
 
-        // Should the consent form be displayed?
-        // If it is displayed, then user selection can turn logging off
+        // If the content is displayed, then user selection can turn logging off
         // otherwise logger will default to the loggerOn value
         var displayConsent;
         var loggerOn; // Users response of consent form can change this value.
 
+        //the current interface mode that we are in
+        //enum values are stored in interfaceConstants
+        var currentInterface;
 
-        var customIPflag = 0;
-        var serverURL = 'http://localhost:3000';
-        var customServerURL = '192.168.1.3:3000';
-
-        //init the logging stuff
+        //create the logger
         var logger = JL("Version1-Logger");
 
-        //init sound stuff!
-        window.addEventListener('load', init, false);
+        window.addEventListener('load', init, false); //does nothing right now.
 
         if (customIPflag) {
             serverURL = customServerURL;
@@ -69,11 +71,14 @@ block content
         var socket = io(serverURL);
 
         socket.on('welcome', function (data) {
-            currentInterface = parseInt(data.mode);
+
+            //ALWAYS START ON THE WELCOME PAGE! - SO IT CAN INITIATE AUDIO
+            currentInterface = InterfaceEnum.INFO;
+
             displayConsent = parseInt(data.isConsentFormOn);
             loggerOn = parseInt(data.isLoggerOn);
 
-            console.log("Welcome Mode: " + currentInterface + " host " + location.host);
+            console.log("SERVER SENT - Welcome Mode: " + parseInt(data.mode) + " host " + location.host);
             console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn);
 
             // check if they have already consented
@@ -96,112 +101,14 @@ block content
                 loadInterface();
             }
 
-            syncClient = new SyncClient();
-            scheduler = new Scheduler(players, audioContext);
-
-            var timeSyncInterval = 500;
-            // starts time sync
-            setInterval(function () {
-                socket.emit('time_req', {
-                    clientTime: audioContext.currentTime,
-                });
-            }, timeSyncInterval);
-
-            var schedulerInterval = 20;
-            // checks scheduler
-            setInterval(function () {
-                //players[0].schedule(audioContext.currentTime+.5);
-                scheduler.checkSchedule();
-            }, schedulerInterval);
-
-            /*
-            setInterval(function () {
-                scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
-            }, 500);
-             */
-
         });
 
+        //receive messages from server (masterServerControl) on when to change the interface.
         socket.on('changeInterface', function (data) {
             console.log("RECEIVED CHANGED INTERFACE");
             console.log("Interface Changed: " + data.newMode);
-            currentInterface = data.newMode;
-            loadInterface();
+            changeInterface(data.newMode);
         });
-
-
-
-        // function that inits logger - called within the consentButton click action
-        function initLogger() {
-            var appender = JL.createAjaxAppender("Appender");
-            appender.setOptions({
-                "batchSize": 5 //the number of logs that are acquired before they get sent
-            });
-            logger.setOptions({
-                "appenders": [appender]
-            });
-            var dateTime = Date.now();
-            if (loggerOn) {
-                logger.info("{ \"consent\" : " + dateTime + "}");
-            }
-        }
-
-        function loadJSONandDOM() {
-            loadInstrumentsfile(function (response1) {
-                //Parse JSON string into object
-                instrumentPresets = JSON.parse(response1);
-                nPresetInstruments = 0;
-                for (var inst in instrumentPresets) {
-                    nPresetInstruments++;
-                }
-
-                loadPresetsfile(function (response2) {
-                    // Parse JSON string into object
-                    var presetsJSON = JSON.parse(response2);
-                    ch_index = 0;
-                    for (var channel in presetsJSON) {
-                        instr_index = 0;
-                        channelPresets[ch_index] = {}
-                        for (var instrument in presetsJSON[channel]) {
-                            //may not have to do this... access using variables names...
-                            channelPresets[ch_index][instr_index] = presetsJSON[channel][instrument];
-                            instr_index++;
-                        }
-                        ch_index++;
-                    }
-                    nPresetChannels = ch_index;
-                    loadDOMStuff();
-                });
-            });
-        }
-
-
-        function loadInstrumentsfile(callback) {
-            //console.log("load Instr File");
-            var request = new XMLHttpRequest();
-            //request.overrideMimeType("application/json");
-            request.open('GET', '/json/instruments.json', true); // Replace 'my_data' with the path to your file
-            request.onreadystatechange = function () {
-                if (request.readyState == 4 && request.status == "200") {
-                    // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-                    callback(request.responseText);
-                }
-            };
-            request.send(null);
-        }
-
-        function loadPresetsfile(callback) {
-            //console.log("load Presets File");
-            var request = new XMLHttpRequest();
-            request.open('GET', '/json/channels.json', true);
-            request.onreadystatechange = function () {
-                if (request.readyState == 4 && request.status == "200") {
-                    // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-                    callback(request.responseText);
-                }
-            };
-            request.send(null);
-        }
 
 
         socket.on('time_res', function (data) {
@@ -235,24 +142,153 @@ block content
 
         /*********** functions ***********/
 
-        // init() probably occurs first (we think, but it's hard to know with the asynchronous
+        // init is connected to the window load event.
         function init() {
-            console.log("in init");
-            try {
-                // Fix up for prefixing
-                if (isAudioContextSupported()) {
-                    console.log("Web Audio is supported!");
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Setup an event listener for clicks on the soundCheck button
+        // This will initialize our audio context so that it works on ios.
+        $(function () {
+            $("#soundCheck").on("click", function () {
+
+                if (!isAudioSetup) {
+                    try {
+                        // Fix up for prefixing
+                        if (isAudioContextSupported()) {
+                            console.log("Web Audio is supported!");
+                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                    } catch (e) {
+                        alert('You need webaudio support - try another browser');
+                    }
+
+                    for (var i = 0; i < nPlayers; i++) {
+                        players.push(new Player());
+                    }
+
+                    // play empty buffer to unmute audio
+                    playSound(audioContext.currentTime);
+
+                    loadAudioFiles();
+                    isAudioSetup = true;
+                } else {
+                    playSound(audioContext.currentTime);
                 }
-            } catch (e) {
-                alert('You need webaudio support - try another browser');
-            }
 
-            for (var i = 0; i < nPlayers; i++) {
-                players.push(new Player());
-            }
+            });
+        });
 
-            loadAudioFiles();
+
+        // TODO: Have it play something pretty here :)
+        function playSound(time) {
+            console.log("Play Sound");
+            var oscillator = audioContext.createOscillator();
+            oscillator.frequency.value = 400;
+            oscillator.connect(audioContext.destination);
+            oscillator.start(time);
+            oscillator.stop(time + .5);    // you can set this to zero, but I left it here for testing.
+        }
+
+
+        // function that initalizes the logger - called within the consentButton click action
+        // or the "on welcome" socket event
+        function initLogger() {
+            var appender = JL.createAjaxAppender("Appender");
+            appender.setOptions({
+                "batchSize": 5 //the number of logs that are acquired before they get sent
+            });
+            logger.setOptions({
+                "appenders": [appender]
+            });
+            var dateTime = Date.now();
+            if (loggerOn) {
+                logger.info("{ \"consent\" : " + dateTime + "}");
+            }
+        }
+
+        // initalizes the time synchronizer and scheduler
+        function initSyncAndScheduler() {
+            syncClient = new SyncClient();
+            scheduler = new Scheduler(players, audioContext);
+
+            var timeSyncInterval = 500;
+            // starts time sync
+            setInterval(function () {
+                socket.emit('time_req', {
+                    clientTime: audioContext.currentTime,
+                });
+            }, timeSyncInterval);
+
+            var schedulerInterval = 20;
+            // checks scheduler
+            setInterval(function () {
+                //players[0].schedule(audioContext.currentTime+.5);
+                scheduler.checkSchedule();
+            }, schedulerInterval);
+
+
+            console.log('Timer!');
+            setInterval(function () {
+                scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
+            }, 500);
+        }
+
+        // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
+        // when files have finished loaded.
+        function loadJSONandDOM() {
+            loadInstrumentsfile(function (response1) {
+                //Parse JSON string into object
+                instrumentPresets = JSON.parse(response1);
+                nPresetInstruments = 0;
+                for (var inst in instrumentPresets) {
+                    nPresetInstruments++;
+                }
+
+                loadPresetsfile(function (response2) {
+                    // Parse JSON string into object
+                    var presetsJSON = JSON.parse(response2);
+                    ch_index = 0;
+                    for (var channel in presetsJSON) {
+                        instr_index = 0;
+                        channelPresets[ch_index] = {}
+                        for (var instrument in presetsJSON[channel]) {
+                            //may not have to do this... access using variables names...
+                            channelPresets[ch_index][instr_index] = presetsJSON[channel][instrument];
+                            instr_index++;
+                        }
+                        ch_index++;
+                    }
+                    nPresetChannels = ch_index;
+                    loadDOMStuff();
+                });
+            });
+        }
+
+        function loadInstrumentsfile(callback) {
+            //console.log("load Instr File");
+            var request = new XMLHttpRequest();
+            //request.overrideMimeType("application/json");
+            request.open('GET', '/json/instruments.json', true); // Replace 'my_data' with the path to your file
+            request.onreadystatechange = function () {
+                if (request.readyState == 4 && request.status == "200") {
+                    // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+                    callback(request.responseText);
+                }
+            };
+            request.send(null);
+        }
+
+        function loadPresetsfile(callback) {
+            //console.log("load Presets File");
+            var request = new XMLHttpRequest();
+            request.open('GET', '/json/channels.json', true);
+            request.onreadystatechange = function () {
+                if (request.readyState == 4 && request.status == "200") {
+                    // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+                    callback(request.responseText);
+                }
+            };
+            request.send(null);
         }
 
         function isAudioContextSupported() {
@@ -261,28 +297,9 @@ block content
             return window.AudioContext;
         }
 
-
-
         /*************** JQuery stuff *****************/
 
-        /* Work on trying to dynamically create the sliders
-         function generateSliders() {
-         $(document).on('pagebeforeshow', '#three', function () {
-         // Add a new input element
-         var index = 4;
-         var newRight = "rightItem" + index;
-         $('[id="#m0-dc"]').append('<div label class="leftItem">NEW!</div>');
-         $('[id="#m0-dc"]').append('<div class="rightItem" id =' + newRight + '></div>');
-         $('[id=' + newRight + ']').append('<input type="range" name="slider-' + index + '" id="slider-' + index + '" value="25" min="0" max="100" data-track-theme="a" data-theme="a" data-popup-enabled="true" data-mini="true">');
-         // Enhance new input element, unfortunately slider() function is not goinf to work correctly
-
-         $('#three').trigger('create');
-         });
-         }
-         */
-
-
-        // Load the initial display
+        // Load the initial display - hide all visuals
         $(document).ready(function () {
             // hide all visuals
             $('#consent').hide();
@@ -291,21 +308,23 @@ block content
             $('#movement2').hide();
             $('#survey').hide();
             $('#credits').hide();
-
+            $('#footer').hide();
         });
 
+        function changeInterface(newMode) {
+            currentInterface = newMode;
+            loadInterface();
+        }
+
+        // Call after updating the current Interface.
         function loadInterface() {
-            if (!isJSONloaded) {
-                loadJSONandDOM();
-                isJSONloaded = true;
-            }
-
-
             console.log("Current Mode " + currentInterface);
             $('#credits').hide();
+
             switch (currentInterface) {
                 case InterfaceEnum.INFO:
                     $('#welcome').show();
+                    $('#footer').show();
 
                     $('#consent').hide();
                     $('#movement1').hide();
@@ -316,6 +335,13 @@ block content
                 case InterfaceEnum.M1:
                     $('#movement1').show();
 
+                    initSyncAndScheduler();
+
+                    if (!isJSONloaded) {
+                        loadJSONandDOM();
+                        isJSONloaded = true;
+                    }
+
                     $('#consent').hide();
                     $('#welcome').hide();
                     $('#movement2').hide();
@@ -323,8 +349,10 @@ block content
                     break;
 
                 case InterfaceEnum.M2:
+
                     $('#movement2').show();
-                    $('#tabButton1').click();
+                    $('#tabButton1').trigger('click');
+                    $('#channels').sly('reload');
 
                     $('#consent').hide();
                     $('#welcome').hide();
@@ -347,6 +375,24 @@ block content
             }
         }
 
+        // function for the "Next Page" button during testing purposes to force the interface
+        // to go to the next page.
+        function nextPage() {
+            switch (currentInterface) {
+                case InterfaceEnum.INFO:
+                    changeInterface(InterfaceEnum.M1);
+                    break;
+                case InterfaceEnum.M1:
+                    changeInterface(InterfaceEnum.M2);
+                    break;
+                case InterfaceEnum.M2:
+                    changeInterface(InterfaceEnum.SURVEY);
+                    $('#footer').hide();
+                    break;
+                default:
+                    break;
+            }
+        }
 
         function loadDOMStuff() {
             //setup channels slider
@@ -513,15 +559,62 @@ block content
                 }
             });
 
+
+            //show or hide sliders for mode 3 depending on the selector
+            //Selector for ids that end in '-select'
+            $('[id$="-select"]').change(function () {
+                //get the id and extract the mallo id (m0, m1, m2)
+                var id = $(this).attr('id');
+                var playerNum = parseInt(id.slice(1));
+                console.log("Select Player: " + playerNum);
+                var malloId = id.slice(0, 2);
+                //get the value for the child that is selected
+                var nextpage = $(this).children('option:selected').attr('value');
+
+
+                var active = $('#movement2').tabs('option', 'active');
+
+                //if we are in mode 3 - then log the change!
+                if (active == 2) {
+                    if (loggerOn) {
+                        logger.info("{ \"" + id + "\" : " + nextpage + "}");
+                    }
+                }
+
+                //show/hide based on the selection.
+                if (nextpage == '0') {
+                    //console.log("Selected 1!");
+                    players[playerNum].activeInstrument = 0;
+                    $('#' + malloId + '-dc-size').val(players[playerNum].size).trigger('change');
+                    $('#' + malloId + '-dc-decay').val(players[playerNum].decay).trigger('change');
+                    $('#' + malloId + '-dc').show();
+                    $('#' + malloId + '-pp').hide();
+                    $('#' + malloId + '-el').hide();
+
+                } else if (nextpage == '1') {
+                    //console.log("Selected 2!");
+                    players[playerNum].activeInstrument = 1;
+                    $('#' + malloId + '-el-size').val(players[playerNum].size).trigger('change');
+                    $('#' + malloId + '-el-decay').val(players[playerNum].decay).trigger('change');
+                    $('#' + malloId + '-dc').hide();
+                    $('#' + malloId + '-pp').show();
+                    $('#' + malloId + '-el').hide();
+                } else {
+                    //console.log("Selected 3!");
+                    players[playerNum].activeInstrument = 2;
+                    $('#' + malloId + '-pp-size').val(players[playerNum].size).trigger('change');
+                    $('#' + malloId + '-pp-decay').val(players[playerNum].decay).trigger('change');
+                    $('#' + malloId + '-dc').hide();
+                    $('#' + malloId + '-pp').hide();
+                    $('#' + malloId + '-el').show();
+                }
+            });
+
             //set initial select boxes for mode 2
             $("#m0-select").val('0').trigger('change');
             $("#m1-select").val('0').trigger('change');
             $("#m2-select").val('0').trigger('change');
-
-            //
         }
-
-
 
         function sliderChange(playerNum, params) {
             console.log("CHANGE: " + playerNum + " " + params);
@@ -616,58 +709,6 @@ block content
         });
 
 
-        //show or hide sliders for mode 3 depending on the selector
-        $(function () {
-            //Selector for ids that end in '-select'
-            $('[id$="-select"]').change(function () {
-                //get the id and extract the mallo id (m0, m1, m2)
-                var id = $(this).attr('id');
-                var playerNum = parseInt(id.slice(1));
-                console.log("Select Player: " + playerNum);
-                var malloId = id.slice(0, 2);
-                //get the value for the child that is selected
-                var nextpage = $(this).children('option:selected').attr('value');
-
-
-                var active = $('#movement2').tabs('option', 'active');
-
-                //if we are in mode 3 - then log the change!
-                if (active == 2) {
-                    if (loggerOn) {
-                        logger.info("{ \"" + id + "\" : " + nextpage + "}");
-                    }
-                }
-
-                //show/hide based on the selection.
-                if (nextpage == '0') {
-                    //console.log("Selected 1!");
-                    players[playerNum].activeInstrument = 0;
-                    $('#' + malloId + '-dc-size').val(players[playerNum].size).trigger('change');
-                    $('#' + malloId + '-dc-decay').val(players[playerNum].decay).trigger('change');
-                    $('#' + malloId + '-dc').show();
-                    $('#' + malloId + '-pp').hide();
-                    $('#' + malloId + '-el').hide();
-
-                } else if (nextpage == '1') {
-                    //console.log("Selected 2!");
-                    players[playerNum].activeInstrument = 1;
-                    $('#' + malloId + '-el-size').val(players[playerNum].size).trigger('change');
-                    $('#' + malloId + '-el-decay').val(players[playerNum].decay).trigger('change');
-                    $('#' + malloId + '-dc').hide();
-                    $('#' + malloId + '-pp').show();
-                    $('#' + malloId + '-el').hide();
-                } else {
-                    //console.log("Selected 3!");
-                    players[playerNum].activeInstrument = 2;
-                    $('#' + malloId + '-pp-size').val(players[playerNum].size).trigger('change');
-                    $('#' + malloId + '-pp-decay').val(players[playerNum].decay).trigger('change');
-                    $('#' + malloId + '-dc').hide();
-                    $('#' + malloId + '-pp').hide();
-                    $('#' + malloId + '-el').show();
-                }
-            });
-        });
-
 
         //slider changes!
         $(function () {
@@ -757,37 +798,47 @@ block content
             });
         });
 
-        function submitButton() {
-            var randCode = generateRandomCode(10);
-            var params = {};
-            var email = document.getElementById("emailTextBox").value;
-            console.log("EMAIL: " + email);
-            params["email"] = email;
-            params["code"] = randCode;
+        function submitEmailButton(doWeSubmit) {
+            if (doWeSubmit) {
+                var randCode = generateRandomCode(10);
+                var params = {};
+                var email = document.getElementById("emailTextBox").value;
+                console.log("EMAIL: " + email);
+                params["email"] = email;
+                params["code"] = randCode;
 
-            var str = JSON.stringify(params);
-            console.log(str);
+                var str = JSON.stringify(params);
+                console.log(str);
 
-            var dateTime = Date.now();
+                var dateTime = Date.now();
 
-            socket.emit('saveJSON', {
-                type: "email",
-                str: str,
-                dateTime: dateTime
-            });
+                socket.emit('saveJSON', {
+                    type: "email",
+                    str: str,
+                    dateTime: dateTime
+                });
 
-            if (loggerOn) {
-                logger.info("{ \"save_email\" : " + dateTime + "}");
-                logger.info("{ \"save_email\" : " + dateTime + "}");
-                logger.info("{ \"save_email\" : " + dateTime + "}");
-                logger.info("{ \"save_email\" : " + dateTime + "}");
-                logger.info("{ \"save_email\" : " + dateTime + "}");
+                if (loggerOn) {
+                    logger.info("{ \"save_email\" : " + dateTime + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + "}");
+                }
+            } else {
+                //flush the buffers
+                if (loggerOn) {
+                    logger.info("{ \"flush\" : " + dateTime + "}");
+                    logger.info("{ \"flush\" : " + dateTime + "}");
+                    logger.info("{ \"flush\" : " + dateTime + "}");
+                    logger.info("{ \"flush\" : " + dateTime + "}");
+                    logger.info("{ \"flush\" : " + dateTime + "}");
+                }
             }
 
             //load the credits!
             $('#survey').hide();
             $('#credits').show();
-
         }
 
         function generateRandomCode(num) {
@@ -811,14 +862,19 @@ block content
 
             a.consentButton.ui-btn.ui-btn-inline(id='1') Yes - You Can Use My Data
             a.consentButton.ui-btn.ui-btn-inline(id='0') No - Do not Use My Data
-    #welcome.center.ui-content(data-role='main')
+    #welcome.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
-            h3(role='banner') Welcome!
+            h3.center(role='banner') Welcome to the March MalLO performance website!
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                        | The piece should begin shorlty. MORE INFORMATION ABOUT THE PIECE!
+                        | To make sure that you can hear the sound for this piece, please put in your headphones now and click the button below.
+                        | You should hear a short tone. If you do not hear the tone, your device or browser may not be compatible to play the audio for this piece.
+                        | Ask around to see if you can share with another audience member. There are headphone jack splitters available upone request.
+
+                    button#soundCheck.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button') Enable Audio and Check Sound
+
             .ui-block-c(style='width:10%')
     #movement1.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
@@ -1067,8 +1123,8 @@ block content
                     label(for='emailTextBox', data-theme='b') Email:
                     input#emailTextBox(type='text', name='text-basic', data-theme='b', value='')
                 .ui-field-contain
-                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:50%', onclick="submitButton()") Submit
-                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:25%',) No Thanks
+                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:50%', onclick="submitEmailButton(true)") Submit
+                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:25%', onclick="submitEmailButton(false)") No Thanks
             .ui-block-c(style='width:10%')
 
     #credits.center.ui-content(data-role='main')
@@ -1087,7 +1143,13 @@ block content
                     p    Sound Design:                Reid Oda
                     p    MalLo Creator and Developer: Reid Oda
             .ui-block-c(style='width:10%')
-
+    #footer.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            .ui-block-a
+            .ui-block-b
+            .ui-block-c()
+                .ui-field-contain
+                    button#nextPage.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', onclick="nextPage()") Next
 
 
 

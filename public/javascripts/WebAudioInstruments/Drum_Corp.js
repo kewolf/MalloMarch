@@ -21,7 +21,7 @@ var Drum = function(buffer)
 
         // apply parameters
         var randNum = Math.random();
-        this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000;
+        //this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000;
 
         var decayBase = 100.0;
         var decayScaling = 3.0;

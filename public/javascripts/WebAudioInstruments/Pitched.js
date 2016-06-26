@@ -51,7 +51,7 @@ var PitchedVoice = function () {
 var Pitched = function () {
     this.lfoOsc = audioContext.createOscillator();
     this.lfoOsc.frequency.value = 5.0;
-    this.lfoOsc.start();
+    this.lfoOsc.start(audioContext.currentTime);
     this.buffers = [];
     this.reverseBuffers = [];
     this.curVoice = 0;
