@@ -227,10 +227,11 @@ block content
             }, schedulerInterval);
 
 
+            /*
             console.log('Timer!');
             setInterval(function () {
                 scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
-            }, 500);
+             }, 500); */
         }
 
         // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
@@ -940,19 +941,19 @@ block content
                     .ui-content#m0-dc
                         label.leftItem(for='m0-dc-size') Size
                         .rightItem
-                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true', data-highlight='true', data-mini='true')
                         label.leftItem(for='m0-dc-decay') Decay
                         .rightItem
-                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-highlight='true',data-mini='true')
                         label.leftItem(for='m0-dc-pitch') Pitch
                         .rightItem
-                            input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-highlight='true',data-mini='true')
                         label.leftItem(for='m0-dc-drums') # o'Drums
                         .rightItem
-                            input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-highlight='true',data-mini='true')
                         label.leftItem(for='m0-dc-dyn') Dynamics
                         .rightItem
-                            input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-mini='true')
+                            input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='b', data-theme='b', min='0', max='99', value='50', data-popup-enabled='true' data-highlight='true', data-mini='true')
                     .ui-content#m0-pp
                         label.leftItem(for='m0-pp-size') Size
                         .rightItem
@@ -993,7 +994,7 @@ block content
                             select#m1-select(name='m1-select', data-mini='true', data-theme='c', data-iconpos='left')
                                 option(value='0') Drum Corp
                                 option(value='1') Pitched Percussion
-                                option(value='2') Electonic
+                                option(value='2') Electronic
                     .ui-content#m1-dc
                         label.leftItem(for='m1-dc-size') Size
                         .rightItem

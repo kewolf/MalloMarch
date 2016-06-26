@@ -71,8 +71,8 @@ var Pitched = function () {
     this.noteSequences = [];
     this.noteSequences[0] = [23, 26, 25, 28, 30, 31, 26];
     this.noteSequences[1] = [23, 35, 11, 18, 19, 14, 26, 21];
-    this.noteSequences[2] = [17, 23, 15, 13, 11, 26];
-    this.noteSequences[3] = [0, 8, 12, 20, 24];
+    this.noteSequences[2] = [35, 33, 30, 35, 33, 26, 33, 31, 25];
+    this.noteSequences[3] = [11, 2, 7, 2, 1, 6];
     this.curNoteIndex = 0;
 
 
