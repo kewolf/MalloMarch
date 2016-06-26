@@ -38,11 +38,11 @@ function WebDrum(context) {
     this.tone.frequency.value = 440.0;
     this.tone.start(0);
 
-    this.tonePitchEnv = new WebAHDSR(this.context, this.tone.frequency);
-    this.tonePitchEnv.decayTime = 0.1;
-    this.tonePitchEnv.releaseTime = 0.1;
-    this.tonePitchEnv.holdValue = 220.0;
-    this.tonePitchEnv.sustainValue = 110.0;
+    //this.tonePitchEnv = new WebAHDSR(this.context, this.tone.frequency);
+    // this.tonePitchEnv.decayTime = 0.1;
+    // this.tonePitchEnv.releaseTime = 0.1;
+    // this.tonePitchEnv.holdValue = 220.0;
+    // this.tonePitchEnv.sustainValue = 110.0;
 
     this.toneFilter = this.context.createBiquadFilter();
     this.toneFilter.type = 'lowpass';
@@ -94,17 +94,21 @@ function WebDrum(context) {
     this.noiseAmpEnv.holdValue = 0.5;
     this.noiseAmpEnv.sustainValue = 0.0;
 
+    this.noiseLevel = this.context.createGain();
+    this.noiseLevel.gain.value = 0.1;
+
     this.noise.node.connect(this.noiseFilter);
     this.noiseFilter.connect(this.noiseAmp);
 
     this.mix = this.context.createGain();
-    this.mix.gain.value = 0.5;
+    this.mix.gain.value = 0.50;
 
     this.toneAmp.connect(this.mix);
-    this.noiseAmp.connect(this.mix);
+    this.noiseAmp.connect(this.noiseLevel);
+    this.noiseLevel.connect(this.mix);
 
     this.trigger = function () {
-        _self.tonePitchEnv.on();
+        // _self.tonePitchEnv.on();
         _self.toneFilterEnv.on();
         _self.toneAmpEnv.on();
         _self.noiseFilterEnv.on();
@@ -112,7 +116,7 @@ function WebDrum(context) {
     }
 
     this.stop = function () {
-        _self.tonePitchEnv.off();
+        //_self.tonePitchEnv.off();
         _self.toneFilterEnv.off();
         _self.toneAmpEnv.off();
         _self.noiseFilterEnv.off();

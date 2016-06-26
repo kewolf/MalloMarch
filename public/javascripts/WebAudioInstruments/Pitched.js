@@ -15,13 +15,17 @@ var PitchedVoice = function () {
     this.dryAmp = audioContext.createGain();
     this.dryAmp.gain.value = 0.0;
 
+    this.reverseAmp = audioContext.createGain();
+    this.reverseAmp.gain.value = 0.0
+
     this.play = function (time, pitched, player, buffer, reverseBuffer) {
         this.source = audioContext.createBufferSource();
         this.source.buffer = buffer;
         this.source.connect(this.adsrAmp);
         this.reverseSource = audioContext.createBufferSource();
         this.reverseSource.buffer = reverseBuffer;
-        this.reverseSource.connect(this.adsrAmp);
+        this.reverseSource.connect(this.reverseAmp);
+        this.reverseAmp.connect(this.adsrAmp);
         this.adsrAmp.connect(this.routeToLfoAmp);
         this.routeToLfoAmp.connect(this.lfoAmp);
         this.lfoAmp.connect(player.out);
@@ -30,6 +34,7 @@ var PitchedVoice = function () {
         pitched.lfoOsc.connect(this.lfoAmp.gain);
 
         // apply parameters
+        this.reverseAmp.gain.value = player.trippiness / 100.0;
         this.dryAmp.gain.value = 1.0 - player.vibrato / 100.0;
         this.lfoAmp.gain.value = player.vibrato / 100.0;
 
@@ -82,7 +87,6 @@ var Pitched = function () {
     this.play = function (time, player) {
 
         this.curSequence = Math.floor(player.range / 25);
-        console.log("curSequence: " + this.curSequence);
         this.curNoteIndex = (this.curNoteIndex + 1) % this.noteSequences[this.curSequence].length;
 
         this.voices[this.curVoice].play(time,

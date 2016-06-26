@@ -55,7 +55,9 @@ Player.prototype.setReverbBuffer = function (buffer) {
 Player.prototype.schedule = function (time) {
 
     this.reverbGain.gain.value = this.size / 100.0;
-    this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
+    // this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
+    this.dryGain.gain.value = 0;
+    console.log('this.reverbGain.gain.value: ' + this.reverbGain.gain.value);
 
     switch (this.activeInstrument) {
         case DRUM_CORP:

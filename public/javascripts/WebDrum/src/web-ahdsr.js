@@ -45,9 +45,9 @@ function WebAHDSR(context, param) {
     this.finalValue = 0.0;
 
     // Curves may be 'linear' or 'exponential':
-    this.attackCurve = 'linear';
-    this.decayCurve = 'linear';
-    this.releaseCurve = 'linear';
+    this.attackCurve = 'exponential';
+    this.decayCurve = 'exponential';
+    this.releaseCurve = 'exponential';
 
     this.on = function () {
         // Cancel scheduled values:
