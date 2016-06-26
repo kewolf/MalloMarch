@@ -22,18 +22,18 @@ var Drum = function(buffer)
         // apply parameters
         var randNum = Math.random();
         //this.source.detune.value = (player.drumPitch - 50) / 100.0 * 2000;
+        this.source.playbackRate.value = 1 + (player.drumPitch / 100.00 - 1 / 2) / 1.5;
 
         var decayBase = 100.0;
         var decayScaling = 3.0;
-        var minDecay = 0.01;
+        var minDecay = 0.1;
         this.env.decayTime = minDecay + Math.pow(decayBase, player.decay / 100.0 - 1.0) * decayScaling;
 
         var randVolRatio = 0.20;
         this.dynamicsAmp.gain.value = randVolRatio * randNum + (1 - randVolRatio);
-        this.nDrummersAmp.gain.value = 1 - (drum_corp.nDrummers - 1) / 40;
+        this.nDrummersAmp.gain.value = 1 - (drum_corp.nDrummers - 1) / 20;
 
         this.env.on();
-        console.log("time: " + time);
         this.source.start(time);
     }
 };

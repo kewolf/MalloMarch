@@ -31,8 +31,8 @@ void ofApp::setup(){
     ofAddListener(receiverEvent, this, &ofApp::sendOsc);
     // ofAddListener(leapHeightEvent, this, &ofApp::set_height);
     
-    tom_sound1.load(ofToDataPath("conga.wav"));
-    tom_sound2.load(ofToDataPath("conga.wav"));
+//    tom_sound1.load(ofToDataPath("conga.wav"));
+//    tom_sound2.load(ofToDataPath("conga.wav"));
     
     period = 60000.f/tempo;
     waiting_period = period/8.f;
