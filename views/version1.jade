@@ -40,7 +40,7 @@ block content
         const DAYS_TO_KEEP_COOKIE = 1;
 
 
-        var customIPflag = 1;
+        var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
         var customServerURL = '192.168.1.9:3000';
         //var customServerURL = '10.227.28.178:3000';
@@ -858,7 +858,7 @@ block content
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                        | The composers of the performance you are about to listen to are interested in gathering the data from your interactions with this interface to be analyzed for research purposes.
+                        | The composers of this piece are interested in gathering the data from your interactions with this interface to be analyzed for research purposes.
             .ui-block-c(style='width:10%')
 
             a.consentButton.ui-btn.ui-btn-inline(id='1') Yes - You Can Use My Data
@@ -871,8 +871,8 @@ block content
                 div(style='margin: 10px 0 0 0;')
                     p
                         | To make sure that you can hear the sound for this piece, please put in your headphones now and click the button below.
-                        | You should hear a short tone. If you do not hear the tone, your device or browser may not be compatible to play the audio for this piece.
-                        | Ask around to see if you can share with another audience member. There are headphone jack splitters available upone request.
+                        | After each click, you should hear a short tone. If you do not hear the tone, your device or browser may not be compatible to play the audio for this piece.
+                        | Ask around to see if you can share with another audience member. There are headphone jack splitters available upon request.
 
                     button#soundCheck.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button') Enable Audio and Check Sound
 
