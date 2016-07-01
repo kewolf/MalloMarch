@@ -1,42 +1,90 @@
 {
   "i0": {
     "activeInstrument": 0,
-    "size": 50,
-    "decay": 0,
-    "nDrummers": 2,
-    "drumPitch": 50,
-    "dynamics": 0
+    "size": "10",
+    "decay": "50",
+    "nDrummers": "1",
+    "drumPitch": "1",
+    "dynamics": "1"
   },
   "i1": {
     "activeInstrument": 1,
-    "size": 50,
-    "decay": 0,
-    "range": 0,
-    "vibrato": 0,
-    "trippiness": 0
+    "size": "50",
+    "decay": "80",
+    "range": "0",
+    "vibrato": "0",
+    "trippiness": "0"
   },
   "i2": {
     "activeInstrument": 2,
-    "size": 50,
-    "decay": 0,
-    "grunge": 0,
-    "electronicPitch": 0,
-    "fatness": 0
+    "size": "98",
+    "decay": "14",
+    "grunge": "92",
+    "electronicPitch": "80",
+    "fatness": "98"
   },
   "i3": {
     "activeInstrument": 2,
-    "size": 50,
-    "decay": 0,
-    "grunge": 0,
-    "electronicPitch": 0,
-    "fatness": 0
+    "size": "50",
+    "decay": "55",
+    "grunge": "25",
+    "electronicPitch": "74",
+    "fatness": "98"
   },
   "i4": {
+    "activeInstrument": 1,
+    "size": "49",
+    "decay": "69",
+    "range": "28",
+    "vibrato": "66",
+    "trippiness": "72"
+  },
+  "i5": {
+    "activeInstrument": 0,
+    "size": "31",
+    "decay": "70",
+    "nDrummers": "2",
+    "drumPitch": "50",
+    "dynamics": "0"
+  },
+  "i6": {
     "activeInstrument": 2,
-    "size": 50,
-    "decay": 0,
-    "grunge": 0,
-    "electronicPitch": 0,
-    "fatness": 0
+    "size": "98",
+    "decay": "14",
+    "grunge": "92",
+    "electronicPitch": "80",
+    "fatness": "98"
+  },
+  "i7": {
+    "activeInstrument": 0,
+    "size": "98",
+    "decay": "2",
+    "nDrummers": "66",
+    "drumPitch": "27",
+    "dynamics": "98"
+  },
+  "i8": {
+    "activeInstrument": 1,
+    "size": "96",
+    "decay": "34",
+    "range": "43",
+    "vibrato": "5",
+    "trippiness": "2"
+  },
+  "i9": {
+    "activeInstrument": 1,
+    "size": "96",
+    "decay": "67",
+    "range": "75",
+    "vibrato": "41",
+    "trippiness": "80"
+  },
+  "i10": {
+    "activeInstrument": 1,
+    "size": "96",
+    "decay": "35",
+    "range": "67",
+    "vibrato": "37",
+    "trippiness": "15"
   }
 }

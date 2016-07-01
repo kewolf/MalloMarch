@@ -13,12 +13,15 @@ var users = require('./routes/users');
 var JL = require('jsnlog').JL;
 var winston = require('winston');
 
+var date = Date.now();
+var logFileName = 'logs/ICAD_' + date + '.log';
+
 var clientLogger = new winston.Logger({
     level: 'info',
     transports: [
         new (winston.transports.File)({
             name: 'somefile.log',
-            filename: 'logs/ICADperformanceTest.log',
+            filename: logFileName,
             maxFiles: 100,
             maxsize: 1000000,
             colorize: true

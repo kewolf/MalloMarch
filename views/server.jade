@@ -26,6 +26,7 @@ html
             var serverURL = 'http://localhost:3000';
             var isConsentFormOn;
             var isLoggerOn;
+            var isMetroOn = 0;
 
             //socket to send/receive stuff from
             var socket = io(serverURL);
@@ -35,9 +36,9 @@ html
                 isConsentFormOn = data.isConsentFormOn;
                 isLoggerOn = data.isLoggerOn;
 
-
                 $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');
                 $('#flipLogger').val(isLoggerOn).flipswitch('refresh');
+                $('#flipMetro').val(isMetroOn).flipswitch('refresh');
 
                 console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn);
             });
@@ -59,7 +60,33 @@ html
                 });
             });
 
+            function savePerformerIPs() {
+                console.log("Save IPs");
+                var ips = {};
+                var m1ip = document.getElementById("ip1").value;
+                var m2ip = document.getElementById("ip2").value;
+                var m3ip = document.getElementById("ip3").value;
 
+                console.log("M1: " + m1ip);
+                ips[0] = m1ip;
+                ips[1] = m2ip;
+                ips[2] = m3ip;
+                socket.emit('saveIPs', {
+                    from: "server",
+                    performerIPs: ips
+                });
+            }
+
+            $(function () {
+                $('#flipMetro').click(function () {
+                    // if it is on - send a message to turn it off
+                    if (isMetroOn) {
+                        socket.emit('flipMetro', {isOn: 1});
+                    } else {
+                        socket.emit('flipMetro', {isOn: 0});
+                    }
+                });
+            });
         div(data-role='page')
             h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
             .ui-body.ui-body-a.ui-corner-all
@@ -76,6 +103,12 @@ html
                             select#flipLogger(name='flipLogger', data-role='flipswitch', data-theme='b', data-track-theme='b')
                                 option(value='0') Off
                                 option(value='1') On
+                    .ui-body.ui-body-a.ui-corner-all.center
+                        .ui-block-a(style='width:50%')
+                            label(for='metro') Metronome:
+                            select#metro(name='flipMetro', data-role='flipswitch', data-theme='c', data-track-theme='c')
+                                option(value='0') Off
+                                option(value='1') On
                     fieldset(data-role='controlgroup', data-theme='d' )
                         h2.center Interface Modes
                         input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
@@ -87,8 +120,20 @@ html
                         input#radio-choice-4(type='radio', name='radio-choice-1', value='3')
                         label(for='radio-choice-4') Survey
                 .ui-field-contain
+                    label(for='ip1') MalLo 1 Performer:
+                    input#ip1(type='text', name='text-1', data-theme='b', value='::ffff:192.168.1.')
+                .ui-field-contain
+                    label(for='ip2') MalLo 2 Performer
+                    input#ip2(type='text', name='text-2', data-theme='c', value='::ffff:192.168.1.')
+                .ui-field-contain
+                    label(for='ip3') MalLo 3 Performer
+                    input#ip3(type='text', name='text-3', data-theme='d', value='::ffff:192.168.1.')
+                .ui-field-contain
+                    label(for='saveIPs')
+                    button#saveIPs.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveIPs', type='submit', onclick="savePerformerIPs()", ) Save Performer IPs
+                .ui-field-contain
                     label(for='saveEmail')
                     button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmails()", ) Save Emails
 
-                .ui-block-c(style='width:10%')
+            .ui-block-c(style='width:10%')
 

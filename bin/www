@@ -43,7 +43,6 @@ var udpPort = new osc.UDPPort({
     localPort: 6449
 });
 
-
 // Listen for incoming OSC Messages
 udpPort.on("bundle", function (oscBundle, timeTag, info) {
 
@@ -63,7 +62,6 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
         var velocity = oscBundle.packets[0].args[1];
         sendPrediction(path, time.toNumber(), velocity);
         console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
-
     }
 });
 
@@ -82,10 +80,14 @@ var emails = {};
 var numEmails = 0;
 var numEmailsBeforeSaving = 5;
 
+var performerIPs = {};
+var performerIDs = {};
+
 function saveEmails() {
     var str = JSON.stringify(emails);
     var obj = JSON.parse(str);
-    var file = 'savedJSON/emails.json';
+    var date = (new Date).getTime()
+    var file = 'logs/emailsICAD_' + date + '.json';
     jsonfile.spaces = 4;
     jsonfile.writeFile(file, obj, function (err) {
         console.error(err)
@@ -106,13 +108,13 @@ io.on('connection', function (socket) {
         isLoggerOn: isLoggerOn,
         isConsentFormOn: isConsentFormOn
     });
+
     socket.on('saveJSON', function (newSocket) {
         var id = socket.request.connection.remoteAddress;
         //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
         var date = newSocket.dateTime;
         var data = JSON.parse(newSocket.str);
         data["ip"] = id;
-
 
         if (newSocket.type == "email") {
             emails["email" + numEmails] = data;
@@ -131,7 +133,6 @@ io.on('connection', function (socket) {
                 console.error(err)
             })
         }
-
     });
     socket.on('time_req', function (newSocket) {
         socket.emit('time_res', {
@@ -164,6 +165,27 @@ io.on('connection', function (socket) {
         saveEmails();
     });
 
+    socket.on('saveIPs', function (newSocket) {
+        console.log("Server Saved IPs");
+        performerIPs = newSocket.performerIPs;
+    });
+    socket.on('checkPerformers', function (newSocket) {
+        console.log("CHECK PERFORMERS");
+        var ip = socket.request.connection.remoteAddress;
+        for (pip in performerIPs) {
+            console.log("PIP: " + pip);
+            console.log("performerIPs[pip]: " + performerIPs[pip]);
+            console.log("IP: " + ip);
+            if (ip === performerIPs[pip]) {
+                console.log("IT IS A PERFORMER!");
+                //performerIDs.push(newSocket.id);
+                //TODO: Make sure this only sends to the socket that is a performer.
+                socket.emit('setPerformer', {performer: true});
+                return;
+            }
+        }
+    });
+
 });
 
 function changeInterface(newMode) {
@@ -171,6 +193,7 @@ function changeInterface(newMode) {
         newMode: newMode
     });
 }
+
 function flipLogger(newLogger) {
     io.emit('flipLogger', {
         loggerOn: newLogger
