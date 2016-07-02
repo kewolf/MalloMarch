@@ -86,7 +86,7 @@ var Pitched = function () {
 
     this.play = function (time, player) {
 
-        this.curSequence = Math.floor(player.range / 25);
+        this.curSequence = player.range - 1;
         this.curNoteIndex = (this.curNoteIndex + 1) % this.noteSequences[this.curSequence].length;
 
         this.voices[this.curVoice].play(time,

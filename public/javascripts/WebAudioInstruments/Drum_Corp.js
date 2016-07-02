@@ -50,14 +50,14 @@ Drum_Corp.prototype.addDrum = function (buffer) {
 Drum_Corp.prototype.play = function (time, player)
 {
     if(player.dynamics > 1) {
-        var range = Math.ceil(player.dynamics / 10.0);
+        var range = player.dynamics;
         var high;
         var low;
         if (player.nDrummers + range / 2.0 > 10.0) {
             high = 10;
-            low = 10 - (range - 1);
+            low = 10 - (range / 2.0 - 1);
         } else if (player.nDrummers - range / 2.0 < 0) {
-            high = 1 + (range - 1);
+            high = 1 + (range / 2.0 - 1);
             low = 0;
         } else {
             high = Math.floor(player.nDrummers + range / 2.0);
@@ -65,7 +65,7 @@ Drum_Corp.prototype.play = function (time, player)
         }
         this.nDrummers = low + Math.floor(Math.random() * (high - low));
     } else {
-    this.nDrummers = Math.ceil(player.nDrummers / 10.0);
+        this.nDrummers = player.nDrummers;
     }
     for (var i = 0; i < Math.min(this.nDrummers, this.drums.length); i++)
     {

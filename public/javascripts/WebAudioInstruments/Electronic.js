@@ -79,7 +79,7 @@ var Electronic = function (player) {
         this.curNoteIndex = (this.curNoteIndex + 1) % this.sequences[this.curSequence].length;
 
         this.modAmp.gain.value = 500 + player.grunge * 20;
-        var newModFrequency = this.drumFrequencies[Math.floor(player.fatness / 10.0)] * this.overtones[this.sequences[this.curSequence][this.curNoteIndex]];
+        var newModFrequency = this.drumFrequencies[player.fatness - 1] * this.overtones[this.sequences[this.curSequence][this.curNoteIndex]];
         if (this.glideCounter % 3 == 0)
             this.mod.frequency.value = newModFrequency;
         else
