@@ -248,7 +248,7 @@ block content
         // initalizes the time synchronizer and scheduler
         function initSyncAndScheduler() {
             syncClient = new SyncClient();
-            scheduler = new Scheduler(players, audioContext);
+            scheduler = new Scheduler(players, audioContext, logger);
 
             var timeSyncInterval = 500;
             // starts time sync

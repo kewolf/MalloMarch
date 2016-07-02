@@ -51,8 +51,9 @@ var SyncClient = function () {
     };
 };
 
-var Scheduler = function (players, audioContext) {
+var Scheduler = function (players, audioContext, logger) {
     this.audioContext = audioContext;
+    this.logger = logger;
     this.preThreshold = 0.02; //schedule 20 ms in advance
     this.postThreshold = 0.03; //30 ms after
     this.waitPeriod = 0.2; //
@@ -77,16 +78,11 @@ var Scheduler = function (players, audioContext) {
                 // console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
                 // console.log("#########################################################");
 
-                if (diff < 0) {
-                    this.players[i].schedule(this.audioContext.currentTime);
-                    this.lastPlayTime[i] = this.audioContext.currentTime;
-                } else {
-                    players[i].schedule(this.curPredictions[i]);
-                    this.lastPlayTime[i] = this.curPredictions[i];
-                    // log this.lastPlayTime[i] + 
-                }
-                //console.log('scheduled audio');
+                var playTime = (diff < 0) ? this.audioContext.currentTime : this.curPredictions[i];
+                this.players[i].schedule(playTime);
+                this.lastPlayTime[i] = playTime;
                 this.curPredictions[i] = -1;
+                this.logger.info("put log here");
             }
         }
     };
