@@ -1,7 +1,7 @@
 var nSnares = 10;
-// var nMarimbaSamples = 61;
 var nVibraphoneSamples = 37;
 var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
+var clickPath = '/audio/stick.wav';
 
 function loadAudioFiles() {
     // get the snare samples from the server
@@ -36,31 +36,24 @@ function loadAudioFiles() {
                 players[j].setReverbBuffer(buffer);
             }
         }, function (e) {
-            consolde.log("Error setting up the reverb buffer: " + e.err);
+            console.log("Error setting up the reverb buffer: " + e.err);
         });
     };
     request.send();
 
-// get marimba samples
-//     var marimbaRequests = [];
-//     for (var k = 0; k < nMarimbaSamples; k++) {
-//         var marimbaUrl = '/audio/Marimba/PatchArena_marimba-0' + (36 + k) + '.wav';
-//         marimbaRequests[k] = new XMLHttpRequest();
-//         marimbaRequests[k].open('GET', marimbaUrl, true);
-//         marimbaRequests[k].responseType = 'arraybuffer';
-//         marimbaRequests[k].k = k;
-//         marimbaRequests[k].onload = function () {
-//             var index = this.k;
-//             audioContext.decodeAudioData(marimbaRequests[index].response, function (buffer) {
-//                 for (var j = 0; j < nPlayers; j++) {
-//                     players[j].pitched.addAudioSample(buffer, index);
-//                 }
-//             }, function (e) {
-//                 console.log("Error in decoding audio data: " + e.err);
-//             });
-//         };
-//         marimbaRequests[k].send();
-//     }
+    // get metronome click
+    var clickRequest = new XMLHttpRequest();
+    clickRequest.open('GET', reverbPath, true);
+    clickRequest.responseType = 'arraybuffer';
+    clickRequest.onload = function () {
+        audioContext.decodeAudioData(clickRequest.response, function (buffer) {
+            metronome.setClick(buffer);
+            console.log("Loaded metronome click");
+        }, function (e) {
+            console.log("Error setting up the reverb buffer: " + e.err);
+        });
+    };
+    clickRequest.send();
 
     var vibraphoneRequests = [];
     for (var k = 0; k < nVibraphoneSamples; k++) {

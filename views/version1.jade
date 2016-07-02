@@ -14,6 +14,7 @@ block content
     script(src='/javascripts/WebAudioInstruments/Pitched.js')
     script(src='/javascripts/WebAudioInstruments/Player.js')
     script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
+    script(src='/javascripts/WebAudioInstruments/Metronome.js')
     script(src='/javascripts/Logger/jsnlog.min.js')
     script(src='/javascripts/MalloTools/TimeTools.js')
     script(src='/javascripts/Cookies/cookies.js')
@@ -23,6 +24,8 @@ block content
         var audioContext;
         var nPlayers = 3;
         var players = [];
+        var metronome;
+        var tempo = 110;
         var instrumentPresets = [];
         var channelPresets = {};
         var nPresetChannels = 0;
@@ -43,7 +46,7 @@ block content
         const CONSENT_COOKIE_NAME = "consentFormAgreement";
         const DAYS_TO_KEEP_COOKIE = 1;
 
-        var customIPflag = 1;
+        var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
         //var customServerURL = '192.168.1.9:3000';
         var customServerURL = '10.102.39.183:3000';
@@ -141,7 +144,7 @@ block content
         socket.on('changeChannel', function (data) {
             console.log("Change Channel " + data.newChannel);
             $('#channels').sly('activate', data.newChannel);
-        })
+        });
 
         socket.on('time_res', function (data) {
             var receive_time = audioContext.currentTime;
@@ -153,6 +156,7 @@ block content
         //when we receive predictions, schedule them
         socket.on('note_prediction', function (data) {
             //todo: schedule the event
+            var offset = syncClient.getOffset();
             var offset = syncClient.getOffset();
             var instr;
             if (data.address == "/left") {
@@ -197,6 +201,9 @@ block content
                     for (var i = 0; i < nPlayers; i++) {
                         players.push(new Player());
                     }
+
+                    metronome = new Metronome(audioContext);
+                    metronome.setTempo = tempo;
 
                     // play empty buffer to unmute audio
                     playSound(audioContext.currentTime);
@@ -298,9 +305,11 @@ block content
         function switchMetronomeOn(isOn) {
             if (isOn) {
                 // make sound
+                metronome.start();
                 console.log("Metro make sound");
             } else {
                 console.log("Metro stop makein sound");
+                metronome.stop();
             }
         }
 
@@ -418,6 +427,7 @@ block content
                 if (!initMovements) {
                     console.log("Init Movemnts");
                     initSyncAndScheduler();
+                    metronome.setSyncClient(syncClient);
                     loadJSONandDOM();
                     initMovements = true;
                 }
