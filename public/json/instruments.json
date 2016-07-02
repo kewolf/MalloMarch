@@ -86,5 +86,13 @@
     "range": "67",
     "vibrato": "37",
     "trippiness": "15"
+  },
+  "i11": {
+    "activeInstrument": 0,
+    "size": "92",
+    "decay": "1",
+    "nDrummers": "4",
+    "drumPitch": "88",
+    "dynamics": "2"
   }
 }

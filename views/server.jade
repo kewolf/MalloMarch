@@ -15,6 +15,8 @@ html
         //link(rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css')
         script(src='/javascripts/jquery/jquery-1.12.4.js')
         script(src='/javascripts/jquery/jquery.mobile-1.4.5.min.js')
+        script(src='/javascripts/Sly/sly.min.js')
+        link(rel='stylesheet', href='/stylesheets/sly.css')
 
         script(src='/socket.io/socket.io.js')
         script(src='/javascripts/Logger/jsnlog.min.js')
@@ -27,6 +29,12 @@ html
             var isConsentFormOn;
             var isLoggerOn;
             var isMetroOn = 0;
+            var isSeqOn = 0;
+
+            var channelPresets = {};
+            var nPresetChannels = 0;
+
+            window.addEventListener('load', init, false);
 
             //socket to send/receive stuff from
             var socket = io(serverURL);
@@ -36,12 +44,107 @@ html
                 isConsentFormOn = data.isConsentFormOn;
                 isLoggerOn = data.isLoggerOn;
 
+                //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
                 $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');
                 $('#flipLogger').val(isLoggerOn).flipswitch('refresh');
                 $('#flipMetro').val(isMetroOn).flipswitch('refresh');
+                $('#flipSequencer').val(isSeqOn).flipswitch('refresh');
 
-                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn);
+                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn);
             });
+
+            function init() {
+                loadJSONandDOM();
+                console.log("Number prests: " + nPresetChannels);
+            }
+
+            function loadJSONandDOM() {
+                loadPresetsfile(function (response2) {
+                    // Parse JSON string into object
+                    var presetsJSON = JSON.parse(response2);
+                    ch_index = 0;
+                    for (var channel in presetsJSON) {
+                        ch_index++;
+                    }
+                    nPresetChannels = ch_index;
+                    loadDOMStuff();
+                });
+            }
+
+
+            function loadPresetsfile(callback) {
+                //console.log("load Presets File");
+                var request = new XMLHttpRequest();
+                request.open('GET', '/json/channels.json', true);
+                request.onreadystatechange = function () {
+                    if (request.readyState == 4 && request.status == "200") {
+                        // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+                        callback(request.responseText);
+                    }
+                };
+                request.send(null);
+            }
+
+
+            function loadDOMStuff() {
+                //setup channels slider
+                var $channels_frame = $('#channels');
+                var $channels_wrap = $channels_frame.parent();
+
+                var channels_options = {
+                    horizontal: 1,
+                    itemNav: 'forceCentered',
+                    smart: 1,
+                    activateMiddle: 1,
+                    activateOn: 'click',
+                    mouseDragging: 1,
+                    touchDragging: 1,
+                    releaseSwing: 1,
+                    startAt: 0,
+                    scrollBar: $channels_wrap.find('.scrollbar'),
+                    scrollBy: 1,
+                    speed: 200,
+                    elasticBounds: 1,
+                    easing: 'swing',
+                    clickBar: 1
+                };
+
+                //create our sly for the channels box slider
+                var sly_channels = new Sly('#channels', channels_options);
+
+                //Setup event listener for when a new item has been activated
+                //eventName: Event Name
+                //itemIndex: index of active item.
+
+                sly_channels.on('active', function (eventName, itemIndex) {
+                    socket.emit('changeChannel', {
+                        newChannel: itemIndex
+                    });
+                });
+
+                //DO WE NEED TO LOG THESE EVENTS? OR WILL CLIENT LOG THEM?
+                sly_channels.on('moveEnd', function (eventName) {
+                    //do we only want to force this for the channels mode?
+                    //if (currentMode == ModeEnum.CHANNELS) {
+                    var el = document.querySelector(".active").id;
+                    var ch_number = parseInt(el.slice(3));
+                    //if (loggerOn) {
+                    //    logger.info("{ \"channel\" : " + ch_number + "}");
+                    // }
+                    //}
+                });
+
+                sly_channels.init();
+
+                console.log("Num of presets: " + nPresetChannels);
+
+                for (var i = 0; i < nPresetChannels; i++) {
+                    $('[id="ch_slidee"]').append('<li id = ' + 'ch_' + i + '>' + i + '</div>');
+                }
+                $('#channels').sly('reload');
+                sly_channels.activate(0);
+            }
+
 
             function saveEmails() {
                 console.log("Send SaveEmail Message");
@@ -78,15 +181,37 @@ html
             }
 
             $(function () {
-                $('#flipMetro').click(function () {
+                $('#flipMetro').change(function () {
+                    console.log("metro clicked");
                     // if it is on - send a message to turn it off
                     if (isMetroOn) {
-                        socket.emit('flipMetro', {isOn: 1});
-                    } else {
                         socket.emit('flipMetro', {isOn: 0});
+                        isMetroOn = 0;
+                    } else {
+                        socket.emit('flipMetro', {isOn: 1});
+                        isMetroOn = 1;
                     }
                 });
             });
+
+            $(function () {
+                $('#flipSequencer').change(function () {
+                    console.log("Seq clicked");
+                    // if it is on - send a message to turn it off
+                    if (isSeqOn) {
+                        socket.emit('flipSeq', {isOn: 0});
+                        isSeqOn = 0;
+                    } else {
+                        socket.emit('flipSeq', {isOn: 1});
+                        isSeqOn = 1;
+                    }
+                });
+            });
+
+            $(window).resize(function (e) {
+                $('#channels').sly('reload');
+            });
+
         div(data-role='page')
             h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
             .ui-body.ui-body-a.ui-corner-all
@@ -105,8 +230,13 @@ html
                                 option(value='1') On
                     .ui-body.ui-body-a.ui-corner-all.center
                         .ui-block-a(style='width:50%')
-                            label(for='metro') Metronome:
-                            select#metro(name='flipMetro', data-role='flipswitch', data-theme='c', data-track-theme='c')
+                            label(for='flipMetro') Metronome:
+                            select#flipMetro(name='flipMetro', data-role='flipswitch', data-theme='c', data-track-theme='c')
+                                option(value='0') Off
+                                option(value='1') On
+                        .ui-block-b(style='width:50%')
+                            label(for='flipSequencer') Sequencer:
+                            select#flipSequencer(name='flipSequencer', data-role='flipswitch', data-theme='b', data-track-theme='b')
                                 option(value='0') Off
                                 option(value='1') On
                     fieldset(data-role='controlgroup', data-theme='d' )
@@ -116,9 +246,11 @@ html
                         input#radio-choice-2(type='radio', name='radio-choice-1', value='1')
                         label(for='radio-choice-2') Movement 1
                         input#radio-choice-3(type='radio', name='radio-choice-1', value='2')
-                        label(for='radio-choice-3') Movement 2
+                        label(for='radio-choice-3') Intermission
                         input#radio-choice-4(type='radio', name='radio-choice-1', value='3')
-                        label(for='radio-choice-4') Survey
+                        label(for='radio-choice-4') Movement 2
+                        input#radio-choice-5(type='radio', name='radio-choice-1', value='4')
+                        label(for='radio-choice-5') Survey
                 .ui-field-contain
                     label(for='ip1') MalLo 1 Performer:
                     input#ip1(type='text', name='text-1', data-theme='b', value='::ffff:192.168.1.')
@@ -134,6 +266,11 @@ html
                 .ui-field-contain
                     label(for='saveEmail')
                     button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmails()", ) Save Emails
-
+                .form.wrap
+                    label(for='channels') Audience Channel:
+                    #ch_scrollbar.scrollbar
+                        #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                    #channels.frame(style='overflow; hidden;')
+                        ul#ch_slidee.slide
             .ui-block-c(style='width:10%')
 

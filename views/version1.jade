@@ -27,22 +27,26 @@ block content
         var channelPresets = {};
         var nPresetChannels = 0;
         var nPresetInstruments = 0;
+        var nPresetInstruments = 0;
 
         var ModeEnum = Object.freeze({"CHANNELS": 0, "PLAYERS": 1, "PARAMETERS": 2});
         var currentMode = ModeEnum.CHANNELS;
-        var isJSONloaded = false;
+        var initMovements = false;
         var isAudioSetup = false;
 
         var scheduler;
         var syncClient;
 
+        var amIperformer = 0;
+
 
         const CONSENT_COOKIE_NAME = "consentFormAgreement";
         const DAYS_TO_KEEP_COOKIE = 1;
 
-        var customIPflag = 0;
+        var customIPflag = 1;
         var serverURL = 'http://localhost:3000';
-        var customServerURL = '192.168.1.9:3000';
+        //var customServerURL = '192.168.1.9:3000';
+        var customServerURL = '10.102.39.183:3000';
         //var customServerURL = '10.227.28.178:3000';
         //var customServerURL = '10.8.65.195:3000';
 
@@ -72,14 +76,15 @@ block content
 
         socket.on('welcome', function (data) {
 
-            //ALWAYS START ON THE WELCOME PAGE! - SO IT CAN INITIATE AUDIO
-            currentInterface = InterfaceEnum.INFO;
+            //read in the current interface from the server
+            currentInterface = data.mode;
 
             displayConsent = parseInt(data.isConsentFormOn);
             loggerOn = parseInt(data.isLoggerOn);
+            isSeqOn = data.isSequencerOn;
 
             console.log("SERVER SENT - Welcome Mode: " + parseInt(data.mode) + " host " + location.host);
-            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn);
+            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn + " Seq On? " + isSeqOn);
 
             // check if they have already consented
             var alreadyConsented = getCookie(CONSENT_COOKIE_NAME);
@@ -102,22 +107,41 @@ block content
             }
 
             socket.emit('checkPerformers', {});
-
         });
 
         // receives this message if we are a performer!
 
         socket.on('setPerformer', function (data) {
             console.log("SET PERFORMER: " + data.performer);
+            amIperformer = data.performer;
         });
 
         //receive messages from server (masterServerControl) on when to change the interface.
         socket.on('changeInterface', function (data) {
-            console.log("RECEIVED CHANGED INTERFACE");
             console.log("Interface Changed: " + data.newMode);
             changeInterface(data.newMode);
         });
 
+        //receive messages from server (masterServerControl) on when to turn on/off the sequencer
+        socket.on('flipSeq', function (data) {
+            switchSequencerOn(data.isOn);
+        });
+
+        //receive messages from server (masterServerControl) on when to turn on/off the metronome
+        socket.on('flipMetro', function (data) {
+            if (amIperformer) {
+                console.log("I am perfromer, Flip Seq: " + data.isOn);
+                switchMetronomeOn(data.isOn);
+            } else {
+                console.log("I am not performer don't do anything with metronome");
+            }
+        });
+
+        //receive messages from server (masterServerControl) on when to change the channel
+        socket.on('changeChannel', function (data) {
+            console.log("Change Channel " + data.newChannel);
+            $('#channels').sly('activate', data.newChannel);
+        })
 
         socket.on('time_res', function (data) {
             var receive_time = audioContext.currentTime;
@@ -158,7 +182,7 @@ block content
         // This will initialize our audio context so that it works on ios.
         $(function () {
             $("#soundCheck").on("click", function () {
-
+                $('#audioSetup').hide();
                 if (!isAudioSetup) {
                     try {
                         // Fix up for prefixing
@@ -234,7 +258,11 @@ block content
                 scheduler.checkSchedule();
             }, schedulerInterval);
 
-            switchSequencerOn(true);
+
+            if (isSeqOn) {
+                console.log("Switch on sequencer!");
+                switchSequencerOn(true);
+            }
 
         }
 
@@ -253,9 +281,9 @@ block content
                     } else if (tutorialSequencer == 2) {
                         scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
                     } else if (tutorialSequencer == 3) {
-                        scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
-                        scheduler.setPrediction(audioContext.currentTime + 0.01, 1);
-                        scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
+                        //scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
+                        //scheduler.setPrediction(audioContext.currentTime + 0.01, 1);
+                        //scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
                     }
                     tutorialSequencer++;
                     if (tutorialSequencer == 4) {
@@ -265,7 +293,15 @@ block content
             } else {
                 clearInterval(sequencerID);
             }
-
+        }
+        var metronomeID = 0;
+        function switchMetronomeOn(isOn) {
+            if (isOn) {
+                // make sound
+                console.log("Metro make sound");
+            } else {
+                console.log("Metro stop makein sound");
+            }
         }
 
         // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
@@ -337,6 +373,7 @@ block content
         // Load the initial display - hide all visuals
         $(document).ready(function () {
             // hide all visuals
+            $('#header').hide();
             $('#consent').hide();
             $('#welcome').hide();
             $('#movement1').hide();
@@ -347,7 +384,9 @@ block content
         });
 
         function changeInterface(newMode) {
+            prevInterface = currentInterface;
             currentInterface = newMode;
+            console.log("Old inter: " + prevInterface + " new: " + currentInterface);
             loadInterface();
         }
 
@@ -355,77 +394,108 @@ block content
         function loadInterface() {
             console.log("Current Mode " + currentInterface);
             $('#credits').hide();
+            $('#header').hide();
 
-            switch (currentInterface) {
-                case InterfaceEnum.INFO:
-                    $('#welcome').show();
-                    $('#footer').show();
+            if (currentInterface == InterfaceEnum.SURVEY) {
+                $('#survey').show();
 
-                    $('#consent').hide();
-                    $('#movement1').hide();
-                    $('#movement2').hide();
-                    $('#survey').hide();
-                    break;
+                $('#consent').hide();
+                $('#welcome').hide();
+                $('#movement1').hide();
+                $('#movement2').hide();
+            } else if (!isAudioSetup || currentInterface == InterfaceEnum.INFO) {
+                $('#welcome').show();
+                $('#footer').show();
+                $('#audioSetup').hide();
 
-                case InterfaceEnum.M1:
-                    $('#movement1').show();
+                $('#consent').hide();
+                $('#movement1').hide();
+                $('#movement2').hide();
+                $('#survey').hide();
+            } else {
+                //otherwise we are in a sound making interface!
 
+                if (!initMovements) {
+                    console.log("Init Movemnts");
                     initSyncAndScheduler();
+                    loadJSONandDOM();
+                    initMovements = true;
+                }
 
-                    if (!isJSONloaded) {
-                        loadJSONandDOM();
-                        isJSONloaded = true;
-                    }
+                switch (currentInterface) {
 
-                    $('#consent').hide();
-                    $('#welcome').hide();
-                    $('#movement2').hide();
-                    $('#survey').hide();
-                    break;
+                    case InterfaceEnum.M1:
+                        $('#movement1').show();
 
-                case InterfaceEnum.M2:
+                        $('#consent').hide();
+                        $('#welcome').hide();
+                        $('#movement2').hide();
+                        $('#survey').hide();
+                        break;
+                    case InterfaceEnum.TUTORIAL:
+                        //disaply Tutorial header
+                        $('#header').show();
+                        //bigin popups
 
-                    $('#movement2').show();
-                    $('#tabButton1').trigger('click');
-                    $('#channels').sly('reload');
+                        $('#movement2').show();
+                        $('#tabButton1').trigger('click');
+                        $('#channels').sly('reload');
 
-                    $('#consent').hide();
-                    $('#welcome').hide();
-                    $('#movement1').hide();
-                    $('#survey').hide();
-                    break;
+                        $('#consent').hide();
+                        $('#welcome').hide();
+                        $('#movement1').hide();
+                        $('#survey').hide();
+                        break;
 
-                case InterfaceEnum.SURVEY:
-                    $('#movenment2').hide();
-                    $('#survey').show();
+                    case InterfaceEnum.M2:
 
-                    $('#consent').hide();
-                    $('#welcome').hide();
-                    $('#movement1').hide();
-                    $('#movement2').hide();
-                    break
+                        $('#movement2').show();
+                        $('#tabButton1').trigger('click');
+                        $('#channels').sly('reload');
 
-                default:
-                    break;
+                        $('#consent').hide();
+                        $('#welcome').hide();
+                        $('#movement1').hide();
+                        $('#survey').hide();
+                        break;
+
+                    default:
+                        break;
+                }
             }
         }
 
         // function for the "Next Page" button during testing purposes to force the interface
         // to go to the next page.
         function nextPage() {
-            switch (currentInterface) {
-                case InterfaceEnum.INFO:
-                    changeInterface(InterfaceEnum.M1);
-                    break;
-                case InterfaceEnum.M1:
-                    changeInterface(InterfaceEnum.M2);
-                    break;
-                case InterfaceEnum.M2:
-                    changeInterface(InterfaceEnum.SURVEY);
-                    $('#footer').hide();
-                    break;
-                default:
-                    break;
+            //if audio is setup go to the next page, otherwise make sure users click the setup button
+            if (isAudioSetup) {
+                switch (currentInterface) {
+                    case InterfaceEnum.INFO:
+                        $('#audioSetup').hide();
+                        changeInterface(InterfaceEnum.M1);
+                        break;
+
+                        //uncomment if you want to use the button to navigate:
+                        /*
+                         case InterfaceEnum.M1:
+                         changeInterface(InterfaceEnum.TUTORIAL);
+                         break;
+                         case InterfaceEnum.TUTORIAL:
+                         changeInterface(InterfaceEnum.M2);
+                         break;
+                         case InterfaceEnum.M2:
+                         changeInterface(InterfaceEnum.SURVEY);
+                         $('#footer').hide();
+                         break;
+                         */
+                    default:
+                        $('#footer').hide();
+                        changeInterface(currentInterface);
+                        break;
+                }
+            } else {
+                $('#audioSetup').show();
             }
         }
 
@@ -467,14 +537,14 @@ block content
                     for (var i = 0; i < nPlayers; i++) {
                         //get the instrument index:
                         var instr = channelPresets[itemIndex][i];
-                        console.log("New Channel " + itemIndex + " Instrument Preset: " + instr);
+                        //console.log("New Channel " + itemIndex + " Instrument Preset: " + instr);
                         var params = instrumentPresets['i' + instr];
                         players[i].setParameters(params);
                         //update the channel sliders
                         $('#i' + i).sly('activate', instr);
                     }
                 }
-                console.log("Channel Active Item: " + itemIndex);
+                //console.log("Channel Active Item: " + itemIndex);
                 refreshSliders();
             });
 
@@ -522,13 +592,13 @@ block content
                     //if we are currently in mode 1 then update the players:
                     if (currentMode == ModeEnum.PLAYERS) {
                         var instr = itemIndex;
-                        console.log("Instrument Preset: " + instr);
+                        //console.log("Instrument Preset: " + instr);
                         var params = instrumentPresets['i' + instr];
                         players[playerNum].setParameters(params);
                         sliderChange(playerNum, params);
                         //if(loggerOn){ logger.info("Active:" + id); }
                     }
-                    console.log("Instr " + id + " Active Item: " + itemIndex);
+                    //console.log("Instr " + id + " Active Item: " + itemIndex);
                 });
 
                 sly.on('moveEnd', function (eventName) {
@@ -558,14 +628,14 @@ block content
             // Need to do this after creating the channel slys - otherwise activate won't
             // set them properly
             sly_channels.init();
-            sly_channels.activate(0);
-            sly_channels.reload();
 
 
             for (var i = 0; i < nPresetChannels; i++) {
                 $('[id="ch_slidee"]').append('<li id = ' + 'ch_' + i + '>' + i + '</div>');
             }
+
             $('#channels').sly('reload');
+            sly_channels.activate(0);
 
 
             $("#movement2").tabs({
@@ -645,25 +715,10 @@ block content
                     $('#' + malloId + '-el').show();
                 }
             });
-
-            //sly.rel.activeItem
-
-            //$("#channels").val('0').trigger('change');
-            //$('#channels').sly('reload');
-
-            //set initial select boxes for mode 2
-            //TODO: This should be set to the current channels instruments
-            //channelPresets[ch_index][instr_index]
-            //where ch_index = the value of the active channel slider
-            //console.log("Presets: " + channelPresets[1][0] + " " + channelPresets[1][1] + " " + channelPresets[1][2]);
-            //$("#m0-select").val(channelPresets[0][0]).trigger('change');
-            //$("#m1-select").val(channelPresets[0][1]).trigger('change');
-            //$("#m2-select").val(channelPresets[0][2]).trigger('change');
         }
 
         function sliderChange(playerNum, params) {
-            console.log("CHANGE: " + playerNum + " " + params);
-            //set active Instrument;
+            //set active Instrument - which will trigger changes to the params
             var activeInstrument = params["activeInstrument"];
             $('#m' + playerNum + '-select').val(activeInstrument).trigger('change');
         }
@@ -673,14 +728,14 @@ block content
             for (var i = 0; i < nPlayers; i++) {
                 params = players[i].getParameters();
 
-                console.log("REFRESH: " + i + " " + params);
+                //console.log("REFRESH: " + i + " " + params);
                 //set active Instrument;
                 var activeInstrument = params["activeInstrument"];
                 $('#m' + i + '-select').val(activeInstrument).trigger('change');
 
                 switch (activeInstrument) {
                     case DRUM_CORP:
-                        console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
+                        //console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
                         $('#m' + i + '-dc-size').val(params["size"]).trigger('change');
                         $('#m' + i + '-dc-decay').val(params["decay"]).trigger('change');
                         $('#m' + i + '-dc-pitch').val(params["drumPitch"]).trigger('change');
@@ -726,7 +781,6 @@ block content
         $(function () {
             $('#saveButton').click(function () {
                 //var str = JSON.stringify($('#m-form').serializeObject());
-                //console.log(str);
                 //console.log("Save");
                 var dateTime = Date.now();
                 var params = {};
@@ -762,7 +816,7 @@ block content
                 var id = event.target.id;
                 var playerNumber = parseInt(id.slice(1));
                 var value = $(this).text();
-                console.log("Slider Changes: " + event.target.id + " " + playerNumber + " " + value);
+                //console.log("Slider Changes: " + event.target.id + " " + playerNumber + " " + value);
                 var instrType = players[playerNumber].activeInstrument;
                 if (id.indexOf("decay") > -1) {
                     players[playerNumber].decay = value;
@@ -894,7 +948,12 @@ block content
             }
             return s;
         }
-
+    #header.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Intermission
+            p
+                | To prepare you for Movement 2 we will take a couple of minutes to let you get familiar with the interface.
+                | A drum sequencer will play the instruments, instead of the performers on stage.
     #consent.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
             h3(role='banner') Data Collection Consent Form
@@ -919,7 +978,9 @@ block content
                         | Ask around to see if you can share with another audience member. There are headphone jack splitters available upon request.
 
                     button#soundCheck.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button') Enable Audio and Check Sound
-
+                div#audioSetup(style='margin: 10px 0 0 0;',)
+                    p
+                        | You must click the sound check button to enable the audio for this piece.
             .ui-block-c(style='width:10%')
     #movement1.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
@@ -974,7 +1035,7 @@ block content
         #three.ui-content(data-role='main')
             form#m-form
                 #m0-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='b')
-                    h3 MalLo 1
+                    h3 Player 1
                     .ui-content
                         label.leftItem(for='m0-select') Type
                         .rightItem
@@ -983,9 +1044,12 @@ block content
                                 option(value='1') Pitched Percussion
                                 option(value='2') Electronic
                     .ui-content#m0-dc
+                        label.leftItem(for='m0-dc-vol') Volume
+                        .rightItem
+                            input#m0-dc-vol(type='range', name='m0-dc-vol', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-highlight='true', data-mini='true', data-show-value='false')
                         label.leftItem(for='m0-dc-size') Size
                         .rightItem
-                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-highlight='true', data-mini='true')
+                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-highlight='true', data-mini='true', data-show-value='false')
                         label.leftItem(for='m0-dc-decay') Decay
                         .rightItem
                             input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true' data-highlight='true',data-mini='true')
@@ -999,6 +1063,9 @@ block content
                         .rightItem
                             input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true' data-highlight='true', data-mini='true')
                     .ui-content#m0-pp
+                        label.leftItem(for='m0-pp-vol') Volume
+                        .rightItem
+                            input#m0-pp-vol(type='range', name='m0-pp-vol', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-pp-size') Size
                         .rightItem
                             input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1015,6 +1082,9 @@ block content
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                     .ui-content#m0-el
+                        label.leftItem(for='m0-el-vol') Volume
+                        .rightItem
+                            input.ui-hidden-accessible#m0-el-vol(type='range', name='m0-el-vol', data-track-theme='b', data-theme='b',min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m0-el-size') Size
                         .rightItem
                             input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b',min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1031,7 +1101,7 @@ block content
                         .rightItem
                             input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='b', data-theme='b',min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                 #m1-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='c')
-                    h3 MalLo 2
+                    h3 Player 2
                     .ui-content
                         label.leftItem(for='m1-select') Type
                         .rightItem
@@ -1040,6 +1110,9 @@ block content
                                 option(value='1') Pitched Percussion
                                 option(value='2') Electronic
                     .ui-content#m1-dc
+                        label.leftItem(for='m1-dc-vol') Volume
+                        .rightItem
+                            input#m1-dc-vol(type='range', name='m1-dc-vol', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-dc-size') Size
                         .rightItem
                             input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1056,6 +1129,9 @@ block content
                         .rightItem
                             input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                     .ui-content#m1-pp
+                        label.leftItem(for='m1-pp-vol') Volume
+                        .rightItem
+                            input.ui-hidden-accessible#m1-pp-vol(type='range', name='m1-pp-vol', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-pp-size') Size
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1072,6 +1148,9 @@ block content
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-trip(type='range', name='m1-pp-trip', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                     .ui-content#m1-el
+                        label.leftItem(for='m1-el-vol') Volume
+                        .rightItem
+                            input.ui-hidden-accessible#m1-el-vol(type='range', name='m1-el-vol', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m1-el-size') Size
                         .rightItem
                             input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1088,7 +1167,7 @@ block content
                         .rightItem
                             input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                 #m2-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='d')
-                    h3 MalLo 3
+                    h3 Player 3
                     .ui-content
                         label.leftItem(for='m2-select') Type
                         .rightItem
@@ -1097,6 +1176,9 @@ block content
                                 option(value='1') Pitched Percussion
                                 option(value='2') Electronic
                     .ui-content#m2-dc
+                        label.leftItem(for='m2-dc-vol') Volume
+                        .rightItem
+                            input#m2-dc-vol(type='range', name='m2-dc-vol', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-dc-size') Size
                         .rightItem
                             input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1113,6 +1195,9 @@ block content
                         .rightItem
                             input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', max='99', value='0', data-popup-enabled='true' data-mini='true')
                     .ui-content#m2-pp
+                        label.leftItem(for='m2-pp-vol') Volume
+                        .rightItem
+                            input.ui-hidden-accessible#m2-pp-vol(type='range', name='m2-pp-vol', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-pp-size') Size
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1129,6 +1214,9 @@ block content
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-trip(type='range', name='m2-pp-trip', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                     .ui-content#m2-el
+                        label.leftItem(for='m2-el-vol') Volume
+                        .rightItem
+                            input.ui-hidden-accessible#m2-el-vol(type='range', name='m2-el-vol', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
                         label.leftItem(for='m2-el-size') Size
                         .rightItem
                             input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true' data-mini='true')
@@ -1194,7 +1282,7 @@ block content
             .ui-block-b
             .ui-block-c()
                 .ui-field-contain
-                    button#nextPage.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', onclick="nextPage()") Next
+                    button#nextPage.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', onclick="nextPage()") Continue
 
 
 
