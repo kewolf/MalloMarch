@@ -9,6 +9,7 @@ var Player = function () {
     //common to all
     this.size = 50;
     this.decay = 0;
+    this.level = 1;
 
     //drummers
     this.nDrummers = 2;
@@ -26,18 +27,18 @@ var Player = function () {
     this.fatness = 0;
 
     //setup reverb
+    this.mainGain = audioContext.createGain();
+    this.mainGain.connect(audioContext.destination);
     this.reverbGain = audioContext.createGain();
-    this.reverbGain.connect(audioContext.destination);
+    this.reverbGain.connect(this.mainGain);
     this.reverb = audioContext.createConvolver();
+    this.reverb.connect(this.reverbGain);
     this.dryGain = audioContext.createGain();
-    this.dryGain.connect(audioContext.destination);
+    this.dryGain.connect(this.mainGain);
 
     //create output for instruments to connect to
     this.out = audioContext.createGain();
-    this.out.gain.value = 1;
     this.out.connect(this.reverb);
-    this.reverb.connect(this.reverbGain);
-    this.reverbGain.connect(audioContext.destination);
     this.out.connect(this.dryGain);
 
     //create instruments
@@ -56,6 +57,7 @@ Player.prototype.schedule = function (time) {
 
     this.reverbGain.gain.value = this.size / 100.0;
     this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
+    this.mainGain.gain.value = this.level;
     // this.dryGain.gain.value = 0;
     console.log('this.reverbGain.gain.value: ' + this.reverbGain.gain.value);
 
