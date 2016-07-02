@@ -51,9 +51,10 @@ var SyncClient = function () {
     };
 };
 
-var Scheduler = function (players, audioContext, logger) {
+var Scheduler = function (players, audioContext, logger, syncClient) {
     this.audioContext = audioContext;
     this.logger = logger;
+    this.syncClient = syncClient;
     this.preThreshold = 0.02; //schedule 20 ms in advance
     this.postThreshold = 0.03; //30 ms after
     this.waitPeriod = 0.2; //
@@ -82,7 +83,7 @@ var Scheduler = function (players, audioContext, logger) {
                 this.players[i].schedule(playTime);
                 this.lastPlayTime[i] = playTime;
                 this.curPredictions[i] = -1;
-                this.logger.info("put log here");
+                this.logger.info("put log here"); // i indicates the player, playTime + syncClient.getOffset() indicates when in global time
             }
         }
     };
