@@ -1,7 +1,7 @@
 var nSnares = 10;
 var nVibraphoneSamples = 37;
 var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
-var clickPath = '/audio/stick.wav';
+var clickPath = '/audio/stick.mp3';
 
 function loadAudioFiles() {
     // get the snare samples from the server
@@ -43,7 +43,7 @@ function loadAudioFiles() {
 
     // get metronome click
     var clickRequest = new XMLHttpRequest();
-    clickRequest.open('GET', reverbPath, true);
+    clickRequest.open('GET', clickPath, true);
     clickRequest.responseType = 'arraybuffer';
     clickRequest.onload = function () {
         audioContext.decodeAudioData(clickRequest.response, function (buffer) {

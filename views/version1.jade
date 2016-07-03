@@ -25,7 +25,7 @@ block content
         var nPlayers = 3;
         var players = [];
         var metronome;
-        var tempo = 110;
+        var tempo = 110.0;
         var instrumentPresets = [];
         var channelPresets = {};
         var nPresetChannels = 0;
@@ -204,12 +204,13 @@ block content
                     }
 
                     metronome = new Metronome(audioContext);
-                    metronome.setTempo = tempo;
+                    metronome.setTempo(tempo);
 
                     // play empty buffer to unmute audio
                     playSound(audioContext.currentTime);
 
                     loadAudioFiles();
+
                     isAudioSetup = true;
                 } else {
                     playSound(audioContext.currentTime);
@@ -249,8 +250,13 @@ block content
         // initalizes the time synchronizer and scheduler
         function initSyncAndScheduler() {
             syncClient = new SyncClient();
-            scheduler = new Scheduler(players, audioContext, logger, syncClient);
-
+            if (syncClient != undefined) {
+                console.log("syncClient is defined");
+                metronome.setSyncClient(syncClient);
+                scheduler = new Scheduler(players, audioContext, logger, syncClient);
+            } else {
+                console.log("syncClient is undefined");
+            }
             var timeSyncInterval = 500;
             // starts time sync
             setInterval(function () {
@@ -427,9 +433,9 @@ block content
                 //otherwise we are in a sound making interface!
 
                 if (!initMovements) {
-                    console.log("Init Movemnts");
+                    console.log("Init Movements");
                     initSyncAndScheduler();
-                    metronome.setSyncClient(syncClient);
+                    // metronome.setSyncClient(syncClient);
                     loadJSONandDOM();
                     initMovements = true;
                 }
