@@ -305,6 +305,7 @@ block content
         function switchMetronomeOn(isOn) {
             if (isOn) {
                 // make sound
+                metronome.stop();
                 metronome.start();
                 console.log("Metro make sound");
             } else {

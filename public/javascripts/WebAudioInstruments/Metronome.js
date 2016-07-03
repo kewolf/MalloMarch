@@ -17,7 +17,7 @@ Metronome = function (audioContext) {
 
     this.start = function () {
         this.tickPeriod = 60.0 / this.tempo;
-        this.check();
+        this.check(); 
         this.interval = setInterval(this.check(), this.intervalLength);
     };
 
@@ -25,6 +25,7 @@ Metronome = function (audioContext) {
         clearInterval(this.interval);
     };
 
+    //checks if it should schedule a click
     this.check = function () {
         var nextTickTime = (1 + Math.floor(this.syncClient.getTime() / this.tickPeriod)) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
