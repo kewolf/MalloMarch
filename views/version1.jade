@@ -231,11 +231,14 @@ block content
         //TODO: Have it play something pretty here :)
         function playSound(time) {
             console.log("Play Sound");
+            var beepGain = audioContext.createGain();
+            beepGain.gain.value = 0.5;
             var oscillator = audioContext.createOscillator();
-            oscillator.frequency.value = 200;
-            oscillator.connect(audioContext.destination);
+            oscillator.frequency.value = 800;
+            oscillator.connect(beepGain);
+            beepGain.connect(audioContext.destination);
             oscillator.start(time);
-            oscillator.stop(time + .5);    // you can set this to zero, but I left it here for testing.
+            oscillator.stop(time + .2);    // you can set this to zero, but I left it here for testing.
         }
 
 
