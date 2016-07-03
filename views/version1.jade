@@ -232,13 +232,17 @@ block content
         function playSound(time) {
             console.log("Play Sound");
             var beepGain = audioContext.createGain();
-            beepGain.gain.value = 0.4;
+            var beepLevel = audioContext.createGain();
+            beepLevel.gain.value = 0.4;
+            var envelope = new WebAHDSR(audioContext, beepGain.gain);
             var oscillator = audioContext.createOscillator();
             oscillator.frequency.value = 800;
             oscillator.connect(beepGain);
-            beepGain.connect(audioContext.destination);
+            beepGain.connect(beepLevel);
+            beepLevel.connect(audioContext.destination);
+            envelope.on();
             oscillator.start(time);
-            oscillator.stop(time + .2);    // you can set this to zero, but I left it here for testing.
+            oscillator.stop(time + .1);    // you can set this to zero, but I left it here for testing.
         }
 
 
