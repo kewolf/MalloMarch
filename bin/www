@@ -74,6 +74,7 @@ var interfaceMode = interfaceConstants.InterfaceEnum.M1;
 var isLoggerOn = 1;
 var isConsentFormOn = 0;
 var isSeqOn = 0;
+var isMalloOn = 0;
 
 
 // Setup the storgat for the audience email addresses
@@ -108,7 +109,8 @@ io.on('connection', function (socket) {
         mode: interfaceMode,
         isLoggerOn: isLoggerOn,
         isConsentFormOn: isConsentFormOn,
-        isSequencerOn: isSeqOn
+        isSequencerOn: isSeqOn,
+        isMalloOn: isMalloOn
     });
 
     socket.on('saveJSON', function (newSocket) {
@@ -154,16 +156,20 @@ io.on('connection', function (socket) {
 
     socket.on('flipLogger', function (newSocket) {
         isLoggerOn = parseInt(newSocket.loggerOn);
-        flipLogger(newSocket.loggerOn);
     });
 
     socket.on('flipConsentForm', function (newSocket) {
         isConsentFormOn = parseInt(newSocket.displayConsent);
-        flipConsent(newSocket.displayConsent);
     });
+
     socket.on('flipMetro', function (newSocket) {
         flipMetro(newSocket.isOn);
-    })
+    });
+
+    socket.on('flipMallo', function (newSocket) {
+        isMalloOn = newSocket.isOn;
+        flipMallo(newSocket.isOn);
+    });
 
     socket.on('flipSeq', function (newSocket) {
         isSeqOn = newSocket.isOn;
@@ -207,26 +213,18 @@ function changeInterface(newMode) {
         newMode: newMode
     });
 }
-
-function flipLogger(newLogger) {
-    io.emit('flipLogger', {
-        loggerOn: newLogger
-    });
-}
-
-function flipConsent(newConsent) {
-    io.emit('flipConsent', {
-        displayConsent: newConsent
-    });
-}
 function flipMetro(isOn) {
     io.emit('flipMetro', {
         isOn: isOn
     });
 }
-
 function flipSequencer(isOn) {
     io.emit('flipSeq', {
+        isOn: isOn
+    });
+}
+function flipMallo(isOn) {
+    io.emit('flipMallo', {
         isOn: isOn
     });
 }

@@ -30,6 +30,7 @@ html
             var isLoggerOn;
             var isMetroOn = 0;
             var isSeqOn = 0;
+            var isMalloOn = 0;
 
             var channelPresets = {};
             var nPresetChannels = 0;
@@ -43,14 +44,16 @@ html
                 currentInterface = parseInt(data.mode);
                 isConsentFormOn = data.isConsentFormOn;
                 isLoggerOn = data.isLoggerOn;
+                isMalloOn = data.isMalloOn;
 
                 //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
                 $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');
                 $('#flipLogger').val(isLoggerOn).flipswitch('refresh');
                 $('#flipMetro').val(isMetroOn).flipswitch('refresh');
                 $('#flipSequencer').val(isSeqOn).flipswitch('refresh');
+                $('#flipMallo').val(isMalloOn).flipswitch('refresh');
 
-                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn);
+                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
             });
 
             function init() {
@@ -181,6 +184,34 @@ html
             }
 
             $(function () {
+                $('#flipLogger').change(function () {
+                    console.log("logger clicked");
+                    // if it is on - send a message to turn it off
+                    if (isLoggerOn) {
+                        socket.emit('flipLogger', {loggerOn: 0});
+                        isLoggerOn = 0;
+                    } else {
+                        socket.emit('flipLogger', {loggerOn: 1});
+                        isLoggerOn = 1;
+                    }
+                });
+            });
+
+            $(function () {
+                $('#flipConsent').change(function () {
+                    console.log("consent clicked");
+                    // if it is on - send a message to turn it off
+                    if (isConsentFormOn) {
+                        socket.emit('flipConsentForm', {displayConsent: 0});
+                        isConsentFormOn = 0;
+                    } else {
+                        socket.emit('flipConsentForm', {displayConsent: 1});
+                        isConsentFormOn = 1;
+                    }
+                });
+            });
+
+            $(function () {
                 $('#flipMetro').change(function () {
                     console.log("metro clicked");
                     // if it is on - send a message to turn it off
@@ -208,6 +239,20 @@ html
                 });
             });
 
+            $(function () {
+                $('#flipMallo').change(function () {
+                    console.log("Mallo clicked");
+                    // if it is on - send a message to turn it off
+                    if (isSeqOn) {
+                        socket.emit('flipMallo', {isOn: 0});
+                        isMalloOn = 0;
+                    } else {
+                        socket.emit('flipMallo', {isOn: 1});
+                        isMalloOn = 1;
+                    }
+                });
+            });
+
             $(window).resize(function (e) {
                 $('#channels').sly('reload');
             });
@@ -229,16 +274,22 @@ html
                                 option(value='0') Off
                                 option(value='1') On
                     .ui-body.ui-body-a.ui-corner-all.center
-                        .ui-block-a(style='width:50%')
+                        .ui-block-a(style='width:30%')
                             label(for='flipMetro') Metronome:
                             select#flipMetro(name='flipMetro', data-role='flipswitch', data-theme='c', data-track-theme='c')
                                 option(value='0') Off
                                 option(value='1') On
-                        .ui-block-b(style='width:50%')
+                        .ui-block-b(style='width:30%')
                             label(for='flipSequencer') Sequencer:
                             select#flipSequencer(name='flipSequencer', data-role='flipswitch', data-theme='b', data-track-theme='b')
                                 option(value='0') Off
                                 option(value='1') On
+                        .ui-block-c(style='width:30%')
+                            label(for='flipMallo') MalLos:
+                            select#flipMallo(name='flipMallo', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                                option(value='0') Off
+                                option(value='1') On
+
                     fieldset(data-role='controlgroup', data-theme='d' )
                         h2.center Interface Modes
                         input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
@@ -263,14 +314,14 @@ html
                 .ui-field-contain
                     label(for='saveIPs')
                     button#saveIPs.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveIPs', type='submit', onclick="savePerformerIPs()", ) Save Performer IPs
-                .ui-field-contain
-                    label(for='saveEmail')
-                    button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmails()", ) Save Emails
                 .form.wrap
                     label(for='channels') Audience Channel:
                     #ch_scrollbar.scrollbar
                         #channel_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                     #channels.frame(style='overflow; hidden;')
                         ul#ch_slidee.slide
+                .ui-field-contain
+                    label(for='saveEmail')
+                    button#saveEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'saveEmail', type='submit', onclick="saveEmails()", ) Save Emails
             .ui-block-c(style='width:10%')
 
