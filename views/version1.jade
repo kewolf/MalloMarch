@@ -232,7 +232,7 @@ block content
         function playSound(time) {
             console.log("Play Sound");
             var beepGain = audioContext.createGain();
-            beepGain.gain.value = 0.5;
+            beepGain.gain.value = 0.4;
             var oscillator = audioContext.createOscillator();
             oscillator.frequency.value = 800;
             oscillator.connect(beepGain);

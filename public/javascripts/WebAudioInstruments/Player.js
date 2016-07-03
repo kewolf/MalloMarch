@@ -30,7 +30,7 @@ var Player = function () {
     this.muteGain = audioContext.createGain();
     this.muteGain.connect(audioContext.destination);
     this.mainGain = audioContext.createGain();
-    this.mainGain.connect(muteGain);
+    this.mainGain.connect(this.muteGain);
     this.reverbGain = audioContext.createGain();
     this.reverbGain.connect(this.mainGain);
     this.reverb = audioContext.createConvolver();
