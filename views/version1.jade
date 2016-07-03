@@ -82,12 +82,13 @@ block content
             //read in the current interface from the server
             currentInterface = data.mode;
 
-            displayConsent = parseInt(data.isConsentFormOn);
-            loggerOn = parseInt(data.isLoggerOn);
+            displayConsent = data.isConsentFormOn;
+            loggerOn = data.isLoggerOn;
             isSeqOn = data.isSequencerOn;
+            isMalloOn = data.isMalloOn;
 
             console.log("SERVER SENT - Welcome Mode: " + parseInt(data.mode) + " host " + location.host);
-            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn + " Seq On? " + isSeqOn);
+            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn + " Seq On? " + isSeqOn + " MalLo On? " + isMalloOn);
 
             // check if they have already consented
             var alreadyConsented = getCookie(CONSENT_COOKIE_NAME);
@@ -113,7 +114,6 @@ block content
         });
 
         // receives this message if we are a performer!
-
         socket.on('setPerformer', function (data) {
             console.log("SET PERFORMER: " + data.performer);
             amIperformer = data.performer;
@@ -130,6 +130,13 @@ block content
             console.log("Message from server, turn sequencer: " + data.isOn);
             switchSequencerOn(data.isOn);
         });
+
+        //receive messages from server (masterServerControl) on when to turn on/off the mallos
+        socket.on('flipMallo', function (data) {
+            console.log("Message from server, turn mallo: " + data.isOn);
+            switchMalloOn(data.isOn);
+        });
+
 
         //receive messages from server (masterServerControl) on when to turn on/off the metronome
         socket.on('flipMetro', function (data) {
@@ -206,13 +213,14 @@ block content
                     metronome = new Metronome(audioContext);
                     metronome.setTempo(tempo);
 
-                    // play empty buffer to unmute audio
+                    // play sound to test audio
                     playSound(audioContext.currentTime);
 
                     loadAudioFiles();
 
                     isAudioSetup = true;
                 } else {
+                    // play sound to test audio
                     playSound(audioContext.currentTime);
                 }
 
@@ -308,7 +316,7 @@ block content
                 clearInterval(sequencerID);
             }
         }
-        var metronomeID = 0;
+
         function switchMetronomeOn(isOn) {
             if (isOn) {
                 // make sound
@@ -318,6 +326,23 @@ block content
             } else {
                 console.log("Metro stop makein sound");
                 metronome.stop();
+            }
+        }
+
+        function switchMalloOn(isOn) {
+            if (isOn) {
+                console.log("MalLos on");
+                /*
+                 players[0].mute();
+                 players[1].mute();
+                 players[2].mute();
+                 */
+            } else {
+                console.log("Mallos Off!");
+                /*
+                 players[0].unmute();
+                 players[1].unmute();
+                 players[2].unmute();*/
             }
         }
 
@@ -398,6 +423,13 @@ block content
             $('#survey').hide();
             $('#credits').hide();
             $('#footer').hide();
+
+            $('#m0-el-size-l').hide();
+            $('#m0-el-size-r').hide();
+            $('#m1-el-size-l').hide();
+            $('#m1-el-size-r').hide();
+            $('#m2-el-size-l').hide();
+            $('#m2-el-size-r').hide();
         });
 
         function changeInterface(newMode) {
@@ -431,7 +463,6 @@ block content
                 $('#survey').hide();
             } else {
                 //otherwise we are in a sound making interface!
-
                 if (!initMovements) {
                     console.log("Init Movements");
                     initSyncAndScheduler();
@@ -453,7 +484,9 @@ block content
                     case InterfaceEnum.TUTORIAL:
                         //disaply Tutorial header
                         $('#header').show();
-                        //bigin popups
+
+                        //begin popups
+
 
                         $('#movement2').show();
                         $('#tabButton1').trigger('click');
@@ -966,6 +999,16 @@ block content
             $('#credits').show();
         }
 
+        function runTutorial(shouldRun) {
+            console.log("run tutorial: " + shouldRun);
+            $('#tutorialText').hide();
+            $('#tabButton1').trigger('click');
+
+            if (shouldRun) {
+
+            }
+        }
+
         function generateRandomCode(num) {
             var s = "";
             while (s.length < num && num > 0) {
@@ -980,6 +1023,15 @@ block content
             p
                 | To prepare you for Movement 2 we will take a couple of minutes to let you get familiar with the interface.
                 | A drum sequencer will play the instruments, instead of the performers on stage.
+            div#tutorialText
+                p
+                    | Would you like to do the tutorial?
+                a.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', href='#popupChannel', data-rel='popup', data-transition='none', data-position-to='#ch_scrollbar', data-dismissible='false', onclick='runTutorial(true)') Yes
+                #popupChannel(data-role='popup', data-theme='b')
+                    p In the 'Change the Channel' Mode you can swipe or drag the sliders to change the presets for all instruments.
+
+                a.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='0', onclick='runTutorial(false)') No
+
     #consent.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
             h3(role='banner') Data Collection Consent Form
@@ -1073,10 +1125,10 @@ block content
                         label.leftItem(for='m0-dc-vol') Volume
                         .rightItem
                             input#m0-dc-vol(type='range', name='m0-dc-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-size') Size
+                        label.leftItem(for='m0-dc-size') Echo
                         .rightItem
                             input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-decay') Decay
+                        label.leftItem(for='m0-dc-decay') Sustain
                         .rightItem
                             input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-dc-pitch') Pitch
@@ -1092,10 +1144,10 @@ block content
                         label.leftItem(for='m0-pp-vol') Volume
                         .rightItem
                             input#m0-pp-vol(type='range', name='m0-pp-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-size') Size
+                        label.leftItem(for='m0-pp-size') Echo
                         .rightItem
                             input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-decay') Decay
+                        label.leftItem(for='m0-pp-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-pp-scale') Pattern
@@ -1111,10 +1163,10 @@ block content
                         label.leftItem(for='m0-el-vol') Volume
                         .rightItem
                             input.ui-hidden-accessible#m0-el-vol(type='range', name='m0-el-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-el-size') Size
-                        .rightItem
+                        label.leftItem#m0-el-size-l(for='m0-el-size') Echo
+                        .rightItem#m0-el-size-r
                             input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b',min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-el-decay') Decay
+                        label.leftItem(for='m0-el-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-el-grunge') Grunge
@@ -1139,10 +1191,10 @@ block content
                         label.leftItem(for='m1-dc-vol') Volume
                         .rightItem
                             input#m1-dc-vol(type='range', name='m1-dc-vol', data-track-theme='c', data-theme='c', min='0', max='1', value='.5', step='.01',data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m1-dc-size') Size
+                        label.leftItem(for='m1-dc-size') Echo
                         .rightItem
                             input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m1-dc-decay') Decay
+                        label.leftItem(for='m1-dc-decay') Sustain
                         .rightItem
                             input#m1-dc-decay(type='range', name='m1-dc-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-dc-pitch') Pitch
@@ -1158,10 +1210,10 @@ block content
                         label.leftItem(for='m1-pp-vol') Volume
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-vol(type='range', name='m1-pp-vol', data-track-theme='c', data-theme='c', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m1-pp-size') Size
+                        label.leftItem(for='m1-pp-size') Echo
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m1-pp-decay') Decay
+                        label.leftItem(for='m1-pp-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-pp-scale') Pattern
@@ -1177,10 +1229,10 @@ block content
                         label.leftItem(for='m1-el-vol') Volume
                         .rightItem
                             input.ui-hidden-accessible#m1-el-vol(type='range', name='m1-el-vol', data-track-theme='c', data-theme='c', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m1-el-size') Size
-                        .rightItem
+                        label.leftItem#m1-el-size-l(for='m1-el-size') Echo
+                        .rightItem#m1-el-size-r
                             input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m1-el-decay') Decay
+                        label.leftItem(for='m1-el-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m1-el-decay(type='range', name='m1-el-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-el-grunge') Grunge
@@ -1205,10 +1257,10 @@ block content
                         label.leftItem(for='m2-dc-vol') Volume
                         .rightItem
                             input#m2-dc-vol(type='range', name='m2-dc-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true',  data-mini='true')
-                        label.leftItem(for='m2-dc-size') Size
+                        label.leftItem(for='m2-dc-size') Echo
                         .rightItem
                             input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m2-dc-decay') Decay
+                        label.leftItem(for='m2-dc-decay') Sustain
                         .rightItem
                             input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-dc-pitch') Pitch
@@ -1224,10 +1276,10 @@ block content
                         label.leftItem(for='m2-pp-vol') Volume
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-vol(type='range', name='m2-pp-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m2-pp-size') Size
+                        label.leftItem(for='m2-pp-size') Echo
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m2-pp-decay') Decay
+                        label.leftItem(for='m2-pp-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-pp-scale') Pattern
@@ -1243,10 +1295,10 @@ block content
                         label.leftItem(for='m2-el-vol') Volume
                         .rightItem
                             input.ui-hidden-accessible#m2-el-vol(type='range', name='m2-el-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m2-el-size') Size
-                        .rightItem
+                        label.leftItem#m2-el-size-l(for='m2-el-size') Echo
+                        .rightItem#m2-el-size-r
                             input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m2-el-decay') Decay
+                        label.leftItem(for='m2-el-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m2-el-decay(type='range', name='m2-el-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-el-grunge') Grunge
