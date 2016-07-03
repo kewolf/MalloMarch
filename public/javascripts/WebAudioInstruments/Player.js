@@ -103,6 +103,7 @@ Player.prototype.getParameters = function() {
     params['activeInstrument'] = this.activeInstrument;
     params['size'] = this.size;
     params['decay'] = this.decay;
+    params['level'] = this.level;
 
     switch (this.activeInstrument) {
         case DRUM_CORP:
@@ -131,6 +132,7 @@ Player.prototype.setParameters = function(params) {
     this.activeInstrument = params['activeInstrument'];
     this.size = params['size'];
     this.decay = params['decay'];
+    this.level = params['level'];
 
     switch(params['activeInstrument']) {
         case DRUM_CORP:

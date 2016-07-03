@@ -3,6 +3,7 @@
     "activeInstrument": 0,
     "size": "10",
     "decay": "50",
+    "level": "0.5",
     "nDrummers": "1",
     "drumPitch": "1",
     "dynamics": "1"
@@ -11,31 +12,35 @@
     "activeInstrument": 1,
     "size": "50",
     "decay": "80",
-    "range": "0",
+    "level": "0.5",
+    "range": "1",
     "vibrato": "0",
     "trippiness": "0"
   },
   "i2": {
     "activeInstrument": 2,
     "size": "98",
+    "level": "0.5",
     "decay": "14",
     "grunge": "92",
-    "electronicPitch": "80",
-    "fatness": "98"
+    "electronicPitch": "4",
+    "fatness": "10"
   },
   "i3": {
     "activeInstrument": 2,
     "size": "50",
     "decay": "55",
+    "level": "0.5",
     "grunge": "25",
-    "electronicPitch": "74",
-    "fatness": "98"
+    "electronicPitch": "3",
+    "fatness": "10"
   },
   "i4": {
     "activeInstrument": 1,
     "size": "49",
     "decay": "69",
-    "range": "28",
+    "level": "0.5",
+    "range": "2",
     "vibrato": "66",
     "trippiness": "72"
   },
@@ -43,6 +48,7 @@
     "activeInstrument": 0,
     "size": "31",
     "decay": "70",
+    "level": "0.5",
     "nDrummers": "2",
     "drumPitch": "50",
     "dynamics": "0"
@@ -51,23 +57,26 @@
     "activeInstrument": 2,
     "size": "98",
     "decay": "14",
+    "level": "0.5",
     "grunge": "92",
-    "electronicPitch": "80",
-    "fatness": "98"
+    "electronicPitch": "4",
+    "fatness": "10"
   },
   "i7": {
     "activeInstrument": 0,
     "size": "98",
     "decay": "2",
-    "nDrummers": "66",
+    "level": "0.5",
+    "nDrummers": "7",
     "drumPitch": "27",
-    "dynamics": "98"
+    "dynamics": "9"
   },
   "i8": {
     "activeInstrument": 1,
     "size": "96",
     "decay": "34",
-    "range": "43",
+    "level": "0.5",
+    "range": "1",
     "vibrato": "5",
     "trippiness": "2"
   },
@@ -75,7 +84,8 @@
     "activeInstrument": 1,
     "size": "96",
     "decay": "67",
-    "range": "75",
+    "level": "0.5",
+    "range": "3",
     "vibrato": "41",
     "trippiness": "80"
   },
@@ -83,7 +93,8 @@
     "activeInstrument": 1,
     "size": "96",
     "decay": "35",
-    "range": "67",
+    "level": "0.5",
+    "range": "3",
     "vibrato": "37",
     "trippiness": "15"
   },
@@ -91,6 +102,7 @@
     "activeInstrument": 0,
     "size": "92",
     "decay": "1",
+    "level": "0.5",
     "nDrummers": "4",
     "drumPitch": "88",
     "dynamics": "2"
