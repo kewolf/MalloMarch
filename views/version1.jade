@@ -49,7 +49,8 @@ block content
         var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
         //var customServerURL = '192.168.1.9:3000';
-        var customServerURL = '10.102.39.183:3000';
+        //var customServerURL = '10.102.39.183:3000';
+        //var customServerURL = '130.56.213.166:3000';
         //var customServerURL = '10.227.28.178:3000';
         //var customServerURL = '10.8.65.195:3000';
 
@@ -122,18 +123,27 @@ block content
         //receive messages from server (masterServerControl) on when to change the interface.
         socket.on('changeInterface', function (data) {
             console.log("Interface Changed: " + data.newMode);
+            if (loggerOn) {
+                logger.info("{ \"change_interface\" : " + data.newMode + ", \"global_time\" : " + syncClient.getTime() + "}");
+            }
             changeInterface(data.newMode);
         });
 
         //receive messages from server (masterServerControl) on when to turn on/off the sequencer
         socket.on('flipSeq', function (data) {
             console.log("Message from server, turn sequencer: " + data.isOn);
+            if (loggerOn) {
+                logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+            }
             switchSequencerOn(data.isOn);
         });
 
         //receive messages from server (masterServerControl) on when to turn on/off the mallos
         socket.on('flipMallo', function (data) {
             console.log("Message from server, turn mallo: " + data.isOn);
+            if (loggerOn) {
+                logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+            }
             switchMalloOn(data.isOn);
         });
 
@@ -141,6 +151,9 @@ block content
         //receive messages from server (masterServerControl) on when to turn on/off the metronome
         socket.on('flipMetro', function (data) {
             if (amIperformer) {
+                if (loggerOn) {
+                    logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                }
                 console.log("I am performer, Flip Metro: " + data.isOn);
                 switchMetronomeOn(data.isOn);
             } else {
@@ -258,7 +271,7 @@ block content
             });
             var dateTime = Date.now();
             if (loggerOn) {
-                logger.info("{ \"consent\" : " + dateTime + "}");
+                logger.info("{ \"consent\" : " + dateTime + ", \"global_time\" : NA }");
             }
         }
 
@@ -291,6 +304,13 @@ block content
             if (isSeqOn) {
                 console.log("Switch on sequencer!");
                 switchSequencerOn(true);
+            }
+            if (isMalloOn) {
+                console.log("Swith on mallo");
+                switchMalloOn(true);
+            } else {
+                console.log("Swith off mallo");
+                switchMalloOn(false);
             }
 
         }
@@ -339,17 +359,15 @@ block content
         function switchMalloOn(isOn) {
             if (isOn) {
                 console.log("MalLos on");
-                /*
-                 players[0].mute();
-                 players[1].mute();
-                 players[2].mute();
-                 */
+                players[0].unmute();
+                players[1].unmute();
+                players[2].unmute();
+
             } else {
                 console.log("Mallos Off!");
-                /*
-                 players[0].unmute();
-                 players[1].unmute();
-                 players[2].unmute();*/
+                players[0].mute();
+                players[1].mute();
+                players[2].mute();
             }
         }
 
@@ -431,6 +449,9 @@ block content
             $('#credits').hide();
             $('#footer').hide();
 
+            $('#popupPlayer').hide();
+            $('#popupChannel').hide();
+            $('#popupParams').hide();
             $('#m0-el-size-l').hide();
             $('#m0-el-size-r').hide();
             $('#m1-el-size-l').hide();
@@ -494,9 +515,9 @@ block content
 
                         //begin popups
 
-
                         $('#movement2').show();
                         $('#tabButton1').trigger('click');
+
                         $('#channels').sly('reload');
 
                         $('#consent').hide();
@@ -528,6 +549,7 @@ block content
         function nextPage() {
             //if audio is setup go to the next page, otherwise make sure users click the setup button
             if (isAudioSetup) {
+
                 switch (currentInterface) {
                     case InterfaceEnum.INFO:
                         $('#audioSetup').hide();
@@ -611,7 +633,7 @@ block content
                     var el = document.querySelector(".active").id;
                     var ch_number = parseInt(el.slice(3));
                     if (loggerOn) {
-                        logger.info("{ \"channel\" : " + ch_number + "}");
+                        logger.info("{ \"channel\" : " + ch_number + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
                 }
             });
@@ -665,7 +687,8 @@ block content
                         var playerNum = parseInt(el.id.slice(1));
                         var instrNum = parseInt(el.id.slice(3));
                         if (loggerOn) {
-                            logger.info("{ \"player_" + playerNum + "\" : " + instrNum + "}");
+                            logger.info("{ \"player_" + playerNum + "\" : " + instrNum + ", \"global_time\" : " + syncClient.getTime() + "}");
+                            ;
                         }
                     }
                 });
@@ -700,7 +723,7 @@ block content
                 activate: function (event, ui) {
                     var active = $('#movement2').tabs('option', 'active');
                     if (loggerOn) {
-                        logger.info("{ \"tab\" : " + active + "}");
+                        logger.info("{ \"tab\" : " + active + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
                     if (active == 0) {
                         $('#channels').sly('reload');
@@ -741,7 +764,7 @@ block content
                 //if we are in mode 3 - then log the change!
                 if (active == 2) {
                     if (loggerOn) {
-                        logger.info("{ \"" + id + "\" : " + nextpage + "}");
+                        logger.info("{ \"" + id + "\" : " + nextpage + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
                 }
 
@@ -865,7 +888,7 @@ block content
                 });
 
                 if (loggerOn) {
-                    logger.info("{ \"save_params\" : " + dateTime + "}");
+                    logger.info("{ \"save_params\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
                 }
 
                 return false;
@@ -941,7 +964,7 @@ block content
         $(function () {
             $(".ui-slider").on('slidestop', function (event) {
                 if (loggerOn) {
-                    logger.info("{ \"" + event.target.id + "\" : " + event.target.value + "}");
+                    logger.info("{ \"" + event.target.id + "\" : " + event.target.value + ", \"global_time\" : " + syncClient.getTime() + "}");
                 }
             });
         });
@@ -984,20 +1007,20 @@ block content
                 });
 
                 if (loggerOn) {
-                    logger.info("{ \"save_email\" : " + dateTime + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
                 }
             } else {
                 //flush the buffers
                 if (loggerOn) {
-                    logger.info("{ \"flush\" : " + dateTime + "}");
-                    logger.info("{ \"flush\" : " + dateTime + "}");
-                    logger.info("{ \"flush\" : " + dateTime + "}");
-                    logger.info("{ \"flush\" : " + dateTime + "}");
-                    logger.info("{ \"flush\" : " + dateTime + "}");
+                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
                 }
             }
 
@@ -1006,14 +1029,41 @@ block content
             $('#credits').show();
         }
 
-        function runTutorial(shouldRun) {
-            console.log("run tutorial: " + shouldRun);
-            $('#tutorialText').hide();
-            $('#tabButton1').trigger('click');
-
-            if (shouldRun) {
-
+        function startTutorial() {
+            if (loggerOn) {
+                logger.info("{ \"tutorial\" : 0, \"global_time\" : " + syncClient.getTime() + "}");
             }
+            $('#tutorialText').hide();
+            $('#popupChannel').show();
+            $('#tabButton1').trigger('click');
+            return false;
+        }
+
+        function channelsNext() {
+            if (loggerOn) {
+                logger.info("{ \"tutorial\" : 1, \"global_time\" : " + syncClient.getTime() + "}");
+            }
+            $('#popupChannel').hide();
+            $('#popupPlayer').show();
+            $('#tabButton2').trigger('click');
+        }
+
+        function playersNext() {
+            if (loggerOn) {
+                logger.info("{ \"tutorial\" : 2, \"global_time\" : " + syncClient.getTime() + "}");
+            }
+            $('#popupPlayer').hide();
+            $('#popupParams').show();
+            $('#tabButton3').trigger('click');
+        }
+
+        function paramsNext() {
+            if (loggerOn) {
+                logger.info("{ \"tutorial\" : 3, \"global_time\" : " + syncClient.getTime() + "}");
+            }
+            $('#popupParams').hide();
+            $('#tutorialText').show();
+            $('#tabButton1').trigger('click');
         }
 
         function generateRandomCode(num) {
@@ -1030,14 +1080,20 @@ block content
             p
                 | To prepare you for Movement 2 we will take a couple of minutes to let you get familiar with the interface.
                 | A drum sequencer will play the instruments, instead of the performers on stage.
-            div#tutorialText
-                p
-                    | Would you like to do the tutorial?
-                a.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', href='#popupChannel', data-rel='popup', data-transition='none', data-position-to='#ch_scrollbar', data-dismissible='false', onclick='runTutorial(true)') Yes
-                #popupChannel(data-role='popup', data-theme='b')
-                    p In the 'Change the Channel' Mode you can swipe or drag the sliders to change the presets for all instruments.
-
-                a.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='0', onclick='runTutorial(false)') No
+            div#tutorialText(data-theme='b')
+                a.ui-btn-b.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', onclick='runTutorial(true)') Click here for tutorial
+            h5#popupChannel(data-theme='b')
+                .ui-body.ui-body-b.ui-corner-all
+                    p In the 'Change the Channel' mode you can swipe or drag the slider to change the presets for all players.
+                    button#channelsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='channelsNext()') Next
+            h5#popupPlayer(data-theme='c')
+                .ui-body.ui-body-c.ui-corner-all
+                    p In the 'Change the Player' mode you can swipe or drag the sliders to change the presets for individual players.
+                    button#playersNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='playersNext()') Next
+            h5#popupParams(data-theme='d')
+                .ui-body.ui-body-d.ui-corner-all
+                    p In the 'Change the Parameters' mode you can change specific parameters for each individual players.
+                    button#paramsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='paramsNext()') Done
 
     #consent.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
@@ -1053,7 +1109,7 @@ block content
             a.consentButton.ui-btn.ui-btn-inline(id='0') No - Do not Use My Data
     #welcome.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
-            h3.center(role='banner') Welcome to the March MalLO performance website!
+            h3.center(role='banner') Welcome to the March MalLo performance website!
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
@@ -1076,7 +1132,6 @@ block content
                     p
                         | Movement 1 requires no interaction. Please put on headphones, and simply listen to this part of the piece.
             .ui-block-c(style='width:10%')
-
     #movement2(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
         div(data-role='navbar')
             ul

@@ -185,7 +185,7 @@ html
 
             $(function () {
                 $('#flipLogger').change(function () {
-                    console.log("logger clicked");
+                    console.log("logger clicked:" + isLoggerOn);
                     // if it is on - send a message to turn it off
                     if (isLoggerOn) {
                         socket.emit('flipLogger', {loggerOn: 0});
@@ -199,7 +199,7 @@ html
 
             $(function () {
                 $('#flipConsent').change(function () {
-                    console.log("consent clicked");
+                    console.log("consent clicked" + isConsentFormOn);
                     // if it is on - send a message to turn it off
                     if (isConsentFormOn) {
                         socket.emit('flipConsentForm', {displayConsent: 0});
@@ -213,7 +213,7 @@ html
 
             $(function () {
                 $('#flipMetro').change(function () {
-                    console.log("metro clicked");
+                    console.log("metro clicked" + isMetroOn);
                     // if it is on - send a message to turn it off
                     if (isMetroOn) {
                         socket.emit('flipMetro', {isOn: 0});
@@ -227,7 +227,7 @@ html
 
             $(function () {
                 $('#flipSequencer').change(function () {
-                    console.log("Seq clicked");
+                    console.log("Seq clicked" + isSeqOn);
                     // if it is on - send a message to turn it off
                     if (isSeqOn) {
                         socket.emit('flipSeq', {isOn: 0});
@@ -241,9 +241,9 @@ html
 
             $(function () {
                 $('#flipMallo').change(function () {
-                    console.log("Mallo clicked");
+                    console.log("Mallo clicked" + isMalloOn);
                     // if it is on - send a message to turn it off
-                    if (isSeqOn) {
+                    if (isMalloOn) {
                         socket.emit('flipMallo', {isOn: 0});
                         isMalloOn = 0;
                     } else {
