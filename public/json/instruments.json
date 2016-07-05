@@ -18,13 +18,13 @@
     "trippiness": "0"
   },
   "i2": {
-    "activeInstrument": 2,
-    "size": "98",
-    "level": "0.5",
-    "decay": "14",
-    "grunge": "92",
-    "electronicPitch": "4",
-    "fatness": "10"
+    "activeInstrument": 0,
+    "size": "24",
+    "decay": "2",
+    "level": "0.13",
+    "nDrummers": "2",
+    "drumPitch": "27",
+    "dynamics": "4"
   },
   "i3": {
     "activeInstrument": 2,
@@ -82,21 +82,21 @@
   },
   "i9": {
     "activeInstrument": 1,
-    "size": "96",
-    "decay": "67",
-    "level": "0.5",
+    "size": "51",
+    "decay": "94",
+    "level": "0.07",
     "range": "3",
-    "vibrato": "41",
-    "trippiness": "80"
+    "vibrato": "98",
+    "trippiness": "42"
   },
   "i10": {
     "activeInstrument": 1,
-    "size": "96",
-    "decay": "35",
-    "level": "0.5",
-    "range": "3",
-    "vibrato": "37",
-    "trippiness": "15"
+    "size": "52",
+    "decay": "97",
+    "level": "0.07",
+    "range": "2",
+    "vibrato": "93",
+    "trippiness": "98"
   },
   "i11": {
     "activeInstrument": 0,
@@ -106,5 +106,59 @@
     "nDrummers": "4",
     "drumPitch": "88",
     "dynamics": "2"
+  },
+  "i12": {
+    "activeInstrument": 1,
+    "size": "96",
+    "decay": "45",
+    "level": "0.5",
+    "range": "3",
+    "vibrato": "41",
+    "trippiness": "69"
+  },
+  "i13": {
+    "activeInstrument": 1,
+    "size": "17",
+    "decay": "98",
+    "level": "0.26",
+    "range": "2",
+    "vibrato": "57",
+    "trippiness": "43"
+  },
+  "i14": {
+    "activeInstrument": 2,
+    "size": "24",
+    "decay": "7",
+    "level": "0.13",
+    "grunge": "2",
+    "electronicPitch": "3",
+    "fatness": "2"
+  },
+  "i15": {
+    "activeInstrument": 0,
+    "size": "6",
+    "decay": "1",
+    "level": "0.5",
+    "nDrummers": "2",
+    "drumPitch": "27",
+    "dynamics": "9"
+  },
+  "i16": {
+    "activeInstrument": 0,
+    "size": "5",
+    "decay": "0",
+    "level": "0.26",
+    "nDrummers": "2",
+    "drumPitch": "50",
+    "dynamics": ""
+  },
+  "i17": {
+    "activeInstrument": 1,
+    "size": "51",
+    "decay": "98",
+    "level": "0.15",
+    "range": "2",
+    "vibrato": "98",
+    "trippiness": "1"
   }
 }

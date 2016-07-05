@@ -28,9 +28,11 @@ html
             var serverURL = 'http://localhost:3000';
             var isConsentFormOn;
             var isLoggerOn;
-            var isMetroOn = 0;
-            var isSeqOn = 0;
-            var isMalloOn = 0;
+            var isMalloOn;
+            var isMetroOn;
+            var isSeqOn;
+            var doneInitializing = false;
+
 
             var channelPresets = {};
             var nPresetChannels = 0;
@@ -45,6 +47,10 @@ html
                 isConsentFormOn = data.isConsentFormOn;
                 isLoggerOn = data.isLoggerOn;
                 isMalloOn = data.isMalloOn;
+                isSeqOn = data.isSequencerOn;
+
+                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
+
 
                 //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
                 $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');
@@ -53,12 +59,13 @@ html
                 $('#flipSequencer').val(isSeqOn).flipswitch('refresh');
                 $('#flipMallo').val(isMalloOn).flipswitch('refresh');
 
+
                 console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
+                doneInitializing = true;
             });
 
             function init() {
                 loadJSONandDOM();
-                console.log("Number prests: " + nPresetChannels);
             }
 
             function loadJSONandDOM() {
@@ -127,14 +134,8 @@ html
 
                 //DO WE NEED TO LOG THESE EVENTS? OR WILL CLIENT LOG THEM?
                 sly_channels.on('moveEnd', function (eventName) {
-                    //do we only want to force this for the channels mode?
-                    //if (currentMode == ModeEnum.CHANNELS) {
                     var el = document.querySelector(".active").id;
                     var ch_number = parseInt(el.slice(3));
-                    //if (loggerOn) {
-                    //    logger.info("{ \"channel\" : " + ch_number + "}");
-                    // }
-                    //}
                 });
 
                 sly_channels.init();
@@ -185,70 +186,80 @@ html
 
             $(function () {
                 $('#flipLogger').change(function () {
-                    console.log("logger clicked:" + isLoggerOn);
-                    // if it is on - send a message to turn it off
-                    if (isLoggerOn) {
-                        socket.emit('flipLogger', {loggerOn: 0});
-                        isLoggerOn = 0;
-                    } else {
-                        socket.emit('flipLogger', {loggerOn: 1});
-                        isLoggerOn = 1;
+                    if (doneInitializing) {
+                        console.log("logger clicked: " + isLoggerOn);
+                        // if it is on - send a message to turn it off
+                        if (isLoggerOn) {
+                            socket.emit('flipLogger', {loggerOn: 0});
+                            isLoggerOn = 0;
+                        } else {
+                            socket.emit('flipLogger', {loggerOn: 1});
+                            isLoggerOn = 1;
+                        }
                     }
                 });
             });
 
             $(function () {
                 $('#flipConsent').change(function () {
-                    console.log("consent clicked" + isConsentFormOn);
-                    // if it is on - send a message to turn it off
-                    if (isConsentFormOn) {
-                        socket.emit('flipConsentForm', {displayConsent: 0});
-                        isConsentFormOn = 0;
-                    } else {
-                        socket.emit('flipConsentForm', {displayConsent: 1});
-                        isConsentFormOn = 1;
+                    if (doneInitializing) {
+                        console.log("consent clicked " + isConsentFormOn);
+                        // if it is on - send a message to turn it off
+                        if (isConsentFormOn) {
+                            socket.emit('flipConsentForm', {displayConsent: 0});
+                            isConsentFormOn = 0;
+                        } else {
+                            socket.emit('flipConsentForm', {displayConsent: 1});
+                            isConsentFormOn = 1;
+                        }
                     }
                 });
             });
 
             $(function () {
                 $('#flipMetro').change(function () {
-                    console.log("metro clicked" + isMetroOn);
-                    // if it is on - send a message to turn it off
-                    if (isMetroOn) {
-                        socket.emit('flipMetro', {isOn: 0});
-                        isMetroOn = 0;
-                    } else {
-                        socket.emit('flipMetro', {isOn: 1});
-                        isMetroOn = 1;
+                    if (doneInitializing) {
+                        console.log("metro clicked " + isMetroOn);
+                        // if it is on - send a message to turn it off
+                        if (isMetroOn) {
+                            socket.emit('flipMetro', {isOn: 0});
+                            isMetroOn = 0;
+                        } else {
+                            socket.emit('flipMetro', {isOn: 1});
+                            isMetroOn = 1;
+                        }
                     }
                 });
             });
 
             $(function () {
                 $('#flipSequencer').change(function () {
-                    console.log("Seq clicked" + isSeqOn);
-                    // if it is on - send a message to turn it off
-                    if (isSeqOn) {
-                        socket.emit('flipSeq', {isOn: 0});
-                        isSeqOn = 0;
-                    } else {
-                        socket.emit('flipSeq', {isOn: 1});
-                        isSeqOn = 1;
+                    if (doneInitializing) {
+                        console.log("Seq clicked " + isSeqOn);
+                        // if it is on - send a message to turn it off
+                        if (isSeqOn) {
+                            socket.emit('flipSeq', {isOn: 0});
+                            isSeqOn = 0;
+                        } else {
+                            socket.emit('flipSeq', {isOn: 1});
+                            isSeqOn = 1;
+                        }
                     }
                 });
             });
 
             $(function () {
                 $('#flipMallo').change(function () {
-                    console.log("Mallo clicked" + isMalloOn);
-                    // if it is on - send a message to turn it off
-                    if (isMalloOn) {
-                        socket.emit('flipMallo', {isOn: 0});
-                        isMalloOn = 0;
-                    } else {
-                        socket.emit('flipMallo', {isOn: 1});
-                        isMalloOn = 1;
+                    if (doneInitializing) {
+                        console.log("Mallo clicked " + isMalloOn);
+                        // if it is on - send a message to turn it off
+                        if (isMalloOn) {
+                            socket.emit('flipMallo', {isOn: 0});
+                            isMalloOn = 0;
+                        } else {
+                            socket.emit('flipMallo', {isOn: 1});
+                            isMalloOn = 1;
+                        }
                     }
                 });
             });

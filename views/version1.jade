@@ -39,6 +39,7 @@ block content
 
         var scheduler;
         var syncClient;
+        var stayAwake;
 
         var amIperformer = 0;
 
@@ -48,7 +49,7 @@ block content
 
         var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
-        //var customServerURL = '192.168.1.9:3000';
+        var customServerURL = '192.168.1.9:3000';
         //var customServerURL = '10.102.39.183:3000';
         //var customServerURL = '130.56.213.166:3000';
         //var customServerURL = '10.227.28.178:3000';
@@ -112,6 +113,8 @@ block content
             }
 
             socket.emit('checkPerformers', {});
+
+
         });
 
         // receives this message if we are a performer!
@@ -124,7 +127,11 @@ block content
         socket.on('changeInterface', function (data) {
             console.log("Interface Changed: " + data.newMode);
             if (loggerOn) {
-                logger.info("{ \"change_interface\" : " + data.newMode + ", \"global_time\" : " + syncClient.getTime() + "}");
+                if (initMovements) {
+                    logger.info("{ \"change_interface\" : " + data.newMode + ", \"global_time\" : " + syncClient.getTime() + "}");
+                } else {
+                    logger.info("{ \"change_interface\" : " + data.newMode + ", \"global_time\" : NA }");
+                }
             }
             changeInterface(data.newMode);
         });
@@ -133,7 +140,11 @@ block content
         socket.on('flipSeq', function (data) {
             console.log("Message from server, turn sequencer: " + data.isOn);
             if (loggerOn) {
-                logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                if (initMovements) {
+                    logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                } else {
+                    logger.info("{ \"change_interface\" : " + data.isOn + ", \"global_time\" : NA }");
+                }
             }
             switchSequencerOn(data.isOn);
         });
@@ -142,7 +153,11 @@ block content
         socket.on('flipMallo', function (data) {
             console.log("Message from server, turn mallo: " + data.isOn);
             if (loggerOn) {
-                logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                if (initMovements) {
+                    logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                } else {
+                    logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" :  NA }");
+                }
             }
             switchMalloOn(data.isOn);
         });
@@ -152,7 +167,11 @@ block content
         socket.on('flipMetro', function (data) {
             if (amIperformer) {
                 if (loggerOn) {
-                    logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    if (initMovements) {
+                        logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    } else {
+                        logger.info("{ \"flipMallo\" : " + data.isOn + ", \"global_time\" : NA }");
+                    }
                 }
                 console.log("I am performer, Flip Metro: " + data.isOn);
                 switchMetronomeOn(data.isOn);
@@ -271,7 +290,7 @@ block content
             });
             var dateTime = Date.now();
             if (loggerOn) {
-                logger.info("{ \"consent\" : " + dateTime + ", \"global_time\" : NA }");
+                logger.info("{ \"start_logging\" : " + dateTime + ", \"global_time\" : NA }");
             }
         }
 
@@ -312,6 +331,13 @@ block content
                 console.log("Swith off mallo");
                 switchMalloOn(false);
             }
+
+            stayAwake = setInterval(function () {
+                console.log("stay awake!");
+                location.href = location.href; //try refreshing
+                window.setTimeout(window.stop, 0); //stop it soon after
+            }, 1000);
+
 
         }
 
@@ -498,9 +524,8 @@ block content
                     loadJSONandDOM();
                     initMovements = true;
                 }
-
+                $('#footer').hide();
                 switch (currentInterface) {
-
                     case InterfaceEnum.M1:
                         $('#movement1').show();
 
@@ -979,6 +1004,10 @@ block content
                 } else {
                     loggerOn = 0;
                 }
+                var dateTime = Date.now();
+                if (loggerOn) {
+                    logger.info("{ \"consent\" : " + didConsent + ", \"time\" : " + dateTime + "\"global_time\" : NA }");
+                }
                 //set cookies for whether the consent form was answered
                 setCookie(CONSENT_COOKIE_NAME, didConsent, DAYS_TO_KEEP_COOKIE);
                 $('#consent').hide();
@@ -987,6 +1016,7 @@ block content
         });
 
         function submitEmailButton(doWeSubmit) {
+            //is submit - send email to server and flush buffers
             if (doWeSubmit) {
                 var randCode = generateRandomCode(10);
                 var params = {};
@@ -1006,27 +1036,34 @@ block content
                     dateTime: dateTime
                 });
 
+
                 if (loggerOn) {
-                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    if (initMovements) {
+                        logger.info("{ \"save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    } else {
+                        for (var i = 0; i < 19; i++) {
+                            logger.info("{ \"save_email\" : " + dateTime + "}");
+                        }
+                    }
                 }
             } else {
                 //flush the buffers
                 if (loggerOn) {
-                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    logger.info("{ \"flush\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    if (initMovements) {
+                        logger.info("{ \"no_save_email\" : " + dateTime + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    }
+                    else {
+                        for (var i = 0; i < 19; i++) {
+                            logger.info("{ \"no_save_email\" : " + dateTime + "}");
+                        }
+                    }
                 }
             }
 
             //load the credits!
             $('#survey').hide();
             $('#credits').show();
+            clearInterval(stayAwake);
         }
 
         function startTutorial() {
@@ -1081,14 +1118,14 @@ block content
                 | To prepare you for Movement 2 we will take a couple of minutes to let you get familiar with the interface.
                 | A drum sequencer will play the instruments, instead of the performers on stage.
             div#tutorialText(data-theme='b')
-                a.ui-btn-b.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', onclick='runTutorial(true)') Click here for tutorial
+                a.ui-btn-b.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', onclick='startTutorial()') Click for tutorial
             h5#popupChannel(data-theme='b')
                 .ui-body.ui-body-b.ui-corner-all
-                    p In the 'Change the Channel' mode you can swipe or drag the slider to change the presets for all players.
+                    p In the 'Change the Channel' mode you can swipe or click the slider to change the presets for all players.
                     button#channelsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='channelsNext()') Next
             h5#popupPlayer(data-theme='c')
                 .ui-body.ui-body-c.ui-corner-all
-                    p In the 'Change the Player' mode you can swipe or drag the sliders to change the presets for individual players.
+                    p In the 'Change the Player' mode you can swipe or click the sliders to change the presets for individual players.
                     button#playersNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='playersNext()') Next
             h5#popupParams(data-theme='d')
                 .ui-body.ui-body-d.ui-corner-all
@@ -1211,7 +1248,7 @@ block content
                             input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-pp-decay') Sustain
                         .rightItem
-                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', mi1='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-pp-scale') Pattern
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
@@ -1305,7 +1342,7 @@ block content
                             input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-el-fat') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='1', max='10', value='0', data-popup-enabled='true', data-mini='true')
                 #m2-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='d')
                     h3 Player 3
                     .ui-content
@@ -1333,7 +1370,7 @@ block content
                             input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='d', data-theme='d', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-dc-dyn') Dynamics
                         .rightItem
-                            input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', min='1', max='99', value='0', data-popup-enabled='true', data-mini='true')
                     .ui-content#m2-pp
                         label.leftItem(for='m2-pp-vol') Volume
                         .rightItem
@@ -1371,7 +1408,7 @@ block content
                             input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-el-fat') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='d', data-theme='d', min='1', max='10', value='0', data-popup-enabled='true', data-mini='true')
         h2#result
         div(data-role='footer', role='banner', data-position='inline')
             h1
@@ -1396,8 +1433,8 @@ block content
                     label(for='emailTextBox', data-theme='b') Email:
                     input#emailTextBox(type='text', name='text-basic', data-theme='b', value='')
                 .ui-field-contain
-                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:50%', onclick="submitEmailButton(true)") Submit
-                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:25%', onclick="submitEmailButton(false)") No Thanks
+                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:40%', onclick="submitEmailButton(true)") Submit
+                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:15%', onclick="submitEmailButton(false)") No Thanks
             .ui-block-c(style='width:10%')
 
     #credits.center.ui-content(data-role='main')
@@ -1407,14 +1444,16 @@ block content
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                    p    Green Player:               Katie  Wolf
-                    p    Blue  Player:               Steven Landry
-                    p    Pink  Player:               Daniel Verona
+                    p    Player 1 (Green):              Katie  Wolf
+                    p    Player 2 (Blue):               Steven Landry
+                    p    Player 3 (Player):             Daniel Verona
                     p
                     p    Composers:                   Katie Wolf and Reid Oda
                     p    Interface Development:       Katie Wolf
                     p    Sound Design:                Reid Oda
                     p    MalLo Creator and Developer: Reid Oda
+                    p    Speical Thanks to:           Rebecca Fiebrink, Andrew Nelson, Erin Hartman, Letizia Gionfrida, Marc St. Pierre
+
             .ui-block-c(style='width:10%')
     #footer.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all

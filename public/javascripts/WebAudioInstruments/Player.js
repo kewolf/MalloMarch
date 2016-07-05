@@ -8,23 +8,23 @@ var Player = function () {
 
     //common to all
     this.size = 50;
-    this.decay = 0;
+    this.decay = 1;
     this.level = 1;
 
     //drummers
     this.nDrummers = 2;
     this.drumPitch = 50;
-    this.dynamics = 0; 
+    this.dynamics = 1;
 
     //pitched percussion
-    this.range = 0;
-    this.vibrato = 0;  
-    this.trippiness = 0;
+    this.range = 1;
+    this.vibrato = 1;
+    this.trippiness = 1;
 
     //electronic
-    this.grunge = 0;
-    this.electronicPitch = 0;
-    this.fatness = 0;
+    this.grunge = 1;
+    this.electronicPitch = 1;
+    this.fatness = 1;
 
     //setup reverb
     this.muteGain = audioContext.createGain();
@@ -58,7 +58,7 @@ var Player = function () {
     };
 
     this.setReverbBuffer = function (buffer) {
-        console.log('loaded reverb impulse');
+        //console.log('loaded reverb impulse');
         this.reverb.buffer = buffer;
     };
 
@@ -68,7 +68,7 @@ var Player = function () {
         this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
         this.mainGain.gain.value = this.level;
         // this.dryGain.gain.value = 0;
-        console.log('this.reverbGain.gain.value: ' + this.reverbGain.gain.value);
+        //console.log('this.reverbGain.gain.value: ' + this.reverbGain.gain.value);
 
         switch (this.activeInstrument) {
             case DRUM_CORP:

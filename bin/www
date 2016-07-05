@@ -72,7 +72,7 @@ udpPort.open();
 // Initial Values
 var interfaceMode = interfaceConstants.InterfaceEnum.M1;
 var isLoggerOn = 1;
-var isConsentFormOn = 0;
+var isConsentFormOn = 1;
 var isSeqOn = 0;
 var isMalloOn = 0;
 
