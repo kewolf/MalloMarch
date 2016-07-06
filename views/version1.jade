@@ -89,7 +89,7 @@ block content
             isSeqOn = data.isSequencerOn;
             isMalloOn = data.isMalloOn;
 
-            console.log("SERVER SENT - Welcome Mode: " + parseInt(data.mode) + " host " + location.host);
+            //console.log("SERVER SENT - Welcome Mode: " + parseInt(data.mode) + " host " + location.host);
             console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn + " Seq On? " + isSeqOn + " MalLo On? " + isMalloOn);
 
             // check if they have already consented
@@ -125,7 +125,7 @@ block content
 
         //receive messages from server (masterServerControl) on when to change the interface.
         socket.on('changeInterface', function (data) {
-            console.log("Interface Changed: " + data.newMode);
+            //console.log("Interface Changed: " + data.newMode);
             if (loggerOn) {
                 if (initMovements) {
                     logger.info("{ \"change_interface\" : " + data.newMode + ", \"global_time\" : " + syncClient.getTime() + "}");
@@ -138,7 +138,7 @@ block content
 
         //receive messages from server (masterServerControl) on when to turn on/off the sequencer
         socket.on('flipSeq', function (data) {
-            console.log("Message from server, turn sequencer: " + data.isOn);
+            //console.log("Message from server, turn sequencer: " + data.isOn);
             if (loggerOn) {
                 if (initMovements) {
                     logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
@@ -182,7 +182,7 @@ block content
 
         //receive messages from server (masterServerControl) on when to change the channel
         socket.on('changeChannel', function (data) {
-            console.log("Change Channel " + data.newChannel);
+            //console.log("Change Channel " + data.newChannel);
             $('#channels').sly('activate', data.newChannel);
         });
 
@@ -195,22 +195,25 @@ block content
 
         //when we receive predictions, schedule them
         socket.on('note_prediction', function (data) {
-            //todo: schedule the event
-            var offset = syncClient.getOffset();
-            var offset = syncClient.getOffset();
-            var instr;
-            if (data.address == "/left") {
-                instr = 0;
+            if (isMalloOn) {
+                console.log("isMalloOn prediction: " + isMalloOn);
+                //todo: schedule the event
+                var offset = syncClient.getOffset();
+                var offset = syncClient.getOffset();
+                var instr;
+                if (data.address == "/left") {
+                    instr = 0;
+                }
+                if (data.address == "/middle") {
+                    instr = 1;
+                }
+                if (data.address == "/right") {
+                    instr = 2;
+                }
+                scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
+                //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
             }
-            if (data.address == "/middle") {
-                instr = 1;
-            }
-            if (data.address == "/right") {
-                instr = 2;
-            }
-            scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
-            console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
-            console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
         });
 
         socket.on('error', console.error.bind(console));
@@ -226,56 +229,71 @@ block content
         // This will initialize our audio context so that it works on ios.
         $(function () {
             $("#soundCheck").on("click", function () {
-                $('#audioSetup').hide();
+
                 if (!isAudioSetup) {
                     try {
                         // Fix up for prefixing
                         if (isAudioContextSupported()) {
-                            console.log("Web Audio is supported!");
+                            //console.log("Web Audio is supported!");
                             audioContext = new (window.AudioContext || window.webkitAudioContext)();
                         }
                     } catch (e) {
-                        alert('You need webaudio support - try another browser');
+                        $('#notSupported').show();
+                        alert('You need webaudio support - try another browser or device');
                     }
 
                     for (var i = 0; i < nPlayers; i++) {
                         players.push(new Player());
                     }
 
-                    metronome = new Metronome(audioContext);
-                    metronome.setTempo(tempo);
+                    if (amIperformer) {
+                        metronome = new Metronome(audioContext);
+                        metronome.setTempo(tempo);
+                    }
 
                     // play sound to test audio
-                    playSound(audioContext.currentTime);
+                    //playSound(audioContext.currentTime);
 
-                    loadAudioFiles();
-
+                    loadAudioFiles(amIperformer);
+                    if (!initMovements) {
+                        console.log("Init Movements");
+                        initSyncAndScheduler();
+                        loadJSONandDOM();
+                        initMovements = true;
+                    }
                     isAudioSetup = true;
+                    if (currentInterface == InterfaceEnum.INFO) {
+                        $('#sequencerOn').show();
+                        switchSequencerOn(true);
+                        switchMalloOn(false);
+                    } else {
+                        playSound(audioContext.currentTime);
+                    }
                 } else {
                     // play sound to test audio
-                    playSound(audioContext.currentTime);
+                    //playSound(audioContext.currentTime);
                 }
-
             });
         });
 
 
         //TODO: Have it play something pretty here :)
         function playSound(time) {
-            console.log("Play Sound");
+            //console.log("Play Sound");
             var beepGain = audioContext.createGain();
             var beepLevel = audioContext.createGain();
             beepLevel.gain.value = 0.4;
             var envelope = new WebAHDSR(audioContext, beepGain.gain);
             var oscillator = audioContext.createOscillator();
-            oscillator.frequency.value = 800;
+            oscillator.frequency.value = 400;
             oscillator.connect(beepGain);
             beepGain.connect(beepLevel);
             beepLevel.connect(audioContext.destination);
             envelope.on();
             oscillator.start(time);
-            oscillator.stop(time + .1);    // you can set this to zero, but I left it here for testing.
+            oscillator.stop(time + 0.5);    // you can set this to zero, but I left it here for testing.
         }
+
 
 
         // function that initalizes the logger - called within the consentButton click action
@@ -299,7 +317,9 @@ block content
             syncClient = new SyncClient();
             if (syncClient != undefined) {
                 console.log("syncClient is defined");
-                metronome.setSyncClient(syncClient);
+                if (amIperformer) {
+                    metronome.setSyncClient(syncClient);
+                }
                 scheduler = new Scheduler(players, audioContext, logger, syncClient);
             } else {
                 console.log("syncClient is undefined");
@@ -319,24 +339,15 @@ block content
                 scheduler.checkSchedule();
             }, schedulerInterval);
 
-
             if (isSeqOn) {
-                console.log("Switch on sequencer!");
                 switchSequencerOn(true);
-            }
-            if (isMalloOn) {
-                console.log("Swith on mallo");
-                switchMalloOn(true);
-            } else {
-                console.log("Swith off mallo");
-                switchMalloOn(false);
             }
 
             stayAwake = setInterval(function () {
-                console.log("stay awake!");
+                //console.log("stay awake!");
                 location.href = location.href; //try refreshing
                 window.setTimeout(window.stop, 0); //stop it soon after
-            }, 1000);
+            }, 25000);
 
 
         }
@@ -375,26 +386,15 @@ block content
                 // make sound
                 ///metronome.stop();
                 metronome.start();
-                console.log("Metro make sound");
+                //console.log("Metro make sound");
             } else {
-                console.log("Metro stop makein sound");
+                //console.log("Metro stop makein sound");
                 metronome.stop();
             }
         }
 
         function switchMalloOn(isOn) {
-            if (isOn) {
-                console.log("MalLos on");
-                players[0].unmute();
-                players[1].unmute();
-                players[2].unmute();
-
-            } else {
-                console.log("Mallos Off!");
-                players[0].mute();
-                players[1].mute();
-                players[2].mute();
-            }
+            isMalloOn = isOn;
         }
 
         // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
@@ -474,6 +474,10 @@ block content
             $('#survey').hide();
             $('#credits').hide();
             $('#footer').hide();
+            $('#saveFooter').hide();
+            $('#sequencerOn').hide();
+            $('#notSupported').hide();
+
 
             $('#popupPlayer').hide();
             $('#popupChannel').hide();
@@ -489,13 +493,12 @@ block content
         function changeInterface(newMode) {
             prevInterface = currentInterface;
             currentInterface = newMode;
-            console.log("Old inter: " + prevInterface + " new: " + currentInterface);
             loadInterface();
         }
 
         // Call after updating the current Interface.
         function loadInterface() {
-            console.log("Current Mode " + currentInterface);
+            //console.log("Current Mode " + currentInterface);
             $('#credits').hide();
             $('#header').hide();
 
@@ -507,8 +510,12 @@ block content
                 $('#movement1').hide();
                 $('#movement2').hide();
             } else if (!isAudioSetup || currentInterface == InterfaceEnum.INFO) {
+                if (!isAudioSetup && currentInterface == InterfaceEnum.INFO) {
+                    $('#footer').hide();
+                } else {
+                    $('#footer').show();
+                }
                 $('#welcome').show();
-                $('#footer').show();
                 $('#audioSetup').hide();
 
                 $('#consent').hide();
@@ -518,9 +525,8 @@ block content
             } else {
                 //otherwise we are in a sound making interface!
                 if (!initMovements) {
-                    console.log("Init Movements");
+                    //console.log("Init Movements");
                     initSyncAndScheduler();
-                    // metronome.setSyncClient(syncClient);
                     loadJSONandDOM();
                     initMovements = true;
                 }
@@ -528,6 +534,9 @@ block content
                 switch (currentInterface) {
                     case InterfaceEnum.M1:
                         $('#movement1').show();
+                        switchSequencerOn(false);
+                        switchMalloOn(true);
+
 
                         $('#consent').hide();
                         $('#welcome').hide();
@@ -537,6 +546,8 @@ block content
                     case InterfaceEnum.TUTORIAL:
                         //disaply Tutorial header
                         $('#header').show();
+                        switchSequencerOn(true);
+                        switchMalloOn(false);
 
                         //begin popups
 
@@ -552,6 +563,8 @@ block content
                         break;
 
                     case InterfaceEnum.M2:
+                        switchSequencerOn(false);
+                        switchMalloOn(true);
 
                         $('#movement2').show();
                         $('#tabButton1').trigger('click');
@@ -965,7 +978,7 @@ block content
                 $('[data-role="navbar"] a').removeClass("ui-btn-active");
                 $('.tabs-content').children().hide();
                 $('#' + $(this).attr('data-tab')).show();
-                $("html,body").animate({scrollTop: 0}, 500);
+                //$("html,body").animate({scrollTop: 0}, 500);
                 $(this).addClass("ui-btn-active");
             });
         });
@@ -1021,12 +1034,12 @@ block content
                 var randCode = generateRandomCode(10);
                 var params = {};
                 var email = document.getElementById("emailTextBox").value;
-                console.log("EMAIL: " + email);
+                //console.log("EMAIL: " + email);
                 params["email"] = email;
                 params["code"] = randCode;
 
                 var str = JSON.stringify(params);
-                console.log(str);
+                //console.log(str);
 
                 var dateTime = Date.now();
 
@@ -1080,6 +1093,7 @@ block content
             if (loggerOn) {
                 logger.info("{ \"tutorial\" : 1, \"global_time\" : " + syncClient.getTime() + "}");
             }
+            console.log("Offset: " + $('#mode').get(0).offsetTop);
             $('#popupChannel').hide();
             $('#popupPlayer').show();
             $('#tabButton2').trigger('click');
@@ -1089,6 +1103,7 @@ block content
             if (loggerOn) {
                 logger.info("{ \"tutorial\" : 2, \"global_time\" : " + syncClient.getTime() + "}");
             }
+
             $('#popupPlayer').hide();
             $('#popupParams').show();
             $('#tabButton3').trigger('click');
@@ -1100,7 +1115,6 @@ block content
             }
             $('#popupParams').hide();
             $('#tutorialText').show();
-            $('#tabButton1').trigger('click');
         }
 
         function generateRandomCode(num) {
@@ -1111,26 +1125,6 @@ block content
             }
             return s;
         }
-    #header.center.ui-content(data-role='main')
-        .ui-body.ui-body-a.ui-corner-all
-            h3(role='banner') Intermission
-            p
-                | To prepare you for Movement 2 we will take a couple of minutes to let you get familiar with the interface.
-                | A drum sequencer will play the instruments, instead of the performers on stage.
-            div#tutorialText(data-theme='b')
-                a.ui-btn-b.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', onclick='startTutorial()') Click for tutorial
-            h5#popupChannel(data-theme='b')
-                .ui-body.ui-body-b.ui-corner-all
-                    p In the 'Change the Channel' mode you can swipe or click the slider to change the presets for all players.
-                    button#channelsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='channelsNext()') Next
-            h5#popupPlayer(data-theme='c')
-                .ui-body.ui-body-c.ui-corner-all
-                    p In the 'Change the Player' mode you can swipe or click the sliders to change the presets for individual players.
-                    button#playersNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='playersNext()') Next
-            h5#popupParams(data-theme='d')
-                .ui-body.ui-body-d.ui-corner-all
-                    p In the 'Change the Parameters' mode you can change specific parameters for each individual players.
-                    button#paramsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='paramsNext()') Done
 
     #consent.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
@@ -1146,19 +1140,33 @@ block content
             a.consentButton.ui-btn.ui-btn-inline(id='0') No - Do not Use My Data
     #welcome.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
-            h3.center(role='banner') Welcome to the March MalLo performance website!
+            h3.center.player1_color(role='banner') Welcome to the March MalLo performance website!
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                        | To make sure that you can hear the sound for this piece, please put in your headphones now and click the button below.
-                        | After each click, you should hear a short tone. If you do not hear the tone, your device or browser may not be compatible to play the audio for this piece.
-                        | Ask around to see if you can share with another audience member. There are headphone jack splitters available upon request.
-
+                        | Put in your headphones and click the button below.
                     button#soundCheck.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button') Enable Audio and Check Sound
                 div#audioSetup(style='margin: 10px 0 0 0;',)
                     p
                         | You must click the sound check button to enable the audio for this piece.
+                div#notSupported(style='margin: 10px 0 0 0;',)
+                    p.player2_color
+                        | You need WebAudio support - try another browser or device
+                div#sequencerOn(style='margin: 10px 0 0 0;',)
+                    p
+                        | You should hear a sequence of three beats and a rest. If you do not, then your device will not work for this piece.
+                        | Headphone jack splitters are available upon request so you can share with a neighbor.
+                    p#tips(style='margin: 10px 0 0 0;')
+                        p.player3_color Some tips for the performance:
+                        ul Do not use your browsers navigation buttons during the piece.
+                        ul If things don't seem to be working right, try refreshing your browser.
+                        ul Make sure to keep your computer awake during the piece.
+                        ul Reminder: You are not connected to the internet while you are on this router.
+                    p#thanks(style='margin: 10px 0 0 0;',)
+                        p.player2_color  Thank you for your patience as we get setup!
+                        p.player1_color This screen will change when the piece begins.
+
             .ui-block-c(style='width:10%')
     #movement1.center.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
@@ -1167,17 +1175,38 @@ block content
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                        | Movement 1 requires no interaction. Please put on headphones, and simply listen to this part of the piece.
+                        | There is no interaction for Movement 1. Sit back and enjoy the piece.
             .ui-block-c(style='width:10%')
+    #header.center.ui-content(data-role='main')
+        .ui-body.ui-body-a.ui-corner-all
+            h3(role='banner') Intermission
+            p.player1_color To prepare you for Movement 2, take a few minutes to play with the interface.
+            p.player2_color A drum sequencer is controlling the sound.
+            div#tutorialText(data-theme='b')
+                a.ui-btn-b.tutorialButton.ui-btn.ui-corner-all.ui-shadow.ui-btn-inline(name='1', onclick='startTutorial()') Click for tutorial
+            h5#popupChannel(data-theme='b')
+                .ui-body.ui-body-b.ui-corner-all
+                    p In the 'Change the Channel' mode you can swipe or click the slider to change the presets for all players.
+                    button#channelsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='channelsNext()') Next
+            h5#popupPlayer(data-theme='c')
+                .ui-body.ui-body-c.ui-corner-all
+                    p In the 'Change the Player' mode you can swipe or click the sliders to change the presets for individual players.
+                    button#playersNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='playersNext()') Next
+            h5#popupParams(data-theme='d')
+                .ui-body.ui-body-d.ui-corner-all
+                    p In the 'Change the Parameters' mode you can change specific parameters for each individual players.
+                    button#paramsNext.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button', onclick='paramsNext()') Done
+
     #movement2(data-role='tabs', data-position='inline', role='banner', data-transition='slide')
+
         div(data-role='navbar')
             ul
                 li
-                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change the Channel') Channels
+                    a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external', name = 'Change the Channel') Channels
                 li
-                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', name = 'Change Each Player') Players
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Each Player') Players
                 li
-                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', name = 'Change Parameters') Parameters
+                    a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Parameters') Parameters
         .ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
             h2#mode Change the Channel
         #one.ui-content(data-role='main')
@@ -1248,7 +1277,7 @@ block content
                             input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-pp-decay') Sustain
                         .rightItem
-                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', mi1='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-pp-scale') Pattern
                         .rightItem
                             input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
@@ -1264,7 +1293,7 @@ block content
                             input.ui-hidden-accessible#m0-el-vol(type='range', name='m0-el-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
                         label.leftItem#m0-el-size-l(for='m0-el-size') Echo
                         .rightItem#m0-el-size-r
-                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b',min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-el-decay') Sustain
                         .rightItem
                             input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
@@ -1273,10 +1302,10 @@ block content
                             input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-el-pitch') Pattern
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='b', data-theme='b', min='1', max='4', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m0-el-fat') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='b', data-theme='b',min='1', max='10', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='b', data-theme='b',min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
                 #m1-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='c')
                     h3 Player 2
                     .ui-content
@@ -1304,7 +1333,7 @@ block content
                             input#m1-dc-drums(type='range', name='m1-dc-drums', data-track-theme='c', data-theme='c', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-dc-dyn') Dynamics
                         .rightItem
-                            input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='c', data-theme='c', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
                     .ui-content#m1-pp
                         label.leftItem(for='m1-pp-vol') Volume
                         .rightItem
@@ -1317,7 +1346,7 @@ block content
                             input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-pp-scale') Pattern
                         .rightItem
-                            input.ui-hidden-accessible#m1-pp-scale(type='range', name='m1-pp-scale', data-track-theme='c', data-theme='c', min='1', max='4', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m1-pp-scale(type='range', name='m1-pp-scale', data-track-theme='c', data-theme='c', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-pp-vib') Vibrato
                         .rightItem
                             input.ui-hidden-accessible#m1-pp-vib(type='range', name='m1-pp-vib', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
@@ -1339,10 +1368,10 @@ block content
                             input.ui-hidden-accessible#m1-el-grunge(type='range', name='m1-el-grunge', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-el-pitch') Pattern
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='c', data-theme='c', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m1-el-fat') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='1', max='10', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
                 #m2-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='d')
                     h3 Player 3
                     .ui-content
@@ -1358,19 +1387,19 @@ block content
                             input#m2-dc-vol(type='range', name='m2-dc-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true',  data-mini='true')
                         label.leftItem(for='m2-dc-size') Echo
                         .rightItem
-                            input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-dc-decay') Sustain
                         .rightItem
-                            input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-dc-pitch') Pitch
                         .rightItem
-                            input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-dc-drums') # o'Drums
                         .rightItem
                             input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='d', data-theme='d', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-dc-dyn') Dynamics
                         .rightItem
-                            input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', min='1', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
                     .ui-content#m2-pp
                         label.leftItem(for='m2-pp-vol') Volume
                         .rightItem
@@ -1383,7 +1412,7 @@ block content
                             input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-pp-scale') Pattern
                         .rightItem
-                            input.ui-hidden-accessible#m2-pp-scale(type='range', name='m2-pp-scale', data-track-theme='d', data-theme='d', min='1', max='4', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m2-pp-scale(type='range', name='m2-pp-scale', data-track-theme='d', data-theme='d', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-pp-vib') Vibrato
                         .rightItem
                             input.ui-hidden-accessible#m2-pp-vib(type='range', name='m2-pp-vib', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
@@ -1405,12 +1434,12 @@ block content
                             input.ui-hidden-accessible#m2-el-grunge(type='range', name='m2-el-grunge', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-el-pitch') Pattern
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='d', data-theme='d', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
                         label.leftItem(for='m2-el-fat') Pitch
                         .rightItem
-                            input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='d', data-theme='d', min='1', max='10', value='0', data-popup-enabled='true', data-mini='true')
+                            input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='d', data-theme='d', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
         h2#result
-        div(data-role='footer', role='banner', data-position='inline')
+        div#saveFooter(data-role='footer', role='banner', data-position='inline')
             h1
                 .ui-grid-b
                     .ui-block-a(style='text-align: left;')
@@ -1433,8 +1462,8 @@ block content
                     label(for='emailTextBox', data-theme='b') Email:
                     input#emailTextBox(type='text', name='text-basic', data-theme='b', value='')
                 .ui-field-contain
-                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:40%', onclick="submitEmailButton(true)") Submit
-                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:15%', onclick="submitEmailButton(false)") No Thanks
+                    button#submitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:60%', onclick="submitEmailButton(true)") Submit
+                    button#notSubmitEmail.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini(type='submit', style='width:45%', onclick="submitEmailButton(false)") No Thanks
             .ui-block-c(style='width:10%')
 
     #credits.center.ui-content(data-role='main')

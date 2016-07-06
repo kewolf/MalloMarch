@@ -3,7 +3,7 @@ var nVibraphoneSamples = 37;
 var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
 var clickPath = '/audio/stick.mp3';
 
-function loadAudioFiles() {
+function loadAudioFiles(amIperformer) {
     // get the snare samples from the server
     var requests = [];
     for (var i = 0; i < nSnares; i++) {
@@ -42,18 +42,20 @@ function loadAudioFiles() {
     request.send();
 
     // get metronome click
-    var clickRequest = new XMLHttpRequest();
-    clickRequest.open('GET', clickPath, true);
-    clickRequest.responseType = 'arraybuffer';
-    clickRequest.onload = function () {
-        audioContext.decodeAudioData(clickRequest.response, function (buffer) {
-            metronome.setClick(buffer);
-            console.log("Loaded metronome click");
-        }, function (e) {
-            console.log("Error setting up the reverb buffer: " + e.err);
-        });
-    };
-    clickRequest.send();
+    if (amIperformer) {
+        var clickRequest = new XMLHttpRequest();
+        clickRequest.open('GET', clickPath, true);
+        clickRequest.responseType = 'arraybuffer';
+        clickRequest.onload = function () {
+            audioContext.decodeAudioData(clickRequest.response, function (buffer) {
+                metronome.setClick(buffer);
+                console.log("Loaded metronome click");
+            }, function (e) {
+                console.log("Error setting up the reverb buffer: " + e.err);
+            });
+        };
+        clickRequest.send();
+    }
 
     var vibraphoneRequests = [];
     for (var k = 0; k < nVibraphoneSamples; k++) {

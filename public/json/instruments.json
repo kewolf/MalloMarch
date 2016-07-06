@@ -1,12 +1,12 @@
 {
   "i0": {
     "activeInstrument": 0,
-    "size": "10",
-    "decay": "50",
-    "level": "0.5",
-    "nDrummers": "1",
-    "drumPitch": "1",
-    "dynamics": "1"
+    "size": "14",
+    "decay": "4",
+    "level": "0.4",
+    "nDrummers": "10",
+    "drumPitch": "3",
+    "dynamics": "0"
   },
   "i1": {
     "activeInstrument": 1,
@@ -18,15 +18,6 @@
     "trippiness": "0"
   },
   "i2": {
-    "activeInstrument": 0,
-    "size": "24",
-    "decay": "2",
-    "level": "0.13",
-    "nDrummers": "2",
-    "drumPitch": "27",
-    "dynamics": "4"
-  },
-  "i3": {
     "activeInstrument": 2,
     "size": "50",
     "decay": "55",
@@ -35,7 +26,7 @@
     "electronicPitch": "3",
     "fatness": "10"
   },
-  "i4": {
+  "i3": {
     "activeInstrument": 1,
     "size": "49",
     "decay": "69",
@@ -44,25 +35,25 @@
     "vibrato": "66",
     "trippiness": "72"
   },
-  "i5": {
+  "i4": {
     "activeInstrument": 0,
     "size": "31",
     "decay": "70",
     "level": "0.5",
     "nDrummers": "2",
     "drumPitch": "50",
-    "dynamics": "0"
+    "dynamics": "1"
+  },
+  "i5": {
+    "activeInstrument": 2,
+    "size": "0",
+    "decay": "71",
+    "level": "0.5",
+    "grunge": "94",
+    "electronicPitch": "3",
+    "fatness": "0"
   },
   "i6": {
-    "activeInstrument": 2,
-    "size": "98",
-    "decay": "14",
-    "level": "0.5",
-    "grunge": "92",
-    "electronicPitch": "4",
-    "fatness": "10"
-  },
-  "i7": {
     "activeInstrument": 0,
     "size": "98",
     "decay": "2",
@@ -71,34 +62,25 @@
     "drumPitch": "27",
     "dynamics": "9"
   },
-  "i8": {
+  "i7": {
     "activeInstrument": 1,
     "size": "96",
     "decay": "34",
-    "level": "0.5",
-    "range": "1",
+    "level": "0.6",
+    "range": "4",
     "vibrato": "5",
     "trippiness": "2"
   },
-  "i9": {
-    "activeInstrument": 1,
-    "size": "51",
-    "decay": "94",
-    "level": "0.07",
-    "range": "3",
-    "vibrato": "98",
-    "trippiness": "42"
-  },
-  "i10": {
+  "i8": {
     "activeInstrument": 1,
     "size": "52",
     "decay": "97",
-    "level": "0.07",
+    "level": "0.1",
     "range": "2",
     "vibrato": "93",
     "trippiness": "98"
   },
-  "i11": {
+  "i9": {
     "activeInstrument": 0,
     "size": "92",
     "decay": "1",
@@ -107,7 +89,7 @@
     "drumPitch": "88",
     "dynamics": "2"
   },
-  "i12": {
+  "i10": {
     "activeInstrument": 1,
     "size": "96",
     "decay": "45",
@@ -116,16 +98,16 @@
     "vibrato": "41",
     "trippiness": "69"
   },
-  "i13": {
+  "i11": {
     "activeInstrument": 1,
-    "size": "17",
-    "decay": "98",
-    "level": "0.26",
-    "range": "2",
-    "vibrato": "57",
-    "trippiness": "43"
+    "size": "53",
+    "decay": "9",
+    "level": "1",
+    "range": "4",
+    "vibrato": "98",
+    "trippiness": "29"
   },
-  "i14": {
+  "i12": {
     "activeInstrument": 2,
     "size": "24",
     "decay": "7",
@@ -133,32 +115,5 @@
     "grunge": "2",
     "electronicPitch": "3",
     "fatness": "2"
-  },
-  "i15": {
-    "activeInstrument": 0,
-    "size": "6",
-    "decay": "1",
-    "level": "0.5",
-    "nDrummers": "2",
-    "drumPitch": "27",
-    "dynamics": "9"
-  },
-  "i16": {
-    "activeInstrument": 0,
-    "size": "5",
-    "decay": "0",
-    "level": "0.26",
-    "nDrummers": "2",
-    "drumPitch": "50",
-    "dynamics": ""
-  },
-  "i17": {
-    "activeInstrument": 1,
-    "size": "51",
-    "decay": "98",
-    "level": "0.15",
-    "range": "2",
-    "vibrato": "98",
-    "trippiness": "1"
   }
 }
