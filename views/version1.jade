@@ -25,7 +25,7 @@ block content
         var nPlayers = 3;
         var players = [];
         var metronome;
-        var tempo = 110.0;
+        var tempo = 90.0;
         var instrumentPresets = [];
         var channelPresets = {};
         var nPresetChannels = 0;
@@ -255,6 +255,14 @@ block content
                     //playSound(audioContext.currentTime);
 
                     loadAudioFiles(amIperformer);
+                    if (currentInterface == InterfaceEnum.INFO) {
+                        console.log("currentInterface: " + currentInterface);
+                        $('#sequencerOn').show();
+                        switchSequencerOn(true);
+                        switchMalloOn(false);
+                    } else {
+                        playSound(audioContext.currentTime);
+                    }
                     if (!initMovements) {
                         console.log("Init Movements");
                         initSyncAndScheduler();
@@ -262,16 +270,12 @@ block content
                         initMovements = true;
                     }
                     isAudioSetup = true;
-                    if (currentInterface == InterfaceEnum.INFO) {
-                        $('#sequencerOn').show();
-                        switchSequencerOn(true);
-                        switchMalloOn(false);
-                    } else {
-                        playSound(audioContext.currentTime);
-                    }
+
                 } else {
                     // play sound to test audio
-                    //playSound(audioContext.currentTime);
+                    if (currentInterface != InterfaceEnum.INFO) {
+                        playSound(audioContext.currentTime);
+                    }
                 }
             });
         });
@@ -504,13 +508,12 @@ block content
 
             if (currentInterface == InterfaceEnum.SURVEY) {
                 $('#survey').show();
-
                 $('#consent').hide();
                 $('#welcome').hide();
                 $('#movement1').hide();
                 $('#movement2').hide();
             } else if (!isAudioSetup || currentInterface == InterfaceEnum.INFO) {
-                if (!isAudioSetup && currentInterface == InterfaceEnum.INFO) {
+                if (currentInterface == InterfaceEnum.INFO) {
                     $('#footer').hide();
                 } else {
                     $('#footer').show();
@@ -1159,7 +1162,7 @@ block content
                         | Headphone jack splitters are available upon request so you can share with a neighbor.
                     p#tips(style='margin: 10px 0 0 0;')
                         p.player3_color Some tips for the performance:
-                        ul Do not use your browsers navigation buttons during the piece.
+                        ul Do not navigate away from the page.
                         ul If things don't seem to be working right, try refreshing your browser.
                         ul Make sure to keep your computer awake during the piece.
                         ul Reminder: You are not connected to the internet while you are on this router.

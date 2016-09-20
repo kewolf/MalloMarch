@@ -130,7 +130,7 @@ io.on('connection', function (socket) {
         }
         else if (newSocket.type == "params") {
             var saveStr = id + "_" + date;
-            var file = 'savedJSON/ICAD_PracticeSession' + saveStr + '.json';
+            var file = 'savedJSON/ICAD_Performance' + saveStr + '.json';
 
             jsonfile.spaces = 4;
             jsonfile.writeFile(file, data, function (err) {
