@@ -6,6 +6,8 @@
 #include "ofxOsc.h"
 #include "ofxGui.h"
 
+#define HISTORY_SIZE 1024
+
 class ofApp : public ofBaseApp{
     
 public:
@@ -54,7 +56,7 @@ public:
     uint64_t last_time_query = 0;
     uint64_t time_query_interval = 10;
     
-    float mallet_height;
+//    float mallet_height;
     Timer * metronome_timer;
     vector<Timer *> timers;
     
@@ -92,5 +94,17 @@ public:
     uint64_t last_press_middle;
     uint64_t last_press_right;
     uint64_t button_wait = 100;
+    
+    // visualization stuff
+    float future_heights[HISTORY_SIZE];
+    float actual_heights[HISTORY_SIZE];
+    int future_heights_index = 0;
+    int array_index = 0;
+//    float mallet_height;
+    float mallet_x;
+    float old_x = 0;
+    float old_height = 0;
+    float gb = 0;
+    
     
 };

@@ -73,6 +73,7 @@ public:
         this->heightEvent1 = heightEvent1;
         this->heightEvent2 = heightEvent2;
     }
+    bool found_tool = false;
     
 protected:
     
@@ -94,6 +95,9 @@ protected:
         {
             ofNotifyEvent(*heightEvent1, leap_height1);
             //            printf("%f\n",(float) toolList[0].tipPosition().y);
+            found_tool = true;
+        } else {
+            found_tool = false;
         }
         
         if (toolList.count() > 1)

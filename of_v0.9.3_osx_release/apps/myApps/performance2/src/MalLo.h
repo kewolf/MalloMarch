@@ -32,24 +32,24 @@ using Poco::TimerCallback;
 
 /** TODO: I think this message object is no longer used for this version of Mallo **/
 
-class MalloMessage
+class FutureHeight
 {
-    
+
 public:
-    MalloMessage(float time_val, ofEvent<float> * receiver_ofEvent)
+    FutureHeight(float height_val, float * future_height)
     {
-        time = time_val;
-        receiver = receiver_ofEvent;
+        height = height_val;
+        future_height_ptr = future_height;
     }
-    
+
     void schedule(Timer& timer)
     {
-        ofNotifyEvent(*receiver, time);
+        *future_height_ptr = height;
     }
-    
+
 protected:
-    float time;
-    ofEvent<float> * receiver;
+    float height;
+    float * future_height_ptr;
 };
 
 
@@ -73,6 +73,11 @@ public:
         beta = 20;
     }
     
+    float getHeight()
+    {
+        return (heights.size() > 0) ? heights.back() : 0;
+    }
+    
     void setLatency(float latency_val)
     {
         latency = latency_val;
@@ -92,8 +97,15 @@ public:
             float prediction_time = predict();
             // send the message
             ofNotifyEvent(*receiver, prediction_time);
+            future_heights.push_back(new FutureHeight(new_future_height, &future_height));
+            timers.push_back(new Timer(latency, 0));
+            timers.back()->start(TimerCallback<FutureHeight>(*future_heights.back(),
+                                                             &FutureHeight::schedule),
+                                 Thread::PRIO_HIGHEST);
         }
     }
+    
+    float future_height = 0;
     
 protected:
     
@@ -104,86 +116,63 @@ protected:
     float latency;
     float alpha;
     float beta;
+    float new_future_height;
     
     // These are
     string message_action;
     float message_time;
     vector<Timer *> timers;
-    vector<MalloMessage *> messages;
+    //vector<MalloMessage *> messages;
+    vector<FutureHeight *> future_heights;
     
     ofEvent<float> * receiver;
     
     /* Predicts the time of a mallet hit. If there is no predicted mallet hit, returns -1
      * which is interpreted by the receiver as an "unschdule" event */
     
+    
     float predict()
     {
         
         Eigen::MatrixXf A(13,3);
         Eigen::VectorXf b(13);
-        bool test = false;
+        
         
         float offset;
         // for testing
-        if (test)
-        {
-            float test_times[13] = {-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6};
-            
-            A <<  1, test_times[0], pow(test_times[0], 2),
-            1, test_times[1], pow(test_times[1], 2),
-            1, test_times[2], pow(test_times[2], 2),
-            1, test_times[3], pow(test_times[3], 2),
-            1, test_times[4], pow(test_times[4], 2),
-            1, test_times[5], pow(test_times[5], 2),
-            1, test_times[6], pow(test_times[6], 2),
-            1, test_times[7], pow(test_times[7], 2),
-            1, test_times[8], pow(test_times[8], 2),
-            1, test_times[9], pow(test_times[9], 2),
-            1, test_times[10], pow(test_times[10], 2),
-            1, test_times[11], pow(test_times[11], 2),
-            1, test_times[12], pow(test_times[12], 2);
-            
-            
-            b << -85, -60, -39, -22, -9, 0, 5, 6, 3, -4, -15, -30, -49;
-            cout << "Testing:\n";
-        } else
-        {
-            offset = times[6];
-            
-            A <<  1, times[0] - offset, pow(times[0] - offset, 2),
-                  1, times[1] - offset, pow(times[1] - offset, 2),
-                  1, times[2] - offset, pow(times[2] - offset, 2),
-                  1, times[3] - offset, pow(times[3] - offset, 2),
-                  1, times[4] - offset, pow(times[4] - offset, 2),
-                  1, times[5] - offset, pow(times[5] - offset, 2),
-                  1, times[6] - offset, pow(times[6] - offset, 2),
-                  1, times[7] - offset, pow(times[7] - offset, 2),
-                  1, times[8] - offset, pow(times[8] - offset, 2),
-                  1, times[9] - offset, pow(times[9] - offset, 2),
-                  1, times[10] - offset, pow(times[10] - offset, 2),
-                  1, times[11] - offset, pow(times[11] - offset, 2),
-                  1, times[12] - offset, pow(times[12] - offset, 2);
-            
-            b << heights[0], heights[1], heights[2], heights[3],
-                 heights[4], heights[5], heights[6], heights[7],
-                 heights[8], heights[9], heights[10], heights[11],
-                 heights[12];
-        }
+        
+        offset = times[6];
+        
+        A <<  1, times[0] - offset, pow(times[0] - offset, 2),
+        1, times[1] - offset, pow(times[1] - offset, 2),
+        1, times[2] - offset, pow(times[2] - offset, 2),
+        1, times[3] - offset, pow(times[3] - offset, 2),
+        1, times[4] - offset, pow(times[4] - offset, 2),
+        1, times[5] - offset, pow(times[5] - offset, 2),
+        1, times[6] - offset, pow(times[6] - offset, 2),
+        1, times[7] - offset, pow(times[7] - offset, 2),
+        1, times[8] - offset, pow(times[8] - offset, 2),
+        1, times[9] - offset, pow(times[9] - offset, 2),
+        1, times[10] - offset, pow(times[10] - offset, 2),
+        1, times[11] - offset, pow(times[11] - offset, 2),
+        1, times[12] - offset, pow(times[12] - offset, 2);
+        
+        b << heights[0], heights[1], heights[2], heights[3],
+        heights[4], heights[5], heights[6], heights[7],
+        heights[8], heights[9], heights[10], heights[11],
+        heights[12];
+        
         
         // returns the coeifficients in ascending order of degree
         Eigen::Vector3f poly = (A.transpose() * A).ldlt().solve(A.transpose() * b);
         
+        // evaluate the polynomial <latency> seconds in the future
+        float future_time = times[12] - offset + latency;
+        new_future_height = poly(0) + poly(1) * future_time + poly(2) * pow(future_time, 2);
+        
         
         // if the polynomial meets certain criteria, solve and return the larger root
         if (poly(2) < 0 &&
-//            heights[1] - heights[0] <= 0 &&
-//            heights[2] - heights[1] <= 0 &&
-//            heights[3] - heights[2] <= 0 &&
-//            heights[4] - heights[3] <= 0 &&
-//            heights[5] - heights[4] <= 0 &&
-//            heights[6] - heights[5] <= 0 &&
-//            heights[7] - heights[6] <= 0 &&
-//            heights[8] - heights[7] <= 0 &&
             heights[9] - heights[8] < 0 &&
             heights[10] - heights[9] < 0 &&
             heights[11] - heights[10] < 0 &&

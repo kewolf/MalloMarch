@@ -80,6 +80,9 @@ void ofApp::draw(){
         ip_set = true;
         setIp(); //
     }
+    float fade_rate = 3.5;
+    int circle_radius = 5;
+
     
     // for testing
 //    if (ofGetElapsedTimeMillis() - time_last_msg > 1000)
@@ -94,6 +97,63 @@ void ofApp::draw(){
 //        //cout << "path: " << osc_path << ", ip_address: " << ip_address << endl;
 //    }
     gui.draw();
+    
+    
+    // mallet visualization
+    future_heights[array_index % HISTORY_SIZE] = mallo_predictor1->future_height;
+    actual_heights[array_index % HISTORY_SIZE] = mallo_predictor1->getHeight();
+    
+    if (!toolTrackerMulti->found_tool)
+    {
+        gb = 0.0;
+    }
+    
+    ofSetColor(255,(int)gb, (int)gb);
+    ofPolyline future_line, actual_line;
+    float sum = 0;
+    for (int this_index = 0; this_index < HISTORY_SIZE; this_index++)
+    {
+        int local_index = (array_index + this_index + 1 ) % HISTORY_SIZE;
+//        ofPoint pt;
+//        pt.set(this_index, ofGetHeight() - frame_periods[local_index]);
+//        frame_line.addVertex(pt);
+//        sum += frame_periods[local_index];
+        
+        ofPoint pt2;
+        //        pt2.set(ofGetWindowWidth() + mallet_x - this_index, ofGetHeight() - future_heights[local_index]);
+        pt2.set(ofGetWindowWidth() - this_index, ofGetHeight() - future_heights[local_index]);
+        future_line.addVertex(pt2);
+        
+        ofPoint pt3;
+        pt3.set(ofGetWindowWidth() - this_index, ofGetHeight() - actual_heights[local_index]);
+        actual_line.addVertex(pt3);
+    }
+    
+//    if (show_frame_period)
+//    {
+//        frame_line.draw();
+//        getSharedData().font.drawString("Avg Frame period: " + ofToString(sum/((float)HISTORY_SIZE)), 400, ofGetHeight() - 40);
+//    }
+    
+    ofImage input_device_img;
+
+//        input_device_img = getSharedData().leap_img;
+        ofSetColor(255, (int)gb, 0);
+        future_line.draw();
+        ofSetColor(255,(int)gb, (int)gb);
+        actual_line.draw();
+        array_index++;
+        
+        ofSetColor(255, 255, 0);
+        ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->future_height, circle_radius * 2);
+        ofSetColor(255, 255, 255);
+        ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->getHeight(), circle_radius);
+//        old_height = mallet_height;
+        old_x = mallet_x;
+        gb = (gb < 255.0) ? gb + fade_rate : 255.0;
+
+    
+    ofSetColor(255, 255, 255);
     
 }
 
