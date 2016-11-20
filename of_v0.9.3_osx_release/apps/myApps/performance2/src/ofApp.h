@@ -26,6 +26,7 @@ public:
     void windowResized(int w, int h);
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
+    void sendToChuck(LeapPosition pos);
     
     //################# mine ######################
     
@@ -84,6 +85,7 @@ public:
     ofxToggle toggle_right;
     ofxLabel ip_display;
     ofxButton change_ip;
+    ofxToggle send_to_chuck;
     
     uint64_t last_press_left;
     uint64_t last_press_middle;
@@ -91,14 +93,19 @@ public:
     uint64_t button_wait = 100;
     
     // visualization stuff
-    float future_heights[HISTORY_SIZE];
+    float predicted_heights[HISTORY_SIZE];
     float actual_heights[HISTORY_SIZE];
-    int future_heights_index = 0;
+    int predicted_heights_index = 0;
     int array_index = 0;
     float mallet_x;
     float old_x = 0;
     float old_height = 0;
     float gb = 0;
+    
+    // Sending to Chuck
+    bool hysteresis_reset = true;
+    uint64_t last_chuck_send_time = 0;
+    uint64_t chuck_timeout = 250;
     
     
 };

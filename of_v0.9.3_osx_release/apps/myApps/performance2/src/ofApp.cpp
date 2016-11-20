@@ -38,8 +38,9 @@ void ofApp::setup(){
     gui.add(toggle_left.setup("Left Performer", true));
     gui.add(toggle_middle.setup("Middle Performer", false));
     gui.add(toggle_right.setup("Right Performer", false));
-    gui.add(ip_display.setup("IP Adress", ip_address));
+    gui.add(ip_display.setup("IP Address", ip_address));
     gui.add(change_ip.setup("Change IP Address"));
+    gui.add(send_to_chuck.setup("Send to Chuck", false));
     
     toggle_left.addListener(this, &ofApp::leftChanged);
     toggle_right.addListener(this, &ofApp::rightChanged);
@@ -82,12 +83,28 @@ void ofApp::draw(){
 //        time_last_msg = ofGetElapsedTimeMillis();
 //        //cout << "path: " << osc_path << ", ip_address: " << ip_address << endl;
 //    }
-    gui.draw();
+    
     
     
     // mallet visualization
-    future_heights[array_index % HISTORY_SIZE] = mallo_predictor1->future_height;
+    predicted_heights[array_index % HISTORY_SIZE] = mallo_predictor1->predicted_height;
     actual_heights[array_index % HISTORY_SIZE] = mallo_predictor1->getHeight();
+    
+    // chuck
+    if (send_to_chuck &&
+        mallo_predictor1->predicted_height < 0 &&
+        ofGetElapsedTimeMillis() - last_chuck_send_time > chuck_timeout &&
+        hysteresis_reset)
+    {
+        sendToChuck(mallo_predictor1->past_leap_position);
+        hysteresis_reset = false;
+        last_chuck_send_time = ofGetElapsedTimeMillis();
+    } else if (mallo_predictor1->predicted_height > 10 && !hysteresis_reset)
+    {
+        hysteresis_reset = true;
+    }
+    
+    gui.draw();
     
     if (!toolTrackerMulti->found_tool)
     {
@@ -101,7 +118,7 @@ void ofApp::draw(){
     {
         int local_index = (array_index + this_index + 1 ) % HISTORY_SIZE;
         ofPoint pt2;
-        pt2.set(ofGetWindowWidth() - this_index, ofGetHeight() - future_heights[local_index]);
+        pt2.set(ofGetWindowWidth() - this_index, ofGetHeight() - predicted_heights[local_index]);
         future_line.addVertex(pt2);
         
         ofPoint pt3;
@@ -118,7 +135,7 @@ void ofApp::draw(){
         array_index++;
         
         ofSetColor(255, 255, 0);
-        ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->future_height, circle_radius * 2);
+        ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->predicted_height, circle_radius * 2);
         ofSetColor(255, 255, 255);
         ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->getHeight(), circle_radius);
         old_x = mallet_x;
@@ -227,7 +244,7 @@ void ofApp::sendOsc(float & scheduled_time)
     } else if (scheduled_time == 0)
     {
         if (last_message_was_nada) { return; }
-        cout << "*** sent nothing ***" << endl;
+//        cout << "*** sent nothing ***" << endl;
         last_message_was_nada = true;
         return;
     } else {
@@ -242,7 +259,7 @@ void ofApp::sendOsc(float & scheduled_time)
     msg.addFloatArg(1.f);
     
     osc_sender.sendMessage(msg);
-    cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
+//    cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
 }
 
 //void ofApp::inputReceived()
@@ -306,5 +323,10 @@ void ofApp::setIp()
     ip_display = ip_address;
     osc_sender.setup(ip_address, 6449);
     
+}
+
+void ofApp::sendToChuck(LeapPosition pos)
+{
+    printf("x: %f, y: %f, z: %f\n", pos.tipPosition.x, pos.tipPosition.y, pos.tipPosition.z);
 }
 

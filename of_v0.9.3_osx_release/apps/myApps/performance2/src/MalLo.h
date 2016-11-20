@@ -31,24 +31,32 @@ using Poco::TimerCallback;
  *****************/
 
 
+/* Used to simluate the prediction process by updating the "predicted_height" 
+  of the mallo predictor after <latency> amount of time has passed. It's a hack.
+ */
 class FutureHeight
 {
 
 public:
-    FutureHeight(float height_val, float * future_height)
+    FutureHeight(float height_val, float * predicted_height, LeapPosition leap_pos, LeapPosition * past_leap_position)
     {
         height = height_val;
-        future_height_ptr = future_height;
+        predicted_height_ptr = predicted_height;
+        pos = leap_pos;
+        past_leap_position_ptr = past_leap_position;
     }
 
     void schedule(Timer& timer)
     {
-        *future_height_ptr = height;
+        *predicted_height_ptr = height;
+        *past_leap_position_ptr = pos;
     }
 
 protected:
     float height;
-    float * future_height_ptr;
+    float * predicted_height_ptr;
+    LeapPosition pos;
+    LeapPosition * past_leap_position_ptr;
 };
 
 
@@ -96,15 +104,16 @@ public:
             float prediction_time = predict();
             // send the message
             ofNotifyEvent(*receiver, prediction_time);
-            future_heights.push_back(new FutureHeight(new_future_height, &future_height));
+            predicted_heights.push_back(new FutureHeight(new_predicted_height, &predicted_height, position_event, &past_leap_position));
             timers.push_back(new Timer(latency, 0));
-            timers.back()->start(TimerCallback<FutureHeight>(*future_heights.back(),
+            timers.back()->start(TimerCallback<FutureHeight>(*predicted_heights.back(),
                                                              &FutureHeight::schedule),
                                  Thread::PRIO_HIGHEST);
         }
     }
     
-    float future_height = 0;
+    float predicted_height = 0;
+    LeapPosition past_leap_position = LeapPosition(Vector(0,0,0), Vector(0,0,0), 0);
     
 protected:
     
@@ -115,14 +124,14 @@ protected:
     float latency;
     float alpha;
     float beta;
-    float new_future_height;
+    float new_predicted_height;
     
     // These are
     string message_action;
     float message_time;
     vector<Timer *> timers;
     //vector<MalloMessage *> messages;
-    vector<FutureHeight *> future_heights;
+    vector<FutureHeight *> predicted_heights;
     
     ofEvent<float> * receiver;
     
@@ -167,7 +176,7 @@ protected:
         
         // evaluate the polynomial <latency> seconds in the future
         float future_time = times[12] - offset + latency;
-        new_future_height = poly(0) + poly(1) * future_time + poly(2) * pow(future_time, 2);
+        new_predicted_height = poly(0) + poly(1) * future_time + poly(2) * pow(future_time, 2);
         
         
         // if the polynomial meets certain criteria, solve and return the larger root

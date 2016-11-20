@@ -20,6 +20,14 @@ struct LeapPosition
         this->tipVelocity = tip_velocity;
         this->time = time;
     }
+    
+    LeapPosition()
+    {
+        this->tipPosition = Vector(0,0,0);
+        this->tipVelocity = Vector(0,0,0);
+        this->time = 0;
+    }
+    
     Vector tipPosition, tipVelocity;
     uint64_t time;
     
