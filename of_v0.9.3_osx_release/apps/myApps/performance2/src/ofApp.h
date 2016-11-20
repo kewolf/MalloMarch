@@ -29,7 +29,7 @@ public:
     
     //################# mine ######################
     
-    void set_height(LeapHeight & height_event);
+    void set_height(LeapPosition & position_event);
     void schedule(float & scheduled_time);
     void inputReceived();
     void playDrum(Timer& timer);
@@ -43,8 +43,8 @@ public:
     // ofEvent<LeapHeight> leapHeightEvent;
     
     LeapToolTrackerMulti * toolTrackerMulti;
-    ofEvent<LeapHeight> leapHeightEvent1;
-    ofEvent<LeapHeight> leapHeightEvent2;
+    ofEvent<LeapPosition> leapPositionEvent1;
+    ofEvent<LeapPosition> leapPositionEvent2;
     
     
     // MalLoPredictor * mallo_predictor;

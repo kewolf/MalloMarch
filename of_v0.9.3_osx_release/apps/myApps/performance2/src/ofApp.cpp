@@ -6,18 +6,18 @@ void ofApp::setup(){
     /****** MalLo Setup ******/
     float latency = 50;
     tempo = 120;
-//    toolTracker = new LeapToolTracker(&leapHeightEvent);
+//    toolTracker = new LeapToolTracker(&leapPositionEvent);
 //    toolTracker->open();
     
 //    mallo_predictor = new MalLoPredictor(&receiverEvent);
 //    mallo_predictor->setLatency(latency);
     
-//    ofAddListener(leapHeightEvent, mallo_predictor, &MalLoPredictor::onEvent);
+//    ofAddListener(leapPositionEvent, mallo_predictor, &MalLoPredictor::onEvent);
 //    ofAddListener(receiverEvent, this, &ofApp::schedule);
 //    ofAddListener(receiverEvent, this, &ofApp::sendOsc);
-//    ofAddListener(leapHeightEvent, this, &ofApp::set_height);
+//    ofAddListener(leapPositionEvent, this, &ofApp::set_height);
     
-    toolTrackerMulti = new LeapToolTrackerMulti(&leapHeightEvent1, &leapHeightEvent2);
+    toolTrackerMulti = new LeapToolTrackerMulti(&leapPositionEvent1, &leapPositionEvent2);
     toolTrackerMulti->open();
     
     mallo_predictor1 = new MalLoPredictor(&receiverEvent);
@@ -25,11 +25,11 @@ void ofApp::setup(){
     mallo_predictor1->setLatency(latency);
     mallo_predictor2->setLatency(latency);
     
-    ofAddListener(leapHeightEvent1, mallo_predictor1, &MalLoPredictor::onEvent);
-    ofAddListener(leapHeightEvent2, mallo_predictor2, &MalLoPredictor::onEvent);
+    ofAddListener(leapPositionEvent1, mallo_predictor1, &MalLoPredictor::onEvent);
+    ofAddListener(leapPositionEvent2, mallo_predictor2, &MalLoPredictor::onEvent);
     //ofAddListener(receiverEvent, this, &ofApp::schedule);
     ofAddListener(receiverEvent, this, &ofApp::sendOsc);
-    // ofAddListener(leapHeightEvent, this, &ofApp::set_height);
+    // ofAddListener(leapPositionEvent, this, &ofApp::set_height);
     
 //    tom_sound1.load(ofToDataPath("conga.wav"));
 //    tom_sound2.load(ofToDataPath("conga.wav"));

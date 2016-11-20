@@ -83,10 +83,10 @@ public:
         latency = latency_val;
     }
     
-    void onEvent(LeapHeight & height_event){
+    void onEvent(LeapPosition & position_event){
         
-        heights.push_back(height_event.height);
-        times.push_back(height_event.time);
+        heights.push_back(position_event.getHeight());
+        times.push_back(position_event.time);
         
         
         if (heights.size() > n_points)

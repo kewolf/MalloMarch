@@ -13,54 +13,78 @@
 #include "ofxLeapMotion2.h"
 
 // This struct holds the height and time of a tool in a Leap Motion frame
-struct LeapHeight
+//struct LeapHeight
+//{
+//    LeapHeight(float height, float time)
+//    {
+//        this->height = height;
+//        this->time = time;
+//    }
+//    float height;
+//    float time;
+//};
+
+struct LeapPosition
 {
-    LeapHeight(float height, float time)
+    LeapPosition(Vector tip_position, Vector tip_velocity, uint64_t time)
     {
-        this->height = height;
+        this->tipPosition = tip_position;
+        this->tipVelocity = tip_velocity;
         this->time = time;
     }
-    float height;
-    float time;
+    Vector tipPosition, tipVelocity;
+    uint64_t time;
+    
+    float getHeight()
+    {
+        return tipPosition.y;
+    }
 };
+
+//struct LeapHeight: public LeapPosition
+//{
+//    LeapHeight(float height, uint64_t time) : LeapPosition(Vector() {}
+//};
+
+
 
 // This simple listener receives frames from a Leap Motion
 // If there is a tool present, the height of the tool tip
 // and the time of the frame are put into a LeapHeight struct
 // and sent to a ofEvent, to be consumed by other listeners
 
-class LeapToolTracker : public ofxLeapMotion
-{
-    
-public:
-    LeapToolTracker(ofEvent<LeapHeight> * heightEvent) : ofxLeapMotion()
-    {
-        this->heightEvent = heightEvent;
-    }
-    
-protected:
-    
-    ofEvent<LeapHeight> * heightEvent;
-    
-    void onFrameInternal(const Controller& contr){
-        ourMutex.lock();
-        const Frame & curFrame	= contr.frame();
-        const ToolList & toolList = curFrame.tools();
-        
-        LeapHeight leap_height((float) toolList[0].tipPosition().y,
-                   (float) ofGetElapsedTimeMillis());
-        
-        if (toolList.count() > 0)
-        {
-            ofNotifyEvent(*heightEvent, leap_height);
-//            printf("%f\n",(float) toolList[0].tipPosition().y);
-        }
-        
-        currentFrameID = curFrame.id();
-//        this->markFrameAsOld();
-        ourMutex.unlock();
-    }
-};
+//class LeapToolTracker : public ofxLeapMotion
+//{
+//    
+//public:
+//    LeapToolTracker(ofEvent<LeapHeight> * leapPositionEvent) : ofxLeapMotion()
+//    {
+//        this->leapPositionEvent = leapPositionEvent;
+//    }
+//    
+//protected:
+//    
+//    ofEvent<LeapHeight> * leapPositionEvent;
+//    
+//    void onFrameInternal(const Controller& contr){
+//        ourMutex.lock();
+//        const Frame & curFrame	= contr.frame();
+//        const ToolList & toolList = curFrame.tools();
+//        
+//        LeapHeight leap_position((float) toolList[0].tipPosition().y,
+//                   (float) ofGetElapsedTimeMillis());
+//        
+//        if (toolList.count() > 0)
+//        {
+//            ofNotifyEvent(*leapPositionEvent, leap_position);
+////            printf("%f\n",(float) toolList[0].tipPosition().y);
+//        }
+//        
+//        currentFrameID = curFrame.id();
+////        this->markFrameAsOld();
+//        ourMutex.unlock();
+//    }
+//};
 
 /** multi version **/
 
@@ -68,32 +92,34 @@ class LeapToolTrackerMulti : public ofxLeapMotion
 {
     
 public:
-    LeapToolTrackerMulti(ofEvent<LeapHeight> * heightEvent1, ofEvent<LeapHeight> * heightEvent2) : ofxLeapMotion()
+    LeapToolTrackerMulti(ofEvent<LeapPosition> * leapPositionEvent1, ofEvent<LeapPosition> * leapPositionEvent2) : ofxLeapMotion()
     {
-        this->heightEvent1 = heightEvent1;
-        this->heightEvent2 = heightEvent2;
+        this->leapPositionEvent1 = leapPositionEvent1;
+        this->leapPositionEvent2 = leapPositionEvent2;
     }
     bool found_tool = false;
     
 protected:
     
-    ofEvent<LeapHeight> * heightEvent1;
-    ofEvent<LeapHeight> * heightEvent2;
+    ofEvent<LeapPosition> * leapPositionEvent1;
+    ofEvent<LeapPosition> * leapPositionEvent2;
     
     void onFrameInternal(const Controller& contr){
         ourMutex.lock();
         const Frame & curFrame	= contr.frame();
         const ToolList & toolList = curFrame.tools();
         
-        LeapHeight leap_height1((float) toolList[0].tipPosition().y,
-                               (float) ofGetElapsedTimeMillis());
+        LeapPosition leap_position1(toolList[0].tipPosition(),
+                                    toolList[0].tipVelocity(),
+                                    ofGetElapsedTimeMillis());
         
-        LeapHeight leap_height2((float) toolList[1].tipPosition().y,
-                               (float) ofGetElapsedTimeMillis());
+        LeapPosition leap_position2(toolList[1].tipPosition(),
+                                    toolList[1].tipVelocity(),
+                                    ofGetElapsedTimeMillis());
         
         if (toolList.count() > 0)
         {
-            ofNotifyEvent(*heightEvent1, leap_height1);
+            ofNotifyEvent(*leapPositionEvent1, leap_position1);
             //            printf("%f\n",(float) toolList[0].tipPosition().y);
             found_tool = true;
         } else {
@@ -102,7 +128,7 @@ protected:
         
         if (toolList.count() > 1)
         {
-            ofNotifyEvent(*heightEvent2, leap_height2);
+            ofNotifyEvent(*leapPositionEvent2, leap_position2);
             //            printf("%f\n",(float) toolList[0].tipPosition().y);
         }
         
