@@ -39,15 +39,11 @@ public:
     void setIp();
     void sendOsc(float & scheduled_time);
     
-    // LeapToolTracker * toolTracker;
-    // ofEvent<LeapHeight> leapHeightEvent;
-    
     LeapToolTrackerMulti * toolTrackerMulti;
     ofEvent<LeapPosition> leapPositionEvent1;
     ofEvent<LeapPosition> leapPositionEvent2;
     
     
-    // MalLoPredictor * mallo_predictor;
     MalLoPredictor * mallo_predictor1;
     MalLoPredictor * mallo_predictor2;
     ofEvent<float> receiverEvent;
@@ -56,7 +52,6 @@ public:
     uint64_t last_time_query = 0;
     uint64_t time_query_interval = 10;
     
-//    float mallet_height;
     Timer * metronome_timer;
     vector<Timer *> timers;
     
@@ -100,7 +95,6 @@ public:
     float actual_heights[HISTORY_SIZE];
     int future_heights_index = 0;
     int array_index = 0;
-//    float mallet_height;
     float mallet_x;
     float old_x = 0;
     float old_height = 0;

@@ -6,16 +6,6 @@ void ofApp::setup(){
     /****** MalLo Setup ******/
     float latency = 50;
     tempo = 120;
-//    toolTracker = new LeapToolTracker(&leapPositionEvent);
-//    toolTracker->open();
-    
-//    mallo_predictor = new MalLoPredictor(&receiverEvent);
-//    mallo_predictor->setLatency(latency);
-    
-//    ofAddListener(leapPositionEvent, mallo_predictor, &MalLoPredictor::onEvent);
-//    ofAddListener(receiverEvent, this, &ofApp::schedule);
-//    ofAddListener(receiverEvent, this, &ofApp::sendOsc);
-//    ofAddListener(leapPositionEvent, this, &ofApp::set_height);
     
     toolTrackerMulti = new LeapToolTrackerMulti(&leapPositionEvent1, &leapPositionEvent2);
     toolTrackerMulti->open();
@@ -27,12 +17,8 @@ void ofApp::setup(){
     
     ofAddListener(leapPositionEvent1, mallo_predictor1, &MalLoPredictor::onEvent);
     ofAddListener(leapPositionEvent2, mallo_predictor2, &MalLoPredictor::onEvent);
-    //ofAddListener(receiverEvent, this, &ofApp::schedule);
     ofAddListener(receiverEvent, this, &ofApp::sendOsc);
-    // ofAddListener(leapPositionEvent, this, &ofApp::set_height);
-    
-//    tom_sound1.load(ofToDataPath("conga.wav"));
-//    tom_sound2.load(ofToDataPath("conga.wav"));
+
     
     period = 60000.f/tempo;
     waiting_period = period/8.f;
@@ -114,13 +100,7 @@ void ofApp::draw(){
     for (int this_index = 0; this_index < HISTORY_SIZE; this_index++)
     {
         int local_index = (array_index + this_index + 1 ) % HISTORY_SIZE;
-//        ofPoint pt;
-//        pt.set(this_index, ofGetHeight() - frame_periods[local_index]);
-//        frame_line.addVertex(pt);
-//        sum += frame_periods[local_index];
-        
         ofPoint pt2;
-        //        pt2.set(ofGetWindowWidth() + mallet_x - this_index, ofGetHeight() - future_heights[local_index]);
         pt2.set(ofGetWindowWidth() - this_index, ofGetHeight() - future_heights[local_index]);
         future_line.addVertex(pt2);
         
@@ -129,15 +109,8 @@ void ofApp::draw(){
         actual_line.addVertex(pt3);
     }
     
-//    if (show_frame_period)
-//    {
-//        frame_line.draw();
-//        getSharedData().font.drawString("Avg Frame period: " + ofToString(sum/((float)HISTORY_SIZE)), 400, ofGetHeight() - 40);
-//    }
-    
     ofImage input_device_img;
 
-//        input_device_img = getSharedData().leap_img;
         ofSetColor(255, (int)gb, 0);
         future_line.draw();
         ofSetColor(255,(int)gb, (int)gb);
@@ -148,7 +121,6 @@ void ofApp::draw(){
         ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->future_height, circle_radius * 2);
         ofSetColor(255, 255, 255);
         ofDrawCircle(circle_radius, ofGetHeight() - mallo_predictor1->getHeight(), circle_radius);
-//        old_height = mallet_height;
         old_x = mallet_x;
         gb = (gb < 255.0) ? gb + fade_rate : 255.0;
 

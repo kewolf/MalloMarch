@@ -30,7 +30,6 @@ using Poco::TimerCallback;
  * Message
  *****************/
 
-/** TODO: I think this message object is no longer used for this version of Mallo **/
 
 class FutureHeight
 {
