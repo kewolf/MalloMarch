@@ -47,7 +47,7 @@ block content
         const CONSENT_COOKIE_NAME = "consentFormAgreement";
         const DAYS_TO_KEEP_COOKIE = 1;
 
-        var customIPflag = 1;
+        var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
         var customServerURL = '192.168.1.9:3000';
         //var customServerURL = '10.102.39.183:3000';
@@ -86,11 +86,10 @@ block content
 
             displayConsent = data.isConsentFormOn;
             loggerOn = data.isLoggerOn;
-            isSeqOn = data.isSequencerOn;
             isMalloOn = data.isMalloOn;
 
             //console.log("SERVER SENT - Welcome Mode: " + parseInt(data.mode) + " host " + location.host);
-            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn + " Seq On? " + isSeqOn + " MalLo On? " + isMalloOn);
+            console.log("Display Consent? " + displayConsent + " Logger On? " + loggerOn + " MalLo On? " + isMalloOn);
 
             // check if they have already consented
             var alreadyConsented = getCookie(CONSENT_COOKIE_NAME);
@@ -136,18 +135,6 @@ block content
             changeInterface(data.newMode);
         });
 
-        //receive messages from server (masterServerControl) on when to turn on/off the sequencer
-        socket.on('flipSeq', function (data) {
-            //console.log("Message from server, turn sequencer: " + data.isOn);
-            if (loggerOn) {
-                if (initMovements) {
-                    logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
-                } else {
-                    logger.info("{ \"change_interface\" : " + data.isOn + ", \"global_time\" : NA }");
-                }
-            }
-            switchSequencerOn(data.isOn);
-        });
 
         //receive messages from server (masterServerControl) on when to turn on/off the mallos
         socket.on('flipMallo', function (data) {
@@ -199,7 +186,6 @@ block content
                 console.log("isMalloOn prediction: " + isMalloOn);
                 //todo: schedule the event
                 var offset = syncClient.getOffset();
-                var offset = syncClient.getOffset();
                 var instr;
                 if (data.address == "/left") {
                     instr = 0;
@@ -217,6 +203,158 @@ block content
         });
 
         socket.on('error', console.error.bind(console));
+
+        var logIntervalID;
+        var expandCollapsables = 0;
+
+        socket.on('playLogs', function (data) {
+            if (!expandCollapsables) {
+                $('#m0-form .ui-collapsible-heading-toggle').trigger('click');
+                $('#m1-form .ui-collapsible-heading-toggle').trigger('click');
+                $('#m2-form .ui-collapsible-heading-toggle').trigger('click');
+                expandCollapsables = 1;
+            }
+
+            startTime = data.startTime;
+            logs = data.logs;
+
+
+            console.log("START: " + startTime);
+            if (startTime === undefined) {
+                startTime = logs[0][4];
+                console.log("START: " + startTime);
+            }
+
+            currentTime = startTime;
+            var index = 0;
+
+            console.log("END: " + logs[logs.length - 1][4]);
+            logIntervalID = window.setInterval(function () {
+                while (logs[index][4] <= currentTime) {
+                    evaluateLog(logs[index]);
+                    console.log("Evaluate! Current Time " + currentTime);
+                    index++;
+                    if (index >= logs.length - 1) {
+                        window.clearInterval(logIntervalID);
+                        break;
+                    }
+                }
+                currentTime = currentTime + 1;
+            }, 1000);
+        });
+
+        socket.on('stopLogs', function (data) {
+            window.clearInterval(logIntervalID)
+        });
+
+        function evaluateLog(logMessage) {
+            code = logMessage[2];
+            console.log("Code: " + code);
+            switch (code) {
+                case "EVPL0":
+                    players[0].schedule(audioContext.currentTime);
+                    console.log("Player 1 Log");
+                    break;
+                case "EVPL1":
+                    players[1].schedule(audioContext.currentTime);
+                    console.log("Player 2 Log");
+                    break;
+                case "EVPL2":
+                    players[2].schedule(audioContext.currentTime);
+                    console.log("Player 3 Log");
+                    break;
+                case "TABSS":
+                    console.log("Tab Change!");
+                    var tab = logMessage[3] + 1;
+                    $('#tabButton' + tab).trigger('click');
+                    break;
+                case "CHNNL":
+                    newChannel = logMessage[3];
+                    console.log("Channel Change: " + newChannel);
+                    $('#channels').sly('activate', newChannel);
+                    break;
+                case "PLAY1":
+                    newChannel = logMessage[3];
+                    console.log("Change Player 1: " + newChannel);
+                    $('#i' + 0).sly('activate', newChannel);
+                    break;
+                case "PLAY2":
+                    newChannel = logMessage[3];
+                    console.log("Change Player 2: " + newChannel);
+                    $('#i' + 1).sly('activate', newChannel);
+                    break;
+                case "PLAY3":
+                    newChannel = logMessage[3];
+                    console.log("Change Player 1: " + newChannel);
+                    $('#i' + 2).sly('activate', newChannel);
+                    break;
+                case "MSEL1":
+                    activeInstrument = logMessage[3];
+                    console.log("Change Player 1 SELECTOR: " + activeInstrument);
+                    $('#m' + 0 + '-select').val(activeInstrument).trigger('change');
+                    break;
+                case "MSEL2":
+                    activeInstrument = logMessage[3];
+                    console.log("Change Player 2 SELECTOR: " + activeInstrument);
+                    $('#m' + 1 + '-select').val(activeInstrument).trigger('change');
+                    break;
+                case "MSEL3":
+                    activeInstrument = logMessage[3];
+                    console.log("Change Player 3 SELECTOR: " + activeInstrument);
+                    $('#m' + 2 + '-select').val(activeInstrument).trigger('change');
+                    break;
+                case "CONST":
+                    break;
+                case "START":
+                    break;
+                case "TUTRL":
+                    break;
+                default:
+                    value = logMessage[3];
+                    player = parseInt(code.charAt(1));
+                    type = code.charAt(2);
+                    slider = code.substr(3, 5);
+
+                    if (type == 'E') {
+                        instr = "el";
+                    } else if (type == 'D') {
+                        instr = "dc";
+                    } else {
+                        instr = "pp";
+                    }
+
+                    if (slider == "VO") {
+                        sli = "vol";
+                    } else if (slider == "SI") {
+                        sli = "size";
+                    } else if (slider == "DE") {
+                        sli = "decay";
+                    } else if (slider == "PI") {
+                        sli = "pitch";
+                    } else if (slider == "DR") {
+                        sli = "drums";
+                    } else if (slider == "DY") {
+                        sli = "dyn";
+                    } else if (slider == "SC") {
+                        sli = "scale";
+                    } else if (slider == "VI") {
+                        sli = "vib";
+                    } else if (slider == "TR") {
+                        sli = "trip";
+                    } else if (slider == "GR") {
+                        sli = "grunge";
+                    } else if (slider == "FA") {
+                        sli = "fat";
+                    }
+                    label = '#m' + player + '-' + instr + '-' + sli;
+                    console.log("Slider Label: " + label);
+
+                    $(label).val(value).trigger('change');
+                    break;
+            }
+        }
+
+
 
 
         /*********** functions ***********/
@@ -257,8 +395,6 @@ block content
                     loadAudioFiles(amIperformer);
                     if (currentInterface == InterfaceEnum.INFO) {
                         console.log("currentInterface: " + currentInterface);
-                        $('#sequencerOn').show();
-                        switchSequencerOn(true);
                         switchMalloOn(false);
                     } else {
                         playSound(audioContext.currentTime);
@@ -343,9 +479,6 @@ block content
                 scheduler.checkSchedule();
             }, schedulerInterval);
 
-            if (isSeqOn) {
-                switchSequencerOn(true);
-            }
 
             stayAwake = setInterval(function () {
                 //console.log("stay awake!");
@@ -356,34 +489,6 @@ block content
 
         }
 
-        //start sequencer:
-        var sequencerID = 0;
-        var tutorialSequencer = 0;
-
-        function switchSequencerOn(isOn) {
-            if (isOn) {
-                sequencerID = setInterval(function () {
-                    console.log('Timer, ' + tutorialSequencer);
-                    if (tutorialSequencer == 0) {
-                        scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
-                    } else if (tutorialSequencer == 1) {
-                        scheduler.setPrediction(audioContext.currentTime + 0.01, 1);
-                    } else if (tutorialSequencer == 2) {
-                        scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
-                    } else if (tutorialSequencer == 3) {
-                        //scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
-                        //scheduler.setPrediction(audioContext.currentTime + 0.01, 1);
-                        //scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
-                    }
-                    tutorialSequencer++;
-                    if (tutorialSequencer == 4) {
-                        tutorialSequencer = 0;
-                    }
-                }, 500);
-            } else {
-                clearInterval(sequencerID);
-            }
-        }
 
         function switchMetronomeOn(isOn) {
             if (isOn) {
@@ -537,7 +642,6 @@ block content
                 switch (currentInterface) {
                     case InterfaceEnum.M1:
                         $('#movement1').show();
-                        switchSequencerOn(false);
                         switchMalloOn(true);
 
 
@@ -549,7 +653,6 @@ block content
                     case InterfaceEnum.TUTORIAL:
                         //disaply Tutorial header
                         $('#header').show();
-                        switchSequencerOn(true);
                         switchMalloOn(false);
 
                         //begin popups
@@ -566,7 +669,6 @@ block content
                         break;
 
                     case InterfaceEnum.M2:
-                        switchSequencerOn(false);
                         switchMalloOn(true);
 
                         $('#movement2').show();
@@ -1224,9 +1326,9 @@ block content
                     h2 Player 1
                 li.form.wrap
                     #i0_scrollbar.scrollbar.player1_scrollbar
-                            #i0_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i0_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                     #i0.instr_frame.player1_frame(style='overflow; hidden;')
-                            ul#i0_slidee.slidee
+                        ul#i0_slidee.slidee
                 li(data-icon='false', data-theme='c')
                     h2 Player 2
                 li.form.wrap
@@ -1238,9 +1340,9 @@ block content
                     h2 Player 3
                 li.form.wrap
                     #i2_scrollbar.scrollbar.player3_scrollbar
-                            #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #i2_handle.handle(style='transform: translateZ(0px) translateX(228px);')
                     #i2.instr_frame.player3_frame(style='overflow; hidden;')
-                            ul#i2_slidee.slidee
+                        ul#i2_slidee.slidee
         #three.ui-content(data-role='main')
             form#m-form
                 #m0-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='b')
