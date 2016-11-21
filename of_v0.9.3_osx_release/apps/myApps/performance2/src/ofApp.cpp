@@ -288,7 +288,7 @@ void ofApp::sendToChuck(LeapPosition pos)
     printf("Chuck x: %f, y: %f, z: %f\n", pos.tipPosition.x, pos.tipPosition.y, pos.tipPosition.z);
     
     chuck_msg.clear();
-    chuck_msg.setAddress("/left");
+    chuck_msg.setAddress(osc_path);
     chuck_msg.addIntArg(chuck_msg_id);   // id
     chuck_msg.addIntArg(0);   // predicted time
     chuck_msg.addIntArg(0);   // send time (server time)
