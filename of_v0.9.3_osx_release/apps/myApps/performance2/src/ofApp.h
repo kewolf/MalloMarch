@@ -71,7 +71,7 @@ public:
     ofxOscSender osc_sender;
     ofxOscReceiver osc_receiver;
     ofxOscMessage msg;
-    string ip_address = "192.168.1.9";
+    string ip_address = "localhost";
     bool ip_set = false;
     string osc_path = "/left";
     bool last_message_was_unschedule = false;
@@ -106,6 +106,8 @@ public:
     bool hysteresis_reset = true;
     uint64_t last_chuck_send_time = 0;
     uint64_t chuck_timeout = 250;
-    
+    ofxOscSender chuck_osc_sender;
+    ofxOscMessage chuck_msg;
+    uint64_t chuck_msg_id = 0;
     
 };

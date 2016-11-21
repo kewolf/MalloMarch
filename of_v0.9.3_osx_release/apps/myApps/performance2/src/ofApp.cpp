@@ -40,7 +40,7 @@ void ofApp::setup(){
     gui.add(toggle_right.setup("Right Performer", false));
     gui.add(ip_display.setup("IP Address", ip_address));
     gui.add(change_ip.setup("Change IP Address"));
-    gui.add(send_to_chuck.setup("Send to Chuck", false));
+    gui.add(send_to_chuck.setup("Send to Chuck", true));
     
     toggle_left.addListener(this, &ofApp::leftChanged);
     toggle_right.addListener(this, &ofApp::rightChanged);
@@ -69,28 +69,18 @@ void ofApp::draw(){
     }
     float fade_rate = 3.5;
     int circle_radius = 5;
-
-    
-    // for testing
-//    if (ofGetElapsedTimeMillis() - time_last_msg > 1000)
-//    {
-//        msg.clear();
-//        msg.setAddress(osc_path);
-//        msg.addFloatArg(10000);
-//        msg.addFloatArg(1.f);
-//        
-//        osc_sender.sendMessage(msg);
-//        time_last_msg = ofGetElapsedTimeMillis();
-//        //cout << "path: " << osc_path << ", ip_address: " << ip_address << endl;
-//    }
-    
-    
     
     // mallet visualization
     predicted_heights[array_index % HISTORY_SIZE] = mallo_predictor1->predicted_height;
     actual_heights[array_index % HISTORY_SIZE] = mallo_predictor1->getHeight();
     
     // chuck
+    
+    if (mallo_predictor1->predicted_height > 10 && !hysteresis_reset)
+    {
+        hysteresis_reset = true;
+    }
+    
     if (send_to_chuck &&
         mallo_predictor1->predicted_height < 0 &&
         ofGetElapsedTimeMillis() - last_chuck_send_time > chuck_timeout &&
@@ -99,9 +89,6 @@ void ofApp::draw(){
         sendToChuck(mallo_predictor1->past_leap_position);
         hysteresis_reset = false;
         last_chuck_send_time = ofGetElapsedTimeMillis();
-    } else if (mallo_predictor1->predicted_height > 10 && !hysteresis_reset)
-    {
-        hysteresis_reset = true;
     }
     
     gui.draw();
@@ -203,85 +190,39 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 //######################## Mine ################################
 
-//void ofApp::set_height(LeapHeight & height_event)
-//{
-//    this->mallet_height = height_event.height;
-//}
-
-//void ofApp::schedule(float & scheduled_time)
-//{
-//    
-//    float diff = scheduled_time - ofGetElapsedTimeMillis();
-//    if (scheduled_time > 0 &&
-//        diff < alpha &&
-//        -diff < beta)
-//    {
-//        if (diff < 0) {
-//            //                printf("Now\n");
-//            inputReceived();
-//        }
-//        else
-//        {
-//            TimerCallback<ofApp> callback(*this, &ofApp::playDrum);
-//            timers.push_back(new Timer(diff, 0));
-//            timers.back()->start(callback, Thread::PRIO_HIGHEST);
-//            //                printf("Scheduled in: %f\n",diff);
-//        }
-//        scheduled_time = -1;
-//    }
-//}
-
 void ofApp::sendOsc(float & scheduled_time)
 {
-    int64_t send_value;
-    if (scheduled_time == -1)
+    if (!send_to_chuck)
     {
-        if (last_message_was_unschedule) { return; }
-        send_value = -1;
-        last_message_was_unschedule = true;
-        last_message_was_nada = false;
+        int64_t send_value;
+        if (scheduled_time == -1)
+        {
+            if (last_message_was_unschedule) { return; }
+            send_value = -1;
+            last_message_was_unschedule = true;
+            last_message_was_nada = false;
+            
+        } else if (scheduled_time == 0)
+        {
+            if (last_message_was_nada) { return; }
+            //        cout << "*** sent nothing ***" << endl;
+            last_message_was_nada = true;
+            return;
+        } else {
+            send_value = sync_client->get_offset() + (int64_t) scheduled_time;
+            last_message_was_unschedule = false;
+            last_message_was_nada = false;
+        }
         
-    } else if (scheduled_time == 0)
-    {
-        if (last_message_was_nada) { return; }
-//        cout << "*** sent nothing ***" << endl;
-        last_message_was_nada = true;
-        return;
-    } else {
-        send_value = sync_client->get_offset() + (int64_t) scheduled_time;
-        last_message_was_unschedule = false;
-        last_message_was_nada = false;
+        msg.clear();
+        msg.setAddress(osc_path);
+        msg.addInt64Arg(send_value);
+        msg.addFloatArg(1.f);
+        
+        osc_sender.sendMessage(msg);
+        //    cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
     }
-    
-    msg.clear();
-    msg.setAddress(osc_path);
-    msg.addInt64Arg(send_value);
-    msg.addFloatArg(1.f);
-    
-    osc_sender.sendMessage(msg);
-//    cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
 }
-
-//void ofApp::inputReceived()
-//{
-//    
-//    float now = ofGetElapsedTimeMillis();
-//    if (now - last_drum_time > waiting_period) {
-//        last_drum_time = now;
-//        if (play_tom1) {
-//            tom_sound1.play();
-//            play_tom1 = false;
-//        } else {
-//            tom_sound2.play();
-//            play_tom1 = true;
-//        }
-//    }
-//}
-
-//void ofApp::playDrum(Timer& timer)
-//{
-//    inputReceived();
-//}
 
 // callbacks for the gui. it was necessary to have 3 functions.
 void ofApp::leftChanged(bool & param)
@@ -327,6 +268,44 @@ void ofApp::setIp()
 
 void ofApp::sendToChuck(LeapPosition pos)
 {
-    printf("x: %f, y: %f, z: %f\n", pos.tipPosition.x, pos.tipPosition.y, pos.tipPosition.z);
+    
+    /*
+     path
+     id: int64
+     predicted time (server time): int64
+     send time (server time): int64
+     predicted velocity: float
+     x: float
+     y: float
+     z (height): float
+     real-world time: int64
+     composer-determined 1: float
+     composer-determined 2: float
+     composer-determined 3: float
+     composer-determined 4: float
+     composer-determined 5: float
+    */
+    printf("Chuck x: %f, y: %f, z: %f\n", pos.tipPosition.x, pos.tipPosition.y, pos.tipPosition.z);
+    
+    chuck_msg.clear();
+    chuck_msg.setAddress("/left");
+    chuck_msg.addIntArg(chuck_msg_id);   // id
+    chuck_msg.addIntArg(0);   // predicted time
+    chuck_msg.addIntArg(0);   // send time (server time)
+    chuck_msg.addFloatArg(pos.tipVelocity.y);   // predicted velocity
+    chuck_msg.addFloatArg(pos.tipPosition.x);   // x
+    chuck_msg.addFloatArg(pos.tipPosition.z);   // y  (yes I know the letters are different...the leap motion SDK calls height y)
+    chuck_msg.addFloatArg(pos.tipPosition.y);   // z
+    chuck_msg.addIntArg(ofGetSystemTime());   // real-world time
+    chuck_msg.addFloatArg(9);   // composer-determined 1
+    chuck_msg.addFloatArg(10);  // composer-determined 2
+    chuck_msg.addFloatArg(11);  // composer-determined 3
+    chuck_msg.addFloatArg(12);  // composer-determined 4
+    chuck_msg.addFloatArg(13);  // composer-determined 5
+    
+    osc_sender.sendMessage(chuck_msg);
+    
+    chuck_msg_id++;
+    
 }
 
