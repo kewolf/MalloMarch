@@ -9,8 +9,7 @@ npm install
 
 Need to also install socket.io and osc
 ```
-npm install osc
-npm install socket.io
+npm install osc socket.io express serve-favicon morgan cookie-browser cookie-parser body-parser jsnlog winston debug long dateformat
 ```
 
 To install Eigen (needed for MalLo XCode project)
