@@ -254,11 +254,11 @@ string ofGetLogLevelName(ofLogLevel level, bool pad){
 void ofConsoleLoggerChannel::log(ofLogLevel level, const string & module, const string & message){
 	// print to cerr for OF_LOG_ERROR and OF_LOG_FATAL_ERROR, everything else to cout 
 	ostream& out = level < OF_LOG_ERROR ? cout : cerr;
-	out << "[" << ofGetLogLevelName(level, true)  << "] ";
-	// only print the module name if it's not ""
-	if(module != ""){
-		out << module << ": ";
-	}
+//	out << "[" << ofGetLogLevelName(level, true)  << "] ";
+//	// only print the module name if it's not ""
+//	if(module != ""){
+//		out << module << ": ";
+//	}
 	out << message << endl;
 }
 
@@ -305,10 +305,10 @@ void ofFileLoggerChannel::setFile(const string & path,bool append){
 }
 
 void ofFileLoggerChannel::log(ofLogLevel level, const string & module, const string & message){
-	file << "[" << ofGetLogLevelName(level, true) << "] ";
-	if(module != ""){
-		file << module << ": ";
-	}
+//	file << "[" << ofGetLogLevelName(level, true) << "] ";
+//	if(module != ""){
+//		file << module << ": ";
+//	}
 	file << message << endl;
 }
 
@@ -320,9 +320,9 @@ void ofFileLoggerChannel::log(ofLogLevel level, const string & module, const cha
 }
 
 void ofFileLoggerChannel::log(ofLogLevel level, const string & module, const char* format, va_list args){
-	file << "[" << ofGetLogLevelName(level, true) << "] ";
-	if(module != ""){
-		file << module << ": ";
-	}
+//	file << "[" << ofGetLogLevelName(level, true) << "] ";
+//	if(module != ""){
+//		file << module << ": ";
+//	}
 	file << ofVAArgsToString(format,args) << endl;
 }

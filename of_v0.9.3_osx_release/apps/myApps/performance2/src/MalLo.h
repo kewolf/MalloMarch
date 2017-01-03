@@ -108,7 +108,7 @@ public:
             timers.push_back(new Timer(latency, 0));
             timers.back()->start(TimerCallback<FutureHeight>(*predicted_heights.back(),
                                                              &FutureHeight::schedule),
-                                 Thread::PRIO_HIGHEST);
+                                                             Thread::PRIO_HIGHEST);
         }
     }
     
@@ -268,17 +268,12 @@ public:
     
     int64_t get_server_time()
     {
-        if (kalman_initialized)
-        {
-            return (int64_t) ofGetElapsedTimeMillis() + kalman_filter.posteri_est;
-        } else {
-            return (int64_t) ofGetElapsedTimeMillis();
-        }
+        return (int64_t) ofGetElapsedTimeMillis() + kalman_filter.posteri_est;
     }
     
     int64_t get_offset()
     {
-        return kalman_filter.posteri_est;
+        return (kalman_initialized) ? kalman_filter.posteri_est : 0;
     }
     
     void query_timeserver()

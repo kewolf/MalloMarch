@@ -7,6 +7,8 @@
 #include "ofxGui.h"
 
 #define HISTORY_SIZE 1024
+#define CHUCK_MSG 0
+#define OSC_MSG 1
 
 class ofApp : public ofBaseApp{
     
@@ -27,6 +29,10 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     void sendToChuck(LeapPosition pos);
+    void initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or_osc, float predicted_time);
+    void logPosition(LeapPosition & position_event);
+    int getMillisSinceEpoch();
+
     
     //################# mine ######################
     
@@ -43,6 +49,7 @@ public:
     LeapToolTrackerMulti * toolTrackerMulti;
     ofEvent<LeapPosition> leapPositionEvent1;
     ofEvent<LeapPosition> leapPositionEvent2;
+    LeapPosition leap_position1;
     
     
     MalLoPredictor * mallo_predictor1;
@@ -68,6 +75,7 @@ public:
     ofSoundPlayer tom_sound2;
     
     // OSC
+    int chuck_msg_id = 0;
     ofxOscSender osc_sender;
     ofxOscReceiver osc_receiver;
     ofxOscMessage msg;
@@ -103,11 +111,15 @@ public:
     float gb = 0;
     
     // Sending to Chuck
-    bool hysteresis_reset = true;
+    bool hysteresis_reset_chuck = true;
     uint64_t last_chuck_send_time = 0;
     uint64_t chuck_timeout = 250;
     ofxOscSender chuck_osc_sender;
     ofxOscMessage chuck_msg;
-    uint64_t chuck_msg_id = 0;
+    int osc_msg_id = 0;
+    
+    // Logging
+    string log_text;
+    int log_line_count = 0;
     
 };
