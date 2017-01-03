@@ -1,0 +1,327 @@
+//
+   Created by kewolf on 9/20/16.
+
+doctype html
+html
+    head
+        title= "Playback Controller for MalLo March"
+        meta(charset='utf-8')
+        meta(name='viewport', content='width=device-width, initial-scale=1')
+
+        script(src='/socket.io/socket.io.js')
+
+        //these dependencies need to be in this specific order!
+        link(rel='stylesheet', href='/stylesheets/themes/colors.min.css')
+        link(rel='stylesheet', href='/stylesheets/themes/jquery.mobile.icons.min.css')
+        link(rel='stylesheet', href='/javascripts/jquery/jquery.mobile.structure-1.4.5.min.css')
+        link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
+        //link(rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css')
+        script(src='/javascripts/jquery/jquery-1.12.4.js')
+        script(src='/javascripts/jquery/jquery.mobile-1.4.5.min.js')
+        script(src='/javascripts/Sly/sly.min.js')
+        link(rel='stylesheet', href='/stylesheets/sly.css')
+
+        script(src='/socket.io/socket.io.js')
+        script(src='/javascripts/Logger/jsnlog.min.js')
+        script(src='/javascripts/interfaceConstants.js')
+
+
+    body(class="ui-mobile-viewport")
+        script.
+            var serverURL = 'http://localhost:3000';
+            var doneInitializing = false;
+
+
+            var channelPresets = {};
+
+            var logFileName;
+            var allLogs = [];
+            var changeMessageLogs = [];
+            var setupMessages = [];
+            var M1Messages = [];
+            var TutMessages = [];
+            var M2Messages = [];
+            var logStartTime = -1;
+            var currentInterface = 0;
+
+            window.addEventListener('load', init, false);
+
+            //socket to send/receive stuff from
+            var socket = io(serverURL);
+
+            socket.on('welcome', function (data) {
+                //currentInterface = parseInt(data.mode);
+                isMalloOn = data.isMalloOn;
+
+                console.log("Welcome Mode: " + currentInterface + " Mallo " + isMalloOn);
+
+                $('#flipMallo').val(isMalloOn).flipswitch('refresh');
+
+                doneInitializing = true;
+            });
+
+            function init() {
+                $('#playing').hide();
+                $('#loginfo').hide();
+
+            }
+
+            function loadJSONandDOM() {
+                loadPresetsfile(function (response2) {
+                    // Parse JSON string into object for creating a slider
+
+                    loadDOMStuff();
+                });
+            }
+
+
+
+            function loadDOMStuff() {
+                //previously loaded channels slider
+            }
+
+
+
+            $(function () {
+                $("input[name='radio-choice-1']").on("click", function () {
+                    var interfaceSelected = $("input[name='radio-choice-1']:checked").val();
+                    console.log("Interface Selected Changed: " + interfaceSelected);
+                    currentInterface = interfaceSelected;
+                    socket.emit('serverChangedInterface', {
+                        newInterface: currentInterface
+                    });
+
+                });
+            });
+
+            function loadFiles() {
+                console.log("Load Logs");
+                logFileName = document.getElementById("iplogFile").value;
+                var channelsfile = document.getElementById("channelsFile").value;
+                var instrfile = document.getElementById("instrFiles").value;
+
+                console.log("Log File: " + logFileName);
+
+                loadLogfile(function (response2) {
+                    // Parse JSON string into object for creating a slider
+                    var allLogs = JSON.parse(response2);
+                    changeMessageLogs = [];
+                    setupMessages = [];
+                    M1Messages = [];
+                    TutMessages = [];
+                    M2Messages = [];
+                    currentInterface = 0;
+
+                    for (index = 0; index < allLogs.length - 1; index++) {
+                        message = allLogs[index];
+                        if (logStartTime == -1) {
+                            logStartTime = message[4];
+                        }
+
+                        if (message[2] == 'CHANG') {
+                            changeMessageLogs.push(message);
+                            currentInterface = message[3];
+                        } else {
+                            switch (currentInterface) {
+                                case 0:
+                                    setupMessages.push(message);
+                                    break;
+                                case 1:
+                                    M1Messages.push(message);
+                                    break;
+                                case 2:
+                                    TutMessages.push(message);
+                                    break;
+                                case 3:
+                                    M2Messages.push(message);
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (M1Messages.length == 0) {
+                        if (setupMessages.length != 0) {
+                            M1Messages = setupMessages;
+                            console.log("M1 is now setup " + M1Messages.length);
+                        }
+                    }
+
+                    var logCount = index;
+                    updateInterface(logCount, setupMessages, M1Messages, TutMessages, M2Messages);
+                    $('#loginfo').show();
+                });
+
+
+                //TODO: Don't need right now:
+                socket.emit('setupPlayback', {
+                    from: "server",
+                    channels: channelsfile,
+                    instruments: instrfile
+                });
+            }
+
+            function updateInterface(logCount, setupMessages, M1Messages, TutMessages, M2Messages) {
+
+                $('#loginfotext').val('Number of logs: ' + logCount + '\nNumber of changes: ' + changeMessageLogs.length + '\nNumber of M1 Messages: ' + M1Messages.length + '\nNumber of Tutorial Messages: ' + TutMessages.length + '\nNumber of M2 Messages: ' + M2Messages.length + '\nStart Time: ' + logStartTime);
+
+                if (M1Messages.length == 0) {
+                    $('#radio-choice-2').attr("disabled", true).checkboxradio("refresh");
+                }
+                if (TutMessages.length == 0) {
+                    $('#radio-choice-3').attr("disabled", true).checkboxradio("refresh");
+                }
+                if (M2Messages.length == 0) {
+                    $('#radio-choice-4').attr("disabled", true).checkboxradio("refresh");
+                }
+                $('#playing').show();
+
+            }
+
+            function playLogs() {
+                //start from beginning (start time)
+                var startPlayTime;
+                var logs;
+                if (currentInterface == 0) {
+                    startPlayTime = logStartTime;
+                    logs = allLogs;
+                } else if (currentInterface < 5) {
+                    if (currentInterface == 1) {
+                        //start from movement 1
+                        var lookingfor = 1;
+                        logs = M1Messages;
+                    } else if (currentInterface == 2) {
+                        //start from movement tutorial
+                        var lookingfor = 2;
+                        logs = TutMessages;
+                    } else if (currentInterface == 3) {
+                        //start from movement 2
+                        var lookingfor = 3;
+                        logs = M2Messages;
+                    }
+                    for (index = 0; index < changeMessageLogs.length - 1; index++) {
+                        if (changeMessageLogs[index][3] == lookingfor) {
+                            startPlayTime = changeMessageLogs[index][4]
+                        }
+                    }
+                }
+                console.log(startPlayTime);
+                socket.emit('startPlayingLogs', {
+                    from: "playbackControl",
+                    logs: logs,
+                    startTime: startPlayTime,
+                    isLoggerOn: 0,
+                    isMalloOn: isMalloOn
+                });
+
+
+            }
+
+
+            function stopLogs() {
+                socket.emit('stopPlayingLogs', {
+                    from: playbackControl
+                });
+
+            }
+
+            function loadLogfile(callback) {
+                //console.log("load Presets File");
+                var request = new XMLHttpRequest();
+                var fullLogFileName = '/json/playback/' + logFileName;
+                request.open('GET', fullLogFileName, true);
+                request.onreadystatechange = function () {
+                    if (request.readyState == 4 && request.status == "200") {
+                        // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+                        $("#loginfotext").text("Loading Log File Information...");
+                        callback(request.responseText);
+                    } else {
+                        $("#loginfotext").text("Log File Does Not Exist.");
+                    }
+                };
+                request.send(null);
+            }
+
+
+
+
+            $(function () {
+                $('#flipMallo').change(function () {
+                    if (doneInitializing) {
+                        console.log("Mallo clicked " + isMalloOn);
+                        // if it is on - send a message to turn it off
+                        if (isMalloOn) {
+                            socket.emit('flipMallo', {isOn: 0});
+                            isMalloOn = 0;
+                        } else {
+                            socket.emit('flipMallo', {isOn: 1});
+                            isMalloOn = 1;
+                        }
+                    }
+                });
+            });
+
+
+        div(data-role='page')
+            h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
+            .ui-body.ui-body-a.ui-corner-all
+                .ui-block-a(style='width:10%')
+                .ui-block-b(style='width:80%')
+                    .ui-field-contain
+                        label(for='iplogFile') Log File Name:
+                        input#iplogFile(type='text', name='text-1', data-theme='b', value='2016-07-06_ffff192.168.1.6.json')
+                    .ui-field-contain
+                        label(for='channelsFile') Channels File
+                        input#channelsFile(type='text', name='text-2', data-theme='c', value='ICAD_channels.json')
+                    .ui-field-contain
+                        label(for='instrFiles') Instruments File
+                        input#instrFiles(type='text', name='text-3', data-theme='d', value='ICAD_instruments.json')
+                    .ui-field-contain
+                        label(for='LoadLogs')
+                        button#LoadLogs.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'loadLogs', type='submit', onclick="loadFiles()", ) Load Files
+            #loginfo.center.ui-content(data-role='main')
+                .ui-body.ui-body-a.ui-corner-all
+                    h3(role='banner') File Info:
+                    .ui-block-a(style='width:10%')
+                    .ui-block-b(style='width:80%')
+                        div(style='margin: 10px 0 0 0;')
+                            textarea#loginfotext(readonly="TRUE")
+                    .ui-block-c(style='width:10%')
+
+                    .ui-body.ui-body-a.ui-corner-all.center
+                        .ui-block-a(style='width:30%')
+
+                        .ui-block-b(style='width:30%')
+
+                        .ui-block-c(style='width:30%')
+
+            #playing.center.ui-content(data-role='main')
+                fieldset(data-role='controlgroup', data-theme='d' )
+                    h2.center Interface Modes
+                    input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
+                    label(for='radio-choice-1') Welcome
+                    input#radio-choice-2(type='radio', name='radio-choice-1', value='1')
+                    label(for='radio-choice-2') Movement 1
+                    input#radio-choice-3(type='radio', name='radio-choice-1', value='2')
+                    label(for='radio-choice-3') Intermission
+                    input#radio-choice-4(type='radio', name='radio-choice-1', value='3')
+                    label(for='radio-choice-4') Movement 2
+                    input#radio-choice-5(type='radio', name='radio-choice-1', value='4')
+                    label(for='radio-choice-5') Survey
+
+
+                .ui-body.ui-body-a.ui-corner-all.center
+                    .ui-block-a(style='width:50%')
+                        .ui-field-contain
+                            label(for='PlayLogs')
+                            button#PlayLogs.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-b(name= 'playlogs', type='submit', onclick="playLogs()", ) Play Logs
+
+
+                    .ui-block-b(style='width:50%')
+                        label(for='flipMallo') Mute:
+                            select#flipMallo(name='flipMallo', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                                option(value='0') Off
+                                option(value='1') On
+
+
+            .ui-block-c(style='width:10%')
+
