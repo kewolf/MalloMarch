@@ -11,7 +11,6 @@ npm install
 Need to also need to run this:
 ```
 npm install serve-favicon jsnlog winston osc dateformat long socket.io
-dateformat
 ```
 
 To install Eigen (needed for MalLo XCode project)
