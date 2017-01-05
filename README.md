@@ -2,14 +2,11 @@
 
 For installation:
 
-to get most of the node_modules:
+to get the node_modules:
 ```
+rm -rf node_modules
 npm install
-```
-
-Need to also install socket.io and osc
-```
-npm install osc socket.io express serve-favicon morgan cookie-browser cookie-parser body-parser jsnlog winston debug long dateformat
+npm install serve-favicon jsnlog winston osc dateformat long socket.io
 ```
 
 To install Eigen (needed for MalLo XCode project)
