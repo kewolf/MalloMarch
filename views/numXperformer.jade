@@ -1,0 +1,903 @@
+//
+   Created by kewolf on 1/3/17.
+    This is the player interface for the numX peice. The numXconductor controls the tempo of the metronomes, while
+    numXaudience is the audience interface that will be
+
+
+doctype html
+html
+    head
+        title= "Player Interface"
+        meta(charset='utf-8')
+        meta(name='viewport', content='width=device-width, initial-scale=1')
+
+        script(src='/socket.io/socket.io.js')
+
+        //these dependencies need to be in this specific order!
+        link(rel='stylesheet', href='/stylesheets/themes/colors.min.css')
+        link(rel='stylesheet', href='/stylesheets/themes/jquery.mobile.icons.min.css')
+        link(rel='stylesheet', href='/javascripts/jquery/jquery.mobile.structure-1.4.5.min.css')
+        link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
+        //link(rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css')
+        script(src='/javascripts/jquery/jquery-1.12.4.js')
+        script(src='/javascripts/jquery/jquery.mobile-1.4.5.min.js')
+        script(type='text/javascript', src='/javascripts/WebDrum/src/web-noise.js')
+        script(type='text/javascript', src='/javascripts/WebDrum/src/web-ahdsr.js')
+        script(type='text/javascript', src='/javascripts/WebDrum/src/web-drum.js')
+        script(src='/javascripts/Sly/sly.min.js')
+        link(rel='stylesheet', href='/stylesheets/sly.css')
+
+        script(src='/socket.io/socket.io.js')
+        script(src='/javascripts/Logger/jsnlog.min.js')
+        script(src='/javascripts/interfaceConstants.js')
+        script(src='/javascripts/WebDrum/src/web-ahdsr.js')
+        script(src='/javascripts/WebAudioInstruments/Drum_Corp.js')
+        script(src='/javascripts/WebAudioInstruments/Electronic.js')
+        script(src='/javascripts/WebAudioInstruments/Pitched.js')
+        script(src='/javascripts/WebAudioInstruments/Player.js')
+        script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
+        script(src='/javascripts/WebAudioInstruments/Metronome.js')
+        script(src='/javascripts/MalloTools/TimeTools.js')
+        script(src='/javascripts/ourJsonFilesParser.js')
+
+
+
+    body(class="ui-mobile-viewport")
+        script.
+
+            var serverURL = 'http://localhost:3000';
+            window.addEventListener('load', init, false);
+            //socket to send/receive stuff from
+            var socket = io(serverURL);
+
+            var amIperformer = 1;
+            var isSeqOn = 1;
+
+            var nPlayers = 3;
+            var players = [];
+            var currentBPM = 60;
+
+            var thisPerformerNum = -1;
+            var isAudioSetup = false;
+            var isSchedulerSetup = false;
+
+            var performanceNumbers = ["314159265358979323846264338327950288419716939937510582097494459230781640628", "271828182845904523536028747135266249775724709369995957496696762772407663035", "161803398874989484820458683436563811772030917980576286213544862270526046281"];
+            var nNumbers = 5;
+            var nBeats = 8;
+
+
+            var audioContext;
+
+            var scheduler;
+            var syncClient;
+            var stayAwake;
+
+            //sequencer - used to play sounds at a specific interval
+            // NOT Synchronized
+            var sequencerID = 0;
+            var tutorialSequencer = 0;
+
+            //metronome - used to play sounds at a specific interval
+            // ALL Metronomes are synchronized with each other
+            var metronome;
+
+            //create the logger
+            var logger = JL("Performer-Logger");
+
+
+            socket.on('welcome', function (data) {
+                console.log("Welcome!");
+
+                for (ip in data.performerIPs) {
+                    console.log("IP: " + ip);
+                    console.log("performerPI[ip]: " + data.performerIPs[ip]);
+                    var performerNum = ip + 1;
+                    if (data.performerIPs[ip] != "") {
+                        $('#p' + performerNum + 'button').hide();
+                    }
+                }
+            });
+
+
+            socket.on('performerSelected', function (data) {
+                var performerNum = data.performerNumber;
+                if (performerNum != thisPerformerNum) {
+                    console.log("Performer " + performerNum + " Chosen");
+                    $('#p' + performerNum + 'button').hide();
+                }
+            });
+
+            socket.on('performerUnselected', function (data) {
+                var performerNum = data.performerNumber;
+                console.log("Performer " + performerNum + " UnChosen");
+                $('#p' + performerNum + 'button').show();
+            });
+
+            //receive messages from server (masterServerControl) on when to turn on/off the metronome
+            socket.on('flipMetro', function (data) {
+                if (data.isOn) {
+                    metronome.start();
+                    //console.log("Metro make sound");
+                } else {
+                    //console.log("Metro stop makein sound");
+                    metronome.stop();
+                }
+            });
+
+            socket.on('time_res', function (data) {
+                var receive_time = audioContext.currentTime;
+                var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
+                syncClient.addTimeOffset(instant_offset);
+                // console.log("instant_offset: " + instant_offset + ", syncClient.getOffset(): " + syncClient.getOffset());
+            });
+
+            //when we receive predictions, schedule them
+            socket.on('note_prediction', function (data) {
+                //todo: schedule the event
+                var offset = syncClient.getOffset();
+                var offset = syncClient.getOffset();
+                var instr;
+                if (data.address == "/left") {
+                    instr = 0;
+                }
+                if (data.address == "/middle") {
+                    instr = 1;
+                }
+                if (data.address == "/right") {
+                    instr = 2;
+                }
+                scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
+                //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
+
+            });
+
+
+            function init() {
+
+            }
+
+
+            // Load the initial display - hide all visuals
+            $(document).ready(function () {
+                $('#playerInterface').hide();
+                $('#enableAudio').hide();
+                $('#notSupported').hide();
+                $('#p1head').hide();
+                $('#p2head').hide();
+                $('#p3head').hide();
+
+                $('#m0-el-size-l').hide();
+                $('#m0-el-size-r').hide();
+                $('#m1-el-size-l').hide();
+                $('#m1-el-size-r').hide();
+                $('#m2-el-size-l').hide();
+                $('#m2-el-size-r').hide();
+            });
+
+
+            function choosePlayer(number) {
+                thisPerformerNum = number;
+                console.log("Player " + number + " Click!");
+                $('#head').val = "Player " + number + " Interface";
+                $('#playerChoice').hide();
+                $('#enableAudio').show();
+                $('#p' + number + 'head').show();
+
+                //Send Message to Server to let them know which performer was selected:
+                socket.emit('performerSetup', {
+                    performerNumber: number
+                });
+            }
+
+            function logout() {
+                //Send Message to Server to let them know which performer was deselected:
+                socket.emit('performerTeardown', {
+                    performerNumber: thisPerformerNum
+                });
+
+                //refresh the page
+                window.location.reload();
+
+            }
+
+
+            // Setup an event listener for clicks on the choosePlayer button
+            // This will initialize our audio context so that it works on ios.
+            $(function () {
+                $("#soundCheck").on("click", function () {
+
+                    if (!isAudioSetup) {
+
+                        try {
+                            // Fix up for prefixing
+                            if (isAudioContextSupported()) {
+                                //console.log("Web Audio is supported!");
+                                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            }
+                        } catch (e) {
+                            $('#notSupported').show();
+                            alert('You need webaudio support - try another browser or device');
+                        }
+
+                        for (var i = 0; i < nPlayers; i++) {
+                            players.push(new Player());
+                        }
+
+                        setupMetronome(currentBPM);
+
+                        // play sound to test audio
+                        //playSound(audioContext.currentTime);
+
+                        loadAudioFiles(true); //true since we are a performer
+                        playSound(audioContext.currentTime);
+
+                        if (!isSchedulerSetup) {
+                            initSyncAndScheduler(socket, amIperformer, isSeqOn, logger); // seq is not on.
+                            loadJSONandDOM();
+                            isSchedulerSetup = true;
+                        }
+
+                        isAudioSetup = true;
+
+                    } else {
+                        playSound(audioContext.currentTime);
+
+                    }
+                    $('#enableAudio').hide();
+                    $('#playerInterface').show();
+
+                });
+            });
+
+            function isAudioContextSupported() {
+                // This feature is still prefixed in Safari
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                return window.AudioContext;
+            }
+
+
+
+            function initSyncAndScheduler() {
+                syncClient = new SyncClient();
+                if (syncClient != undefined) {
+                    console.log("syncClient is defined");
+                    metronome.setSyncClient(syncClient);
+                    scheduler = new Scheduler(players, audioContext, logger, syncClient);
+                } else {
+                    console.log("syncClient is undefined");
+                }
+                var timeSyncInterval = 500;
+                // starts time sync
+                setInterval(function () {
+                    socket.emit('time_req', {
+                        clientTime: audioContext.currentTime,
+                    });
+                }, timeSyncInterval);
+
+                var schedulerInterval = 20;
+                // checks scheduler
+                setInterval(function () {
+                    //players[0].schedule(audioContext.currentTime+.5);
+                    scheduler.checkSchedule();
+                }, schedulerInterval);
+
+                if (isSeqOn) {
+                    switchSequencerOn(true);
+                }
+
+                stayAwake = setInterval(function () {
+                    //console.log("stay awake!");
+                    location.href = location.href; //try refreshing
+                    window.setTimeout(window.stop, 0); //stop it soon after
+                }, 25000);
+
+            }
+
+            function switchSequencerOn(isOn) {
+                if (isOn) {
+                    sequencerID = setInterval(function () {
+                        console.log('Timer, ' + tutorialSequencer);
+                        if (tutorialSequencer == 0) {
+                            scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
+                        } else if (tutorialSequencer == 1) {
+                            scheduler.setPrediction(audioContext.currentTime + 0.01, 1);
+                        } else if (tutorialSequencer == 2) {
+                            scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
+                        } else if (tutorialSequencer == 3) {
+                            //scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
+                            //scheduler.setPrediction(audioContext.currentTime + 0.01, 1);
+                            //scheduler.setPrediction(audioContext.currentTime + 0.01, 2);
+                        }
+                        tutorialSequencer++;
+                        if (tutorialSequencer == 4) {
+                            tutorialSequencer = 0;
+                        }
+                    }, 500);
+                } else {
+                    clearInterval(sequencerID);
+                }
+            }
+
+            function setupMetronome(tempo) {
+                metronome = new Metronome(audioContext);
+                metronome.setTempo(tempo);
+            }
+
+            function switchMetronomeOn(isOn) {
+                if (isOn) {
+                    // make sound
+                    ///metronome.stop();
+                    metronome.start();
+                    //console.log("Metro make sound");
+                } else {
+                    //console.log("Metro stop makein sound");
+                    metronome.stop();
+                }
+            }
+
+
+            // if logged out then stop it from staying awake.
+            function dontStayAwake() {
+                clearInterval(stayAwake);
+            }
+
+            function playSound(time) {
+                //console.log("Play Sound");
+                var beepGain = audioContext.createGain();
+                var beepLevel = audioContext.createGain();
+                beepLevel.gain.value = 0.4;
+                var envelope = new WebAHDSR(audioContext, beepGain.gain);
+                var oscillator = audioContext.createOscillator();
+                oscillator.frequency.value = 400;
+                oscillator.connect(beepGain);
+                beepGain.connect(beepLevel);
+                beepLevel.connect(audioContext.destination);
+                envelope.on();
+                oscillator.start(time);
+                oscillator.stop(time + 0.5);    // you can set this to zero, but I left it here for testing.
+            }
+
+            // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
+            // when files have finished loaded.
+            function loadJSONandDOM() {
+                loadInstrumentsfile(function (response1) {
+                    parseInstruments(response1);
+
+                    loadPresetsfile(function (response2) {
+                        // Parse JSON string into object
+                        parseChannels(response2);
+                        loadDOMStuff();
+                    });
+                });
+            }
+
+
+            function loadDOMStuff() {
+                //setup Numbers slider
+                var $numbers_frame = $('#numbers');
+                var $numbers_wrap = $numbers_frame.parent();
+
+                var numbers_options = {
+                    horizontal: 1,
+                    itemNav: 'forceCentered',
+                    smart: 1,
+                    activateMiddle: 1,
+                    activateOn: null, //'click',
+                    mouseDragging: 0,
+                    touchDragging: 0,
+                    releaseSwing: 1,
+                    startAt: 0,
+                    scrollBar: $numbers_wrap.find('.scrollbar'),
+                    clickBar: false,
+                    scrollBy: 1,
+                    speed: 200,
+                    elasticBounds: 1,
+                    easing: 'swing'
+                };
+
+                //create our sly for the channels box slider
+                var sly_numbers = new Sly('#numbers', numbers_options);
+
+                //Setup event listener for when a new item has been activated
+                //eventName: Event Name
+                //itemIndex: index of active item.
+
+                sly_numbers.on('active', function (eventName, itemIndex) {
+                    socket.emit('changeNumber', {
+                        newNumber: itemIndex
+                    });
+                });
+
+                //DO WE NEED TO LOG THESE EVENTS? OR WILL CLIENT LOG THEM?
+                sly_numbers.on('moveEnd', function (eventName) {
+                    var el = document.querySelector(".active").id;
+                    var number = parseInt(el.slice(3));
+                });
+
+                sly_numbers.init();
+
+
+                console.log("Num of presets: " + nNumbers);
+
+                var numbersToShow = performanceNumbers[thisPerformerNum - 1];
+                console.log("TO SHOW: " + numbersToShow);
+
+                for (var i = 0; i < nNumbers; i++) {
+                    var num = numbersToShow.charAt(i);
+                    $('[id="num_slidee"]').append('<li id = ' + 'num_' + i + '>' + num + '</div>');
+                }
+
+                $('#numbers').sly('reload');
+                sly_numbers.activate(0);
+
+
+                //setup BEATS slider
+                var $beats_frame = $('#beats');
+                var $beats_wrap = $beats_frame.parent();
+
+                var beats_options = {
+                    horizontal: 0,
+                    itemNav: 'basic',
+                    smart: 1,
+                    activateMiddle: 1,
+                    activateOn: 'click'
+                };
+
+                //create our sly for the channels box slider
+                var sly_beats = new Sly('#beats', beats_options);
+
+                //Setup event listener for when a new item has been activated
+                //eventName: Event Name
+                //itemIndex: index of active item.
+
+                sly_beats.on('active', function (eventName, itemIndex) {
+                    socket.emit('changeBeats', {
+                        newBeat: itemIndex
+                    });
+                });
+
+                //DO WE NEED TO LOG THESE EVENTS? OR WILL CLIENT LOG THEM?
+                sly_beats.on('moveEnd', function (eventName) {
+                    var el = document.querySelector(".active").id;
+                    var beat = parseInt(el.slice(3));
+                });
+
+                sly_beats.init();
+
+
+                console.log("Num of presets: " + nBeats);
+
+                for (var i = 0; i < nBeats; i++) {
+                    var num = i + 1;
+                    $('[id="beats_slidee"]').append('<li id = ' + 'beat_' + i + '>' + num + '</div>');
+                }
+
+                $('#beats').sly('reload');
+                sly_beats.activate(0);
+
+                //show or hide sliders for mode 3 depending on the selector
+                //Selector for ids that end in '-select'
+                $('[id$="-select"]').change(function () {
+                    //get the id and extract the mallo id (m0, m1, m2)
+                    var id = $(this).attr('id');
+                    var playerNum = parseInt(id.slice(1));
+                    //console.log("Select Player: " + playerNum);
+                    var malloId = id.slice(0, 2);
+                    //get the value for the child that is selected
+                    var nextpage = $(this).children('option:selected').attr('value');
+
+
+                    /*
+                     var active = $('#movement2').tabs('option', 'active');
+
+                     //if we are in mode 3 - then log the change!
+                     if (active == 2) {
+                     if (loggerOn) {
+                     logger.info("{ \"" + id + "\" : " + nextpage + ", \"global_time\" : " + syncClient.getTime() + "}");
+                     }
+                     }*/
+
+                    //show/hide based on the selection.
+                    if (nextpage == '0') {
+                        //console.log("Selected 1!");
+                        players[playerNum].activeInstrument = 0;
+                        $('#' + malloId + '-dc-vol').val(players[playerNum].level).trigger('change');
+                        $('#' + malloId + '-dc-size').val(players[playerNum].size).trigger('change');
+                        $('#' + malloId + '-dc-decay').val(players[playerNum].decay).trigger('change');
+                        $('#' + malloId + '-dc').show();
+                        $('#' + malloId + '-pp').hide();
+                        $('#' + malloId + '-el').hide();
+
+                    } else if (nextpage == '1') {
+                        //console.log("Selected 2!");
+                        players[playerNum].activeInstrument = 1;
+                        $('#' + malloId + '-el-vol').val(players[playerNum].level).trigger('change');
+                        $('#' + malloId + '-el-size').val(players[playerNum].size).trigger('change');
+                        $('#' + malloId + '-el-decay').val(players[playerNum].decay).trigger('change');
+                        $('#' + malloId + '-dc').hide();
+                        $('#' + malloId + '-pp').show();
+                        $('#' + malloId + '-el').hide();
+                    } else {
+                        //console.log("Selected 3!");
+                        players[playerNum].activeInstrument = 2;
+                        $('#' + malloId + '-pp-vol').val(players[playerNum].level).trigger('change');
+                        $('#' + malloId + '-pp-size').val(players[playerNum].size).trigger('change');
+                        $('#' + malloId + '-pp-decay').val(players[playerNum].decay).trigger('change');
+                        $('#' + malloId + '-dc').hide();
+                        $('#' + malloId + '-pp').hide();
+                        $('#' + malloId + '-el').show();
+                    }
+                });
+
+                refreshSliders();
+            }
+
+
+
+
+            function sliderChange(playerNum, params) {
+                //set active Instrument - which will trigger changes to the params
+                var activeInstrument = params["activeInstrument"];
+                $('#m' + playerNum + '-select').val(activeInstrument).trigger('change');
+            }
+
+            //gets parameters from the players and sets
+            function refreshSliders() {
+                for (var i = 0; i < nPlayers; i++) {
+                    params = players[i].getParameters();
+
+                    console.log("REFRESH: " + i + " " + params);
+
+                    var activeInstrument = params["activeInstrument"];
+                    $('#m' + i + '-select').val(activeInstrument).trigger('change');
+
+                    switch (activeInstrument) {
+                        case DRUM_CORP:
+                            console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
+                            $('#m' + i + '-dc-vol').val(params["level"]).trigger('change');
+                            $('#m' + i + '-dc-size').val(params["size"]).trigger('change');
+                            $('#m' + i + '-dc-decay').val(params["decay"]).trigger('change');
+                            $('#m' + i + '-dc-pitch').val(params["drumPitch"]).trigger('change');
+                            $('#m' + i + '-dc-drums').val(params["nDrummers"]).trigger('change');
+                            $('#m' + i + '-dc-dyn').val(params["dynamics"]).trigger('change');
+                            break;
+                        case PITCHED:
+                            $('#m' + i + '-pp-vol').val(params["level"]).trigger('change');
+                            $('#m' + i + '-pp-size').val(params["size"]).trigger('change');
+                            $('#m' + i + '-pp-decay').val(params["decay"]).trigger('change');
+                            $('#m' + i + '-pp-scale').val(params["range"]).trigger('change');
+                            $('#m' + i + '-pp-vib').val(params["vibrato"]).trigger('change');
+                            $('#m' + i + '-pp-trip').val(params["trippiness"]).trigger('change');
+                            break;
+                        case ELECTRONIC:
+                            $('#m' + i + '-el-vol').val(params["level"]).trigger('change');
+                            $('#m' + i + '-el-size').val(params["size"]).trigger('change');
+                            $('#m' + i + '-el-decay').val(params["decay"]).trigger('change');
+                            $('#m' + i + '-el-grunge').val(params["grunge"]).trigger('change');
+                            $('#m' + i + '-el-pitch').val(params["electronicPitch"]).trigger('change');
+                            $('#m' + i + '-el-fat').val(params["fatness"]).trigger('change');
+                            break;
+                        default:
+                            console.log("fell to the bottom of the getParameters switch statement (we should not have)");
+                    }
+                }
+            }
+
+            //slider changes!
+            $(function () {
+                $(".ui-slider").on('change', function (event) {
+                    var id = event.target.id;
+                    var playerNumber = parseInt(id.slice(1));
+                    var value = $(this).text();
+                    //console.log("Slider Changes: " + event.target.id + " " + playerNumber + " " + value);
+                    var instrType = players[playerNumber].activeInstrument;
+                    if (id.indexOf("vol") > -1) {
+                        players[playerNumber].level = value;
+                    } else if (id.indexOf("decay") > -1) {
+                        players[playerNumber].decay = value;
+                    } else if (id.indexOf("size") > -1) {
+                        players[playerNumber].size = value;
+                    } else if (id.indexOf("dc-pitch") > -1) {
+                        players[playerNumber].drumPitch = value;
+                    } else if (id.indexOf("dc-dyn") > -1) {
+                        players[playerNumber].dynamics = value;
+                    } else if (id.indexOf("dc-drums") > -1) {
+                        players[playerNumber].nDrummers = value;
+                    } else if (id.indexOf("pp-vib") > -1) {
+                        players[playerNumber].vibrato = value;
+                    } else if (id.indexOf("pp-trip") > -1) {
+                        players[playerNumber].trippiness = value;
+                    } else if (id.indexOf("pp-scale") > -1) {
+                        players[playerNumber].range = value;
+                    } else if (id.indexOf("el-fat") > -1) {
+                        players[playerNumber].fatness = value;
+                    } else if (id.indexOf("el-pitch") > -1) {
+                        players[playerNumber].electronicPitch = value;
+                    } else if (id.indexOf("el-grunge") > -1) {
+                        players[playerNumber].grunge = value;
+                    }
+                });
+            });
+
+            $.fn.serializeObject = function () {
+                var o = {};
+                var a = this.serializeArray();
+                $.each(a, function () {
+                    if (o[this.name] !== undefined) {
+                        if (!o[this.name].push) {
+                            o[this.name] = [o[this.name]];
+                        }
+                        o[this.name].push(this.value || '');
+                    } else {
+                        o[this.name] = this.value || '';
+                    }
+                });
+                return o;
+            };
+
+            $(window).resize(function (e) {
+                $('#beats').sly('reload');
+                $('#numbers').sly('reload');
+            });
+
+
+
+        #playerChoice.center.ui-content(data-role='main')
+            h1.center(data-role='header', data-theme='a', data-position='inline', role='banner') Choose which player you are:
+            .ui-body.ui-body-a.ui-corner-all
+                .ui-block-a(style='width:10%')
+                .ui-block-b(style='width:80%')
+                    form
+                        input#p1Button(type='button', data-inline='true', data-theme='b', value='Player 1', onclick='choosePlayer(1)')
+                        input#p2Button(type='button', data-inline='true', data-theme='c', value='Player 2', onclick='choosePlayer(2)')
+                        input#p3Button(type='button', data-inline='true', data-theme='d', value='Player 3', onclick='choosePlayer(3)')
+        #enableAudio.center.ui-content(data-role='main')
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                        | Put in your headphones and click the button below.button
+                        #soundCheck.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button') Enable Audio and Check Sound
+
+                div#audioSetup(style='margin: 10px 0 0 0;',)
+                    p
+                        | You must click the sound check button to enable the audio for this piece.
+
+                div#notSupported(style='margin: 10px 0 0 0;',)
+                    p.player2_color
+                        | You need WebAudio support - try another browser or device
+
+        #playerInterface.center.ui-content(data-role='main')
+
+            h1#p1head.center(data-role='header', data-theme='b', data-position='inline', role='banner') Player 1 Interface
+
+            h1#p2head.center(data-role='header', data-theme='c', data-position='inline', role='banner') Player 2 Interface
+
+            h1#p3head.center(data-role='header', data-theme='d', data-position='inline', role='banner') Player 3 Interface
+            .ui-body.ui-body-a.ui-corner-all
+                .ui-block-a(style='width:90%')
+                .ui-block-b(style='width:10%')
+                    button#logoutButton.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name='logout', type='submit', onclick='logout()') Logout
+
+
+            .ui-body.ui-body-a.ui-corner-all
+                .ui-block-a(style='width:10%')
+                    .form.wrap
+                        label(for='beats')
+                        #beats.beats_frame(style='overflow; hidden;')
+                            ul#beats_slidee.slide
+                .ui-block-b(style='width:5%')
+                .ui-block-c(style='width:80%')
+                    .form.wrap
+                        label(for='numbers') Number of notes to play per measure:
+                        #num_scrollbar.scrollbar
+                            #numbers_handle.handle(style='transform: translateZ(0px) translateX(228px);')
+                        #numbers.perf_frame(style='overflow; hidden;')
+                            ul#num_slidee.slide
+
+            #playerSelectors.ui-content(data-role='main')
+                form#m-form
+                    #m0-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='b')
+                        h3 Player 1
+                        .ui-content
+                            label.leftItem(for='m0-select') Type
+                            .rightItem
+                                select#m0-select(name='m0-select', data-mini='true', data-theme='b', data-iconpos='left')
+                                    option(value='0') Drum Corp
+                                    option(value='1') Pitched Percussion
+                                    option(value='2') Electronic
+                        .ui-content#m0-dc
+                            label.leftItem(for='m0-dc-vol') Volume
+                            .rightItem
+                                input#m0-dc-vol(type='range', name='m0-dc-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-dc-size') Echo
+                            .rightItem
+                                input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-dc-decay') Sustain
+                            .rightItem
+                                input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-dc-pitch') Pitch
+                            .rightItem
+                                input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-dc-drums') # o'Drums
+                            .rightItem
+                                input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='b', data-theme='b', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-dc-dyn') Dynamics
+                            .rightItem
+                                input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                        .ui-content#m0-pp
+                            label.leftItem(for='m0-pp-vol') Volume
+                            .rightItem
+                                input#m0-pp-vol(type='range', name='m0-pp-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-pp-size') Echo
+                            .rightItem
+                                input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-pp-decay') Sustain
+                            .rightItem
+                                input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-pp-scale') Pattern
+                            .rightItem
+                                input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-pp-vib') Vibrato
+                            .rightItem
+                                input.ui-hidden-accessible#m0-pp-vib(type='range', name='m0-pp-vib', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-pp-trip') Glimmer
+                            .rightItem
+                                input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                        .ui-content#m0-el
+                            label.leftItem(for='m0-el-vol') Volume
+                            .rightItem
+                                input.ui-hidden-accessible#m0-el-vol(type='range', name='m0-el-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem#m0-el-size-l(for='m0-el-size') Echo
+                            .rightItem#m0-el-size-r
+                                input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-el-decay') Sustain
+                            .rightItem
+                                input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-el-grunge') Grunge
+                            .rightItem
+                                input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-el-pitch') Pattern
+                            .rightItem
+                                input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m0-el-fat') Pitch
+                            .rightItem
+                                input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='b', data-theme='b',min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                    #m1-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='c')
+                        h3 Player 2
+                        .ui-content
+                            label.leftItem(for='m1-select') Type
+                            .rightItem
+                                select#m1-select(name='m1-select', data-mini='true', data-theme='c', data-iconpos='left')
+                                    option(value='0') Drum Corp
+                                    option(value='1') Pitched Percussion
+                                    option(value='2') Electronic
+                        .ui-content#m1-dc
+                            label.leftItem(for='m1-dc-vol') Volume
+                            .rightItem
+                                input#m1-dc-vol(type='range', name='m1-dc-vol', data-track-theme='c', data-theme='c', min='0', max='1', value='.5', step='.01',data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-dc-size') Echo
+                            .rightItem
+                                input#m1-dc-size(type='range', name='m1-dc-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-dc-decay') Sustain
+                            .rightItem
+                                input#m1-dc-decay(type='range', name='m1-dc-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-dc-pitch') Pitch
+                            .rightItem
+                                input#m1-dc-pitch(type='range', name='m1-dc-pitch', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-dc-drums') # o'Drums
+                            .rightItem
+                                input#m1-dc-drums(type='range', name='m1-dc-drums', data-track-theme='c', data-theme='c', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-dc-dyn') Dynamics
+                            .rightItem
+                                input#m1-dc-dyn(type='range', name='m1-dc-dyn', data-track-theme='c', data-theme='c', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                        .ui-content#m1-pp
+                            label.leftItem(for='m1-pp-vol') Volume
+                            .rightItem
+                                input.ui-hidden-accessible#m1-pp-vol(type='range', name='m1-pp-vol', data-track-theme='c', data-theme='c', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-pp-size') Echo
+                            .rightItem
+                                input.ui-hidden-accessible#m1-pp-size(type='range', name='m1-pp-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-pp-decay') Sustain
+                            .rightItem
+                                input.ui-hidden-accessible#m1-pp-decay(type='range', name='m1-pp-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-pp-scale') Pattern
+                            .rightItem
+                                input.ui-hidden-accessible#m1-pp-scale(type='range', name='m1-pp-scale', data-track-theme='c', data-theme='c', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-pp-vib') Vibrato
+                            .rightItem
+                                input.ui-hidden-accessible#m1-pp-vib(type='range', name='m1-pp-vib', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-pp-trip') Glimmer
+                            .rightItem
+                                input.ui-hidden-accessible#m1-pp-trip(type='range', name='m1-pp-trip', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                        .ui-content#m1-el
+                            label.leftItem(for='m1-el-vol') Volume
+                            .rightItem
+                                input.ui-hidden-accessible#m1-el-vol(type='range', name='m1-el-vol', data-track-theme='c', data-theme='c', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem#m1-el-size-l(for='m1-el-size') Echo
+                            .rightItem#m1-el-size-r
+                                input.ui-hidden-accessible#m1-el-size(type='range', name='m1-el-size', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-el-decay') Sustain
+                            .rightItem
+                                input.ui-hidden-accessible#m1-el-decay(type='range', name='m1-el-decay', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-el-grunge') Grunge
+                            .rightItem
+                                input.ui-hidden-accessible#m1-el-grunge(type='range', name='m1-el-grunge', data-track-theme='c', data-theme='c', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-el-pitch') Pattern
+                            .rightItem
+                                input.ui-hidden-accessible#m1-el-pitch(type='range', name='m1-el-pitch', data-track-theme='c', data-theme='c', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m1-el-fat') Pitch
+                            .rightItem
+                                input.ui-hidden-accessible#m1-el-fat(type='range', name='m1-el-fat', data-track-theme='c', data-theme='c', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                    #m2-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='d')
+                        h3 Player 3
+                        .ui-content
+                            label.leftItem(for='m2-select') Type
+                            .rightItem
+                                select#m2-select(name='m2-select', data-mini='true', data-theme='d', data-iconpos='left')
+                                    option(value='0') Drum Corp
+                                    option(value='1') Pitched Percussion
+                                    option(value='2') Electronic
+                        .ui-content#m2-dc
+                            label.leftItem(for='m2-dc-vol') Volume
+                            .rightItem
+                                input#m2-dc-vol(type='range', name='m2-dc-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true',  data-mini='true')
+                            label.leftItem(for='m2-dc-size') Echo
+                            .rightItem
+                                input#m2-dc-size(type='range', name='m2-dc-size', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-dc-decay') Sustain
+                            .rightItem
+                                input#m2-dc-decay(type='range', name='m2-dc-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-dc-pitch') Pitch
+                            .rightItem
+                                input#m2-dc-pitch(type='range', name='m2-dc-pitch', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-dc-drums') # o'Drums
+                            .rightItem
+                                input#m2-dc-drums(type='range', name='m2-dc-drums', data-track-theme='d', data-theme='d', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-dc-dyn') Dynamics
+                            .rightItem
+                                input#m2-dc-dyn(type='range', name='m2-dc-dyn', data-track-theme='d', data-theme='d', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                        .ui-content#m2-pp
+                            label.leftItem(for='m2-pp-vol') Volume
+                            .rightItem
+                                input.ui-hidden-accessible#m2-pp-vol(type='range', name='m2-pp-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-pp-size') Echo
+                            .rightItem
+                                input.ui-hidden-accessible#m2-pp-size(type='range', name='m2-pp-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-pp-decay') Sustain
+                            .rightItem
+                                input.ui-hidden-accessible#m2-pp-decay(type='range', name='m2-pp-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-pp-scale') Pattern
+                            .rightItem
+                                input.ui-hidden-accessible#m2-pp-scale(type='range', name='m2-pp-scale', data-track-theme='d', data-theme='d', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-pp-vib') Vibrato
+                            .rightItem
+                                input.ui-hidden-accessible#m2-pp-vib(type='range', name='m2-pp-vib', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-pp-trip') Glimmer
+                            .rightItem
+                                input.ui-hidden-accessible#m2-pp-trip(type='range', name='m2-pp-trip', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                        .ui-content#m2-el
+                            label.leftItem(for='m2-el-vol') Volume
+                            .rightItem
+                                input.ui-hidden-accessible#m2-el-vol(type='range', name='m2-el-vol', data-track-theme='d', data-theme='d', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+                            label.leftItem#m2-el-size-l(for='m2-el-size') Echo
+                            .rightItem#m2-el-size-r
+                                input.ui-hidden-accessible#m2-el-size(type='range', name='m2-el-size', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-el-decay') Sustain
+                            .rightItem
+                                input.ui-hidden-accessible#m2-el-decay(type='range', name='m2-el-decay', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-el-grunge') Grunge
+                            .rightItem
+                                input.ui-hidden-accessible#m2-el-grunge(type='range', name='m2-el-grunge', data-track-theme='d', data-theme='d', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-el-pitch') Pattern
+                            .rightItem
+                                input.ui-hidden-accessible#m2-el-pitch(type='range', name='m2-el-pitch', data-track-theme='d', data-theme='d', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
+                            label.leftItem(for='m2-el-fat') Pitch
+                            .rightItem
+                                input.ui-hidden-accessible#m2-el-fat(type='range', name='m2-el-fat', data-track-theme='d', data-theme='d', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+
+
+
+
+            //TODO: Add a "logout" button for the performers that will send a "performerTeardown" message to the server.
