@@ -1,11 +1,14 @@
 Metronome = function (audioContext) {
     this.tempo = 110.0;
+    this.numBeatsInMeasure = 8;
     this.tickPeriod = 60.0 / this.tempo;
     this.audioContext = audioContext;
     this.lastTickTime = 0;
     this.intervalLength = 200;
     this.lookahead = this.intervalLength * 1.5 / 1000.0;
     this.syncClient = undefined;
+    this.curMeasureNum = 0;
+    this.curBeatNum = 0;
 
     this.setTempo = function (tempo) {
         console.log("this.setTempo()");
@@ -40,14 +43,22 @@ Metronome = function (audioContext) {
         clearInterval(this.interval);
     };
 
-    //checks if it should schedule a click
+    //checks if it should schedule a click or a measure change
     this.check = function () {
-        var nextTickTime = (1 + Math.floor(this.syncClient.getTime() / this.tickPeriod)) * this.tickPeriod;
-        // console.log("this.tickPeriod: " + this.tickPeriod);
-        // console.log("nextTickTime: " + nextTickTime);
-        // console.log("this.syncClient.getTime(): " + this.syncClient.getTime());
-        // console.log("nextTickTime - this.syncClient.getTime(): " + (nextTickTime - this.syncClient.getTime()));
-        // console.log("this.lastTickTime + this.lookahead: " + (this.lastTickTime + this.lookahead));
+        var numTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
+        var oldMeasureNum = this.curMeasureNum;
+        var oldBeatNum = this.curBeatNum;
+        this.curMeasureNum = Math.floor(numTicksSoFar / this.numBeatsInMeasure) + 1;
+        this.curBeatNum = numTicksSoFar % this.numBeatsInMeasure + 1;
+        if (this.curBeatNum != oldBeatNum)
+        {
+            console.log("Beat: " + this.curBeatNum);
+        }
+        if (this.curMeasureNum != oldMeasureNum)
+        {
+            console.log("Measure: " + this.curMeasureNum);
+        }
+        var nextTickTime = (numTicksSoFar + 1) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
             syncClient.getTime() > this.lastTickTime + this.lookahead) {
             this.lastTickTime = (1 + Math.floor(syncClient.getTime() / this.tickPeriod)) * this.tickPeriod;
