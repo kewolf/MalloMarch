@@ -305,11 +305,10 @@ html
                             players.push(new Player());
                         }
 
-                        setupMetronome(currentBPM);
-
                         loadAudioFiles(true); //true since we are a performer and need metronome
                         playSound(audioContext.currentTime);
 
+                        setupMetronome(currentBPM);
 
                         if (!isSchedulerSetup) {
                             initSyncAndScheduler(); // seq is not on.
@@ -318,6 +317,7 @@ html
                         }
 
                         isAudioSetup = true;
+
                         switchMetronomeOn(isMetroOn, currentBPM);
 
                     } else {
@@ -377,7 +377,7 @@ html
             }
             // Setup our metronome and determine if the piece has started
             function setupMetronome(tempo) {
-                metronome = new Metronome(audioContext);
+                metronome = new Metronome(audioContext, logger);
                 metronome.setTempo(tempo);
 
                 metronome.watch('curBeatNum', function (id, oldvalue, newvalue) {
@@ -432,8 +432,6 @@ html
             }
 
             function switchMetronomeOn(isOn, bpm) {
-                logger.info("{ \"FLPME\" : " + isOn + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + bpm + "}");
-
                 if (isOn) {
                     // make sound
                     ///metronome.stop();

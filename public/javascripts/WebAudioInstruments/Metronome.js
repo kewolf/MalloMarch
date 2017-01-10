@@ -1,4 +1,4 @@
-Metronome = function (audioContext) {
+Metronome = function (audioContext, logger) {
     this.tempo = 110.0;
     this.numBeatsInMeasure = 8;
     this.tickPeriod = 60.0 / this.tempo;
@@ -12,6 +12,9 @@ Metronome = function (audioContext) {
 
     this.setTempo = function (tempo) {
         console.log("this.setTempo()");
+        if (logger && this.syncClient) {
+            logger.info("{ \"UPBPM\" : " + this.numBeatsInMeasure + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + tempo + "}");
+        }
         this.tempo = tempo;
         this.tickPeriod = 60.0 / this.tempo;
     };
@@ -31,6 +34,9 @@ Metronome = function (audioContext) {
 
     this.start = function () {
         console.log("metronome.start()");
+        if (logger && this.syncClient) {
+            logger.info("{ \"FLPMA\" : " + 1 + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + this.tempo + "}");
+        }
         this.check();
         self = this;
         this.interval = setInterval(function () {
@@ -40,6 +46,9 @@ Metronome = function (audioContext) {
 
     this.stop = function () {
         console.log("metronome.stop()");
+        if (logger && this.syncClient) {
+            logger.info("{ \"FLPMA\" : " + 0 + ", \"global_time\" : " + syncClient.getTime() + "}");
+        }
         clearInterval(this.interval);
     };
 
