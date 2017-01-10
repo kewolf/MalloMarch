@@ -12,7 +12,7 @@ block content
     script(src='/javascripts/WebAudioInstruments/Drum_Corp.js')
     script(src='/javascripts/WebAudioInstruments/Electronic.js')
     script(src='/javascripts/WebAudioInstruments/Pitched.js')
-    script(src='/javascripts/WebAudioInstruments/Player.js')
+    script(src='/javascripts/WebAudioInstruments/NumXPlayer.js')
     script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
     script(src='/javascripts/Logger/jsnlog.min.js')
     script(src='/javascripts/MalloTools/TimeTools.js')
@@ -186,7 +186,7 @@ block content
                 if (data.address == "/right") {
                     instr = 2;
                 }
-                scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
+                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
                 //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                 //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
             }
@@ -220,7 +220,7 @@ block content
 
                     //create our three players
                     for (var i = 0; i < nPlayers; i++) {
-                        players.push(new Player());
+                        players.push(new NumXPlayer());
                     }
 
                     // play sound to test audio
@@ -714,7 +714,7 @@ block content
                 //get the id and extract the mallo id (m0, m1, m2)
                 var id = $(this).attr('id');
                 var playerNum = parseInt(id.slice(1));
-                //console.log("Select Player: " + playerNum);
+                //console.log("Select NumXPlayer: " + playerNum);
                 var malloId = id.slice(0, 2);
                 //get the value for the child that is selected
                 var nextpage = $(this).children('option:selected').attr('value');
@@ -1127,7 +1127,7 @@ block content
                 li
                     a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external', name = 'Change the Channel') Channels
                 li
-                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Each Player') Players
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Each NumXPlayer') Players
                 li
                     a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Parameters') Parameters
         .ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')

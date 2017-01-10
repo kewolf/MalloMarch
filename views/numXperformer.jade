@@ -7,7 +7,7 @@
 doctype html
 html
     head
-        title= "Player Interface"
+        title= "NumXPlayer Interface"
         meta(charset='utf-8')
         meta(name='viewport', content='width=device-width, initial-scale=1')
 
@@ -34,7 +34,7 @@ html
         script(src='/javascripts/WebAudioInstruments/Drum_Corp.js')
         script(src='/javascripts/WebAudioInstruments/Electronic.js')
         script(src='/javascripts/WebAudioInstruments/Pitched.js')
-        script(src='/javascripts/WebAudioInstruments/Player.js')
+        script(src='/javascripts/WebAudioInstruments/NumXPlayer.js')
         script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
         script(src='/javascripts/WebAudioInstruments/Metronome.js')
         script(src='/javascripts/MalloTools/TimeTools.js')
@@ -146,7 +146,8 @@ html
                 if (data.address == "/right") {
                     instr = 2;
                 }
-                scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
+                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
+                scheduler.curIds[instr] = data.id;
                 //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                 //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
 
@@ -178,8 +179,8 @@ html
 
             function choosePlayer(number) {
                 thisPerformerNum = number;
-                console.log("Player " + number + " Click!");
-                $('#head').val = "Player " + number + " Interface";
+                console.log("NumXPlayer " + number + " Click!");
+                $('#head').val = "NumXPlayer " + number + " Interface";
                 $('#playerChoice').hide();
                 $('#enableAudio').show();
                 $('#p' + number + 'head').show();
@@ -221,7 +222,7 @@ html
                         }
 
                         for (var i = 0; i < nPlayers; i++) {
-                            players.push(new Player());
+                            players.push(new NumXPlayer());
                         }
 
                         setupMetronome(currentBPM);
@@ -482,7 +483,7 @@ html
                     //get the id and extract the mallo id (m0, m1, m2)
                     var id = $(this).attr('id');
                     var playerNum = parseInt(id.slice(1));
-                    //console.log("Select Player: " + playerNum);
+                    //console.log("Select NumXPlayer: " + playerNum);
                     var malloId = id.slice(0, 2);
                     //get the value for the child that is selected
                     var nextpage = $(this).children('option:selected').attr('value');
@@ -649,9 +650,9 @@ html
                 .ui-block-a(style='width:10%')
                 .ui-block-b(style='width:80%')
                     form
-                        input#p1Button(type='button', data-inline='true', data-theme='b', value='Player 1', onclick='choosePlayer(1)')
-                        input#p2Button(type='button', data-inline='true', data-theme='c', value='Player 2', onclick='choosePlayer(2)')
-                        input#p3Button(type='button', data-inline='true', data-theme='d', value='Player 3', onclick='choosePlayer(3)')
+                        input#p1Button(type='button', data-inline='true', data-theme='b', value='NumXPlayer 1', onclick='choosePlayer(1)')
+                        input#p2Button(type='button', data-inline='true', data-theme='c', value='NumXPlayer 2', onclick='choosePlayer(2)')
+                        input#p3Button(type='button', data-inline='true', data-theme='d', value='NumXPlayer 3', onclick='choosePlayer(3)')
         #enableAudio.center.ui-content(data-role='main')
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')

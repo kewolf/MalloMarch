@@ -59,9 +59,16 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
             args: [client_send_time, server_time]
         }, info.address, 6448);
     } else {
-        var time = oscBundle.packets[0].args[0];
-        var velocity = oscBundle.packets[0].args[1];
-        sendPrediction(path, time.toNumber(), velocity);
+        io.emit('note_prediction', {
+            address: address,
+            predicted_time: oscBundle.packets[0].args[1],
+            velocity: oscBundle.packets[0].args[3],
+            id: oscBundle.packets[0].args[0],
+            send_time: oscBundle.packets[0].args[2],
+            x_pos: oscBundle.packets[0].args[4],
+            y_pos: oscBundle.packets[0].args[5],
+            z_pos: oscBundle.packets[0].args[6]
+        });
         console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
     }
 });
@@ -314,13 +321,13 @@ function stopLogs() {
 }
 
 //function for passing the osc messages onto our clients
-function sendPrediction(address, time, velocity) {
-    io.emit('note_prediction', {
-        address: address,
-        time: time,
-        velocity: velocity
-    });
-}
+// function sendPrediction(address, time, velocity) {
+//     io.emit('note_prediction', {
+//         address: address,
+//         time: time,
+//         velocity: velocity
+//     });
+// }
 
 /**
  * Normalize a port into a number, string, or false.

@@ -60,6 +60,7 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
     this.waitPeriod = 0.2; //
     this.players = players;
     this.curPredictions = [];
+    this.curIds = [];
     this.lastPlayTime = [];
     console.log('players.length: ' + players.length);
     for (var i = 0; i < players.length; i++) {
@@ -85,6 +86,7 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
                 this.curPredictions[i] = -1;
                 var time = playTime + syncClient.getOffset();
                 logger.info("{ \"event_player_" + i + "\" : " + time + "}"); // i indicates the player, playTime + syncClient.getOffset() indicates when in global time
+                //TODO: add this.curIds[i] into the log
             }
         }
     };
