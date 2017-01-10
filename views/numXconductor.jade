@@ -41,7 +41,7 @@ html
             var doneInitializing = false;
 
             var isMetroOn;
-            var currentBPM = 60; //starting BPM
+            var currentBPM = 120; //starting BPM
             var metronome;
 
             var startMeasure = -1;
@@ -580,7 +580,7 @@ html
                         .ui-block-b(style='width:40%')
                             .ui-field-contain
                                 label(for='bpm') BPM:
-                                input#bpm(type='text', name='text-1', data-theme='c', value='60')
+                                input#bpm(type='text', name='text-1', data-theme='c', value='120')
                         .ui-block-c(style='width:30%')
                             .ui-field-contain
                                 button#bpmSet.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name= 'bmpSet', type='submit', onclick="setBPM()") Set BPM
