@@ -1,0 +1,383 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+var app = require('../app');
+var debug = require('debug')('MalloMarch:server');
+var http = require('http');
+var fs = require('fs');
+var url = require('url');
+var osc = require('osc');
+var jsonfile = require('jsonfile');
+var dateFormat = require('dateformat');
+var Long = require("long");
+
+var interfaceConstants = require('../public/javascripts/interfaceConstants.js');
+
+/**
+ * Get port from environment and store in Express.
+ */
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+
+/**
+ * Create HTTP server.
+ */
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+//Create a socket io that listens on our server
+var io = require('socket.io').listen(server);
+
+// Create an osc.js UDP Port listening on port 6450.
+var udpPort = new osc.UDPPort({
+    localAddress: "0.0.0.0",
+    localPort: 6450
+});
+
+// Listen for incoming OSC Messages
+// NEEDS TO CHAGE FOR NEW OSC MESSAGES!
+udpPort.on("bundle", function (oscBundle, timeTag, info) {
+
+    var path = oscBundle.packets[0].address;
+    if (path == '/time_req') {
+        var client_send_time = oscBundle.packets[0].args[0];
+        var return_port = oscBundle.packets[0].args[1];
+        // Send an OSC message back to performer
+        var server_time = Long.fromValue((new Date).getTime());
+        udpPort.send({
+            address: "/time_res",
+
+            args: [client_send_time, server_time]
+        }, info.address, 6448);
+    } else {
+        var time = oscBundle.packets[0].args[0];
+        var velocity = oscBundle.packets[0].args[1];
+        sendPrediction(path, time.toNumber(), velocity);
+        console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
+    }
+});
+
+// Open the osc socket for listening
+udpPort.open();
+
+// Setup the mode for our interface
+// Initial Values
+var interfaceMode = interfaceConstants.InterfaceEnum.M1;
+var isLoggerOn = 1;
+var isConsentFormOn = 1;
+var isSeqOn = 0;
+var isMalloOn = 0;
+var isMetroOn = 0; // used to communicate between numXconductor and performer
+var currentBPM; // get this from conductor
+var startMeasure;
+
+// Setup the storage for the audience email addresses
+var emails = {};
+var numEmails = 0;
+var numEmailsBeforeSaving = 5;
+
+
+var performerIPs = ["", "", ""];
+
+
+function saveEmails() {
+    var str = JSON.stringify(emails);
+    var obj = JSON.parse(str);
+    var date = (new Date).getTime();
+    var file = 'logs/emailsICAD_' + date + '.json';
+    jsonfile.spaces = 4;
+    jsonfile.writeFile(file, obj, function (err) {
+        console.error(err)
+    })
+}
+
+// Emit welcome message on when the socket connects and set up our listeners on this
+io.on('connection', function (socket) {
+    // Use socket to communicate with this particular client only, sending it it's own id
+    var address = socket.handshake.address;
+    console.log("SEND WELCOME AND OPEN PAGE: " + interfaceMode + " url: " + socket.handshake.url + " id " + socket.id);
+    socket.emit('welcome', {
+        message: 'Welcome!',
+        id: socket.id,
+        ip: address.address,
+        port: address.port,
+        mode: interfaceMode,
+        isLoggerOn: isLoggerOn,
+        isConsentFormOn: isConsentFormOn,
+        isSequencerOn: isSeqOn,
+        isMalloOn: isMalloOn,
+        isMetroOn: isMetroOn,
+        bpm: currentBPM,
+        performerIPs: performerIPs,
+        startMeasure: startMeasure
+    });
+
+
+    //TODO: TEST!
+    socket.on('disconnect', function () {
+
+        //check if it is one of the performers
+        var ip = socket.request.connection.remoteAddress;
+
+        for (pip in performerIPs) {
+            playerNum = pip + 1;
+            console.log("PIP: " + pip);
+            console.log("performerIPs[pip]: " + performerIPs[pip]);
+            console.log("IP: " + ip);
+            if (ip === performerIPs[pip]) {
+                console.log("Performer Disconnect!");
+                //remove it from the array
+                performerIPs[pip] = "";
+
+                //send on message to make it available again
+                socket.emit('performerUnselected', {performerNumber: playerNum});
+            }
+        }
+    });
+
+    socket.on('saveJSON', function (newSocket) {
+        var id = socket.request.connection.remoteAddress;
+        //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
+        var date = newSocket.dateTime;
+        var data = JSON.parse(newSocket.str);
+        data["ip"] = id;
+
+        if (newSocket.type == "email") {
+            emails["email" + numEmails] = data;
+            numEmails++;
+            if (numEmails % numEmailsBeforeSaving == 0) {
+                //overwrite the emails file
+                saveEmails();
+            }
+        }
+        else if (newSocket.type == "params") {
+            var saveStr = id + "_" + date;
+            var file = 'savedJSON/new_' + saveStr + '.json';
+
+            jsonfile.spaces = 4;
+            jsonfile.writeFile(file, data, function (err) {
+                console.error(err)
+            })
+        }
+    });
+
+    socket.on('time_req', function (newSocket) {
+        socket.emit('time_res', {
+            serverTime: (new Date).getTime(),
+            clientTime: newSocket.clientTime,
+            id: newSocket.id
+        });
+        //console.log("Received Time Request from browser: " + newSocket.clientTime + ", Sending Response");
+    });
+
+    //for communication between server mastercontroller and audience interfaces:
+    socket.on('serverChangedInterface', function (newSocket) {
+        console.log("CHANGE INTERFACE: " + newSocket.newInterface);
+        interfaceMode = parseInt(newSocket.newInterface);
+        changeInterface(interfaceMode);
+    });
+
+    socket.on('flipLogger', function (newSocket) {
+        isLoggerOn = parseInt(newSocket.loggerOn);
+    });
+
+    socket.on('flipConsentForm', function (newSocket) {
+        isConsentFormOn = parseInt(newSocket.displayConsent);
+    });
+
+    socket.on('flipMetro', function (newSocket) {
+        isMetroOn = newSocket.isOn;
+        currentBPM = newSocket.bpm;
+        flipMetro(newSocket.isOn, currentBPM);
+    });
+
+    socket.on('flipMallo', function (newSocket) {
+        isMalloOn = newSocket.isOn;
+        flipMallo(newSocket.isOn);
+    });
+
+    socket.on('flipSeq', function (newSocket) {
+        isSeqOn = newSocket.isOn;
+        flipSequencer(newSocket.isOn);
+    });
+
+    socket.on('changeChannel', function (newSocket) {
+        changeChannel(newSocket.newChannel);
+    });
+
+    socket.on('saveEmails', function (newSocket) {
+        //console.log("Server Saved Emails!");
+        saveEmails();
+    });
+
+
+    // specifically for numX
+    socket.on('performerSetup', function (newSocket) {
+        console.log("Performer Setup!");
+        var ip = socket.request.connection.remoteAddress;
+        performerIPs[newSocket.performerNumber - 1] = ip;
+        socket.emit('performerSelected', {performerNumber: newSocket.performerNumber});
+    });
+
+    socket.on('performerTeardown', function (newSocket) {
+        console.log("Performer Teardown!");
+        performerIPs[newSocket.performerNumber - 1] = "";
+        socket.emit('performerUnselected', {performerNumber: newSocket.performerNumber});
+    });
+
+    socket.on('updateTempo', function (newSocket) {
+        console.log("Update Tempo!");
+        updateMetro(newSocket.newTempo);
+    });
+
+    socket.on('sendStartMeasure', function (newSocket) {
+        console.log("Send Starting Measure to Performers");
+        sendStartMeasure(newSocket.startMeasure)
+    });
+
+
+    // specifically for ICAD_MM_Playback files:
+    socket.on('startPlayingLogs', function (newSocket) {
+        console.log("Play Logs");
+        flipSequencer(0);
+        playLogs(newSocket.logs, newSocket.startTime);
+    });
+
+    socket.on('stopPlayingLogs', function (newSocket) {
+        console.log("Stop Logs");
+        stopLogs();
+    });
+
+});
+
+function sendStartMeasure(measure) {
+    startMeasure = measure;
+    io.emit('startingMeasure', {
+        startMeasure: measure
+    });
+}
+
+function changeInterface(newMode) {
+    io.emit('changeInterface', {
+        newMode: newMode
+    });
+}
+function flipMetro(isOn, bpm) {
+    io.emit('flipMetro', {
+        isOn: isOn,
+        bpm: bpm
+
+    });
+}
+function updateMetro(newTempo) {
+    currentBPM = newTempo;
+    io.emit('updateMetro', {
+        newTempo: newTempo
+    });
+}
+function flipSequencer(isOn) {
+    io.emit('flipSeq', {
+        isOn: isOn
+    });
+}
+function flipMallo(isOn) {
+    io.emit('flipMallo', {
+        isOn: isOn
+    });
+}
+
+function changeChannel(newChannel) {
+    io.emit('changeChannel', {
+        newChannel: newChannel
+    })
+}
+
+
+// For playing and stopping the playback of recorded logs
+function playLogs(logs, startTime) {
+    io.emit('playLogs', {
+        logs: logs,
+        startTime: startTime
+    });
+}
+function stopLogs() {
+    io.emit('stopLogs', {});
+}
+
+//function for passing the osc messages onto our clients
+function sendPrediction(address, time, velocity) {
+    io.emit('note_prediction', {
+        address: address,
+        time: time,
+        velocity: velocity
+    });
+}
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    var bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+}
