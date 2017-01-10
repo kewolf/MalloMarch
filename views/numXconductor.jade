@@ -85,8 +85,10 @@ html
                 $('#flipSequencer').val(isSeqOn).flipswitch('refresh'); // sequence for audience
                 $('#flipMallo').val(isMalloOn).flipswitch('refresh'); // Mallos on/off for audience
 
+                socket.emit('sendStartMeasure', {
+                    startMeasure: startMeasure
+                });
 
-                doneInitializing = true;
 
             });
 
@@ -148,6 +150,7 @@ html
                     }
                     $('#enableAudio').hide();
                     $('#conductorInterface').show();
+                    doneInitializing = true;
 
                 });
             });
@@ -386,8 +389,9 @@ html
 
             function beginPiece() {
                 console.log("Begin!");
-                startMeasure = metronome.curMeasureNum + 2;
+                startMeasure = metronome.curMeasureNum + 3;
                 console.log("Send starting measure: " + startMeasure);
+
                 socket.emit('sendStartMeasure', {
                     startMeasure: startMeasure
                 });
@@ -416,7 +420,14 @@ html
              */
             function stopPiece() {
                 console.log("Stop!");
+
+                socket.emit('sendStartMeasure', {
+                    startMeasure: -1
+                });
+
                 $('#begin').button('enable');
+                $('#pause').button('disable');
+                $('#stop').button('disable');
             }
 
 
@@ -425,6 +436,7 @@ html
             $(document).ready(function () {
                 $('#pause').button('disable');
                 $('#stop').button('disable');
+
             });
 
             $(function () {

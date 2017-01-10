@@ -64,7 +64,6 @@ html
             var nPlayers = 3;
             var players = [];
 
-            var currentBPM;
             var isMetroOn;
             var isMalloOn;
 
@@ -73,8 +72,8 @@ html
             var isSchedulerSetup = false;
 
             var performanceNumbers = ["314159265358979323846264338327950288  4197169399375105820974944592307816406", "     2718281828459045235360287471352   662497757247093699959574966967627724", "          16180339887498948482045868    34365638117720309179805762862135448"];
-            var nNumbers = performanceNumbers[0].length;
-            var nBeats = 8;
+            var nNumbers; //the number of numbers to display, assigned once the performance number is chosen.
+            var nBeats = 8; //number of beats in a measure
 
             var startMeasure = -1;
             var measureOffset = -1;
@@ -83,7 +82,6 @@ html
 
 
             var audioContext;
-
             var scheduler;
             var syncClient;
             var stayAwake;
@@ -94,8 +92,9 @@ html
             var tutorialSequencer = 0;
 
             //metronome - used to play sounds at a specific interval
-            // ALL Metronomes are synchronized with each other
+            // ALL Metronomes are synchronized with each other at the currentBPM
             var metronome;
+            var currentBPM;
 
             //create the logger
             var logger = JL("Performer-Logger");
@@ -114,6 +113,13 @@ html
 
                 startMeasure = data.startMeasure;
                 console.log("Starting Measure: " + data.startMeasure);
+
+                // IF the starting measure is set, then set the flag, and update the label
+                if (startMeasure >= 0) {
+                    hasPieceStarted = true;
+                    var span1 = document.getElementById("countdownLabel");
+                    span1.innerHTML = "Measure Number:";
+                }
 
                 console.log("IPS: " + data.performerIPs);
                 for (ip in data.performerIPs) {
@@ -151,14 +157,26 @@ html
             });
 
             socket.on('startingMeasure', function (data) {
-                startMeasure = data.startMeasure;
-                //Trigger the piece countdown
 
-                var measureUntilStart = startMeasure - metronome.curMeasureNum - 1;
-                beatsUntilStart = (nBeats - metronome.curBeatNum) + (measureUntilStart * nBeats);
-                $('#countdownNum').val = beatsUntilStart;
+                if (metronome) {
+                    startMeasure = data.startMeasure;
+                    //Trigger the piece countdown
+                    if (startMeasure != -1) {
+                        var measureUntilStart = startMeasure - metronome.curMeasureNum - 1;
+                        beatsUntilStart = (nBeats - metronome.curBeatNum) + (measureUntilStart * nBeats);
+                        console.log("Countdown: " + beatsUntilStart);
+                        var span = document.getElementById("countdown");
+                        span.innerHTML = beatsUntilStart.toString();
+                        console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
+                    } else {
+                        console.log("Start Measure Reset");
+                        hasPieceStarted = false;
+                        var span1 = document.getElementById("countdownLabel");
+                        span1.innerHTML = "Countdown Until Piece Starts:";
+                        $('#numbers').sly('activate', 0);
+                    }
+                }
 
-                console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
             });
 
             //receive messages from conductor on when to turn on/off the metronome
@@ -180,8 +198,10 @@ html
 
             //receive message from conductor when to update the metronome
             socket.on('updateMetro', function (data) {
+
                 console.log("Update Tempo: " + data.newTempo);
                 updateMetro(data.newTempo)
+
 
             });
 
@@ -207,9 +227,10 @@ html
                 if (data.address == "/right") {
                     instr = 2;
                 }
+                var pred = (data.predicted_time / 1000.0) - offset;
+                var diff = pred - syncClient.getTime();
 
-                var diff = data.predicted_time - syncClient.getTime();
-                console.log("PRED Time: " + data.predicted_time + " Global Time: " + syncClient.getTime());
+                console.log("PRED Time BEFORE: " + data.predicted_time + " PRED Time AFTER: " + pred + " Global Time: " + syncClient.getTime());
                 console.log("TIME DIFF: " + diff);
 
                 scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
@@ -256,6 +277,8 @@ html
                 $('#enableAudio').show();
                 $('#p' + number + 'head').show();
 
+                nNumbers = performanceNumbers[number - 1].length;
+
                 //Send Message to Server to let them know which performer was selected:
                 socket.emit('performerSetup', {
                     performerNumber: number
@@ -290,9 +313,11 @@ html
             }
 
             function updateMetro(newTempo) {
-                console.log("Update Metro");
                 currentBPM = newTempo;
-                metronome.setTempo(currentBPM);
+                if (metronome) {
+                    console.log("Update Metro");
+                    metronome.setTempo(currentBPM);
+                }
             }
 
 
@@ -391,15 +416,17 @@ html
             // Setup our metronome and determine if the piece has started
             function setupMetronome(tempo) {
                 metronome = new Metronome(audioContext, logger);
-                metronome.setTempo(tempo);
+                //metronome.setTempo(tempo);
 
                 metronome.watch('curBeatNum', function (id, oldvalue, newvalue) {
                     //console.log('metronome.' + id + ' changed from ' + oldvalue + ' to ' + newvalue);
                     $('#beats').sly('activate', newvalue - 1);
                     if (hasPieceStarted == false) {
-                        $('#countdownNum').val = beatsUntilStart;
+                        console.log("Countdown: " + beatsUntilStart);
+                        var span_beat = document.getElementById("countdown");
+                        span_beat.innerHTML = beatsUntilStart.toString();
                         beatsUntilStart--;
-                        //console.log("Beats Until Start: " + beatsUntilStart);
+                        console.log("Beats Until Start: " + beatsUntilStart);
                     }
                     return newvalue;
 
@@ -408,16 +435,29 @@ html
 
                 metronome.watch('curMeasureNum', function (id, oldval, newval) {
                     //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
-
-                    $('#numbers').sly('activate', newval - startMeasure);
-                    if (newval >= startMeasure) {
-                        var measureNum = newval - startMeasure;
-                        console.log("Measure: " + measureNum)
-                        hasPieceStarted = true;
-                        if (syncClient) {
-                            logger.info("{ \"MEASR\" : " + measureNum + ", \"global_time\" : " + syncClient.getTime() + "}");
-                        }
+                    var measureNum = newval - startMeasure;
+                    console.log("NewVal - StartMeasure: " + measureNum);
+                    if ((hasPieceStarted == true) && (measureNum > 0)) {
+                        $('#numbers').sly('activate', measureNum);
+                        var span_measure = document.getElementById("countdown");
+                        span_measure.innerHTML = measureNum.toString();
                     }
+
+                    if (syncClient) {
+                        logger.info("{ \"MEASR\" : " + measureNum + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    }
+
+                    if (measureNum == 0) {
+
+                        var span2 = document.getElementById("countdown");
+                        span2.innerHTML = "0";
+
+                        var span1 = document.getElementById("countdownLabel");
+                        span1.innerHTML = "Measure Number:";
+
+                        hasPieceStarted = true;
+                    }
+
                     return newval;
 
                 });
@@ -800,8 +840,8 @@ html
                 .ui-block-a(style='width:10%')
                 .ui-block-b(style='width:80%')
                     #coundownDiv.ui-field-contain
-                        label(for='countdownNum') Piece will Begin in:
-                        input#countdownNum(type='text', name='text-1', data-theme='c', value='0')
+                        p#countdownLabel Countdown Until Piece Starts:
+                        p#countdown 0
                 .ui-block-c(style='width:10%')
                     button#logoutButton.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name='logout', type='submit', onclick='logout()') Logout
 
