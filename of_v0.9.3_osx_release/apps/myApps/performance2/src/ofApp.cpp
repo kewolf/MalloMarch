@@ -224,7 +224,7 @@ void ofApp::sendOsc(float & scheduled_time)
             last_message_was_nada = false;
         }
         
-        initializeOscMsg(&msg, leap_position1, OSC_MSG, scheduled_time);
+        initializeOscMsg(&msg, leap_position1, OSC_MSG, send_value);
         osc_sender.sendMessage(msg);
         //    cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
     }
@@ -340,13 +340,13 @@ void ofApp::initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or
     msg->clear();
     msg->setAddress(osc_path);
     msg->addIntArg(msg_id);          // id
-    msg->addIntArg((int)predicted_time);        // predicted time
-    msg->addIntArg(ofGetElapsedTimeMillis() + sync_client->get_offset());                     // send time (server time)
+    msg->addInt64Arg(predicted_time);        // predicted time
+    msg->addInt64Arg(ofGetElapsedTimeMillis() + sync_client->get_offset());                     // send time (server time)
     msg->addFloatArg(pos.tipVelocity.y);   // predicted velocity
     msg->addFloatArg(pos.tipPosition.x);   // x
     msg->addFloatArg(pos.tipPosition.z);   // y  (yes I know the letters are different...the leap motion SDK calls height y)
     msg->addFloatArg(pos.tipPosition.y);   // z
-    msg->addIntArg((int)(getMillisSinceEpoch()-EPOCH_OFFSET));     // real-world time
+    msg->addInt64Arg((int)(getMillisSinceEpoch()-EPOCH_OFFSET));     // real-world time
     msg->addFloatArg(9);                   // composer-determined 1
     msg->addFloatArg(10);                  // composer-determined 2
     msg->addFloatArg(11);                  // composer-determined 3
