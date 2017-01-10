@@ -59,9 +59,12 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
             args: [client_send_time, server_time]
         }, info.address, 6448);
     } else {
+        var timeStr = oscBundle.packets[0].args[1];
+        var timeNum = Number(timeStr);
+        console.log("PREDICTED TIME: " + timeStr);
         io.emit('note_prediction', {
             address: info.address,
-            predicted_time: oscBundle.packets[0].args[1],
+            predicted_time: timeNum,
             velocity: oscBundle.packets[0].args[3],
             msg_id: oscBundle.packets[0].args[0],
             send_time: oscBundle.packets[0].args[2],
@@ -69,7 +72,7 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
             y_pos: oscBundle.packets[0].args[5],
             z_pos: oscBundle.packets[0].args[6]
         });
-        console.log("path: " + path + ", prediction_time: " + oscBundle.packets[0].args[1] + ", current_time: " + (new Date).getTime());
+        console.log("path: " + path + ", prediction_time: " + timeNum + ", current_time: " + (new Date).getTime());
     }
 });
 
@@ -82,8 +85,8 @@ var interfaceMode = interfaceConstants.InterfaceEnum.M1;
 var isLoggerOn = 1;
 var isConsentFormOn = 1;
 var isSeqOn = 0;
-var isMalloOn = 0;
-var isMetroOn = 0; // used to communicate between numXconductor and performer
+var isMalloOn = 1;
+var isMetroOn = 1; // used to communicate between numXconductor and performer
 var currentBPM = -1; // get this from conductor - if conductor not setup than -1
 var startMeasure;
 

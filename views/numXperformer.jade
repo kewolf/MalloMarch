@@ -188,26 +188,26 @@ html
 
             //when we receive predictions, schedule them
             socket.on('note_prediction', function (data) {
-                //if (isMalloOn) {
-                    //todo: schedule the event
                 console.log("Note Pediction: " + data.msg_id);
-                    var offset = syncClient.getOffset();
-                    var instr;
-                    if (data.address == "/left") {
-                        instr = 0;
-                    }
-                    if (data.address == "/middle") {
-                        instr = 1;
-                    }
-                    if (data.address == "/right") {
-                        instr = 2;
-                    }
-                    scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
+                var offset = syncClient.getOffset();
+                var instr;
+                if (data.address == "/left") {
+                    instr = 0;
+                }
+                if (data.address == "/middle") {
+                    instr = 1;
+                }
+                if (data.address == "/right") {
+                    instr = 2;
+                }
+
+                var diff = data.predicted_time - syncClient.getTime();
+                console.log("PRED Time: " + data.predicted_time + " Global Time: " + syncClient.getTime());
+                console.log("TIME DIFF: " + diff);
+
+                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
                 scheduler.curIds[instr] = data.msg_id;
                 logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.msg_id + ", \"address\" : " + data.address + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
-                    //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
-                    //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
-                //}
             });
 
 
@@ -387,7 +387,10 @@ html
                     if (hasPieceStarted == false) {
                         $('#countdownNum').val = beatsUntilStart;
                         beatsUntilStart--;
-                        console.log("Beats Until Start: " + beatsUntilStart);
+                        //console.log("Beats Until Start: " + beatsUntilStart);
+                    }
+                    if (syncClient) {
+                        logger.info("{ \"BEATS\" : " + newvalue + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
                     return newvalue;
 
@@ -396,9 +399,15 @@ html
 
                 metronome.watch('curMeasureNum', function (id, oldval, newval) {
                     //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
+
                     $('#numbers').sly('activate', newval - startMeasure);
                     if (newval >= startMeasure) {
+                        var measureNum = newval - startMeasure;
+                        console.log("Measure: " + measureNum)
                         hasPieceStarted = true;
+                        if (syncClient) {
+                            logger.info("{ \"MEASR\" : " + measureNum + ", \"global_time\" : " + syncClient.getTime() + "}");
+                        }
                     }
                     return newval;
 

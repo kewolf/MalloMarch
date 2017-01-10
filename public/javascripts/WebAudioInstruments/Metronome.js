@@ -11,7 +11,7 @@ Metronome = function (audioContext, logger) {
     this.curBeatNum = 0;
 
     this.setTempo = function (tempo) {
-        console.log("this.setTempo()");
+        //console.log("this.setTempo()");
         if (logger && this.syncClient) {
             logger.info("{ \"UPBPM\" : " + this.numBeatsInMeasure + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + tempo + "}");
         }
@@ -24,7 +24,7 @@ Metronome = function (audioContext, logger) {
     };
 
     this.setSyncClient = function (syncClient) {
-        console.log("called metronome.setSyncClient");
+        //console.log("called metronome.setSyncClient");
         this.syncClient = syncClient;
         if (this.syncClient == undefined) {
             console.log("this.syncClient is undefined in metronome.setSyncClient");
@@ -33,7 +33,7 @@ Metronome = function (audioContext, logger) {
     };
 
     this.start = function () {
-        console.log("metronome.start()");
+        //console.log("metronome.start()");
         if (logger && this.syncClient) {
             logger.info("{ \"FLPMA\" : " + 1 + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + this.tempo + "}");
         }
@@ -45,7 +45,7 @@ Metronome = function (audioContext, logger) {
     };
 
     this.stop = function () {
-        console.log("metronome.stop()");
+        //console.log("metronome.stop()");
         if (logger && this.syncClient) {
             logger.info("{ \"FLPMA\" : " + 0 + ", \"global_time\" : " + syncClient.getTime() + "}");
         }
@@ -61,7 +61,7 @@ Metronome = function (audioContext, logger) {
         this.curBeatNum = numTicksSoFar % this.numBeatsInMeasure + 1;
         if (this.curBeatNum != oldBeatNum)
         {
-            console.log("Beat: " + this.curBeatNum);
+            //console.log("Beat: " + this.curBeatNum);
         }
         if (this.curMeasureNum != oldMeasureNum)
         {
@@ -76,7 +76,8 @@ Metronome = function (audioContext, logger) {
     };
 
     this.play = function (time) {
-        console.log("metronome.play()");
+        //console.log("metronome.play()");
+
         this.source = audioContext.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.connect(audioContext.destination);
