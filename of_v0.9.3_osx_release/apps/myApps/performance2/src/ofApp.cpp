@@ -335,7 +335,7 @@ void ofApp::initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or
     // This code is maybe too crafty. I hope it works.
     int msg_id = (chuck_or_osc == CHUCK_MSG) ? chuck_msg_id++ : osc_msg_id++;
     
-    printf("x: %f, y: %f, z: %f\n", pos.tipPosition.x, pos.tipPosition.y, pos.tipPosition.z);
+    //printf("x: %f, y: %f, z: %f\n", pos.tipPosition.x, pos.tipPosition.y, pos.tipPosition.z);
     
     msg->clear();
     msg->setAddress(osc_path);
