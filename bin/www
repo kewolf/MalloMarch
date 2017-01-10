@@ -60,7 +60,7 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
         }, info.address, 6448);
     } else {
         io.emit('note_prediction', {
-            address: address,
+            address: info.address,
             predicted_time: oscBundle.packets[0].args[1],
             velocity: oscBundle.packets[0].args[3],
             id: oscBundle.packets[0].args[0],
@@ -69,7 +69,7 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
             y_pos: oscBundle.packets[0].args[5],
             z_pos: oscBundle.packets[0].args[6]
         });
-        console.log("path: " + path + ", prediction_time: " + time + ", current_time: " + (new Date).getTime());
+        console.log("path: " + path + ", prediction_time: " + oscBundle.packets[0].args[1] + ", current_time: " + (new Date).getTime());
     }
 });
 
