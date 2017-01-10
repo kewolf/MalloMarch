@@ -133,7 +133,7 @@ block content
                 if (initMovements) {
                     logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
                 } else {
-                    logger.info("{ \"change_interface\" : " + data.isOn + ", \"global_time\" : NA }");
+                    logger.info("{ \"flipSeq\" : " + data.isOn + ", \"global_time\" : NA }");
                 }
             }
             switchSequencerOn(data.isOn);
@@ -174,7 +174,6 @@ block content
             if (isMalloOn) {
                 console.log("isMalloOn prediction: " + isMalloOn);
                 //todo: schedule the event
-                var offset = syncClient.getOffset();
                 var offset = syncClient.getOffset();
                 var instr;
                 if (data.address == "/left") {
@@ -649,7 +648,6 @@ block content
                         var instrNum = parseInt(el.id.slice(3));
                         if (loggerOn) {
                             logger.info("{ \"player_" + playerNum + "\" : " + instrNum + ", \"global_time\" : " + syncClient.getTime() + "}");
-                            ;
                         }
                     }
                 });

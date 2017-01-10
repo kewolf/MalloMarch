@@ -14,7 +14,7 @@ var JL = require('jsnlog').JL;
 var winston = require('winston');
 
 var date = Date.now();
-var logFileName = 'logs/ICAD_Performance' + date + '.log';
+var logFileName = 'logs/Testing_' + date + '.log';
 
 var clientLogger = new winston.Logger({
     level: 'info',

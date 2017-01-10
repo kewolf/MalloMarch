@@ -7,7 +7,7 @@
 doctype html
 html
     head
-        title= "NumXPlayer Interface"
+        title= "Player Interface"
         meta(charset='utf-8')
         meta(name='viewport', content='width=device-width, initial-scale=1')
 
@@ -34,36 +34,52 @@ html
         script(src='/javascripts/WebAudioInstruments/Drum_Corp.js')
         script(src='/javascripts/WebAudioInstruments/Electronic.js')
         script(src='/javascripts/WebAudioInstruments/Pitched.js')
-        script(src='/javascripts/WebAudioInstruments/NumXPlayer.js')
+        script(src='/javascripts/WebAudioInstruments/Player.js')
         script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
         script(src='/javascripts/WebAudioInstruments/Metronome.js')
         script(src='/javascripts/MalloTools/TimeTools.js')
         script(src='/javascripts/ourJsonFilesParser.js')
+        script(src='/javascripts/object-watch.js')
 
 
 
     body(class="ui-mobile-viewport")
         script.
 
+            var customIPflag = 1;
             var serverURL = 'http://localhost:3000';
+            var customServerURL = '192.168.1.9:3000';
+
+            if (customIPflag) {
+                serverURL = customServerURL;
+            }
+
             window.addEventListener('load', init, false);
             //socket to send/receive stuff from
             var socket = io(serverURL);
 
             var amIperformer = 1;
-            var isSeqOn = 1;
+            var isSeqOn = 0;
 
             var nPlayers = 3;
             var players = [];
-            var currentBPM = 60;
+
+            var currentBPM;
+            var isMetroOn;
+            var isMalloOn;
 
             var thisPerformerNum = -1;
             var isAudioSetup = false;
             var isSchedulerSetup = false;
 
-            var performanceNumbers = ["314159265358979323846264338327950288419716939937510582097494459230781640628", "271828182845904523536028747135266249775724709369995957496696762772407663035", "161803398874989484820458683436563811772030917980576286213544862270526046281"];
-            var nNumbers = 5;
+            var performanceNumbers = ["314159265358979323846264338327950288  4197169399375105820974944592307816406", "     2718281828459045235360287471352   662497757247093699959574966967627724", "          16180339887498948482045868    34365638117720309179805762862135448"];
+            var nNumbers = performanceNumbers[0].length;
             var nBeats = 8;
+
+            var startMeasure = -1;
+            var measureOffset = -1;
+            var hasPieceStarted = false;
+            var beatsUntilStart = -1; //used to keep track of the number of beats until the piece starts
 
 
             var audioContext;
@@ -88,12 +104,26 @@ html
             socket.on('welcome', function (data) {
                 console.log("Welcome!");
 
+
+                isMetroOn = data.isMetroOn;
+                currentBPM = data.bpm;
+                console.log("Is Metro on? " + data.isMetroOn + " " + data.bpm);
+
+                isMalloOn = data.isMalloOn;
+                console.log("Is MalLo on? " + data.isMalloOn);
+
+                startMeasure = data.startMeasure;
+                console.log("Starting Measure: " + data.startMeasure);
+
+                console.log("IPS: " + data.performerIPs);
                 for (ip in data.performerIPs) {
                     console.log("IP: " + ip);
                     console.log("performerPI[ip]: " + data.performerIPs[ip]);
-                    var performerNum = ip + 1;
-                    if (data.performerIPs[ip] != "") {
-                        $('#p' + performerNum + 'button').hide();
+                    var performerNum = Number(ip) + 1;
+                    var ipStr = data.performerIPs[ip]
+                    if (ipStr) {
+                        console.log("HIDE Performer " + performerNum);
+                        $('#p' + performerNum + 'Button').hide();
                     }
                 }
             });
@@ -103,25 +133,49 @@ html
                 var performerNum = data.performerNumber;
                 if (performerNum != thisPerformerNum) {
                     console.log("Performer " + performerNum + " Chosen");
-                    $('#p' + performerNum + 'button').hide();
+                    $('#p' + performerNum + 'Button').hide();
                 }
             });
 
             socket.on('performerUnselected', function (data) {
                 var performerNum = data.performerNumber;
                 console.log("Performer " + performerNum + " UnChosen");
-                $('#p' + performerNum + 'button').show();
+                $('#p' + performerNum + 'Button').show();
             });
 
-            //receive messages from server (masterServerControl) on when to turn on/off the metronome
+            socket.on('startingMeasure', function (data) {
+                startMeasure = data.startMeasure;
+                //Trigger the piece countdown
+
+                var measureUntilStart = startMeasure - metronome.curMeasureNum - 1;
+                beatsUntilStart = (nBeats - metronome.curBeatNum) + (measureUntilStart * nBeats);
+                $('#countdownNum').val = beatsUntilStart;
+
+                console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
+            });
+
+            //receive messages from conductor on when to turn on/off the metronome
             socket.on('flipMetro', function (data) {
-                if (data.isOn) {
-                    metronome.start();
-                    //console.log("Metro make sound");
-                } else {
-                    //console.log("Metro stop makein sound");
-                    metronome.stop();
-                }
+                console.log("Message from conductor, turn metronome: " + data.isOn);
+                switchMetronomeOn(data.isOn, data.bpm);
+            });
+
+            socket.on('flipSeq', function (data) {
+                console.log("Message from conductor, turn sequencer: " + data.isOn);
+                switchSequencerOn(data.isOn);
+            });
+
+            //receive messages from conductor on when to turn on/off the mallos
+            socket.on('flipMallo', function (data) {
+                console.log("Message from conductor, turn mallos: " + data.isOn);
+                switchMalloOn(data.isOn);
+            });
+
+            //receive message from conductor when to update the metronome
+            socket.on('updateMetro', function (data) {
+                console.log("Update Tempo: " + data.newTempo);
+                updateMetro(data.newTempo)
+
             });
 
             socket.on('time_res', function (data) {
@@ -129,28 +183,30 @@ html
                 var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
                 syncClient.addTimeOffset(instant_offset);
                 // console.log("instant_offset: " + instant_offset + ", syncClient.getOffset(): " + syncClient.getOffset());
+
             });
 
             //when we receive predictions, schedule them
             socket.on('note_prediction', function (data) {
-                //todo: schedule the event
-                var offset = syncClient.getOffset();
-                var offset = syncClient.getOffset();
-                var instr;
-                if (data.address == "/left") {
-                    instr = 0;
+                if (isMalloOn) {
+                    //todo: schedule the event
+                    var offset = syncClient.getOffset();
+                    var instr;
+                    if (data.address == "/left") {
+                        instr = 0;
+                    }
+                    if (data.address == "/middle") {
+                        instr = 1;
+                    }
+                    if (data.address == "/right") {
+                        instr = 2;
+                    }
+                    scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
+                    //TO DO: LOG ALL INCOMING PREDICTIONS: ID, TIME SENT, TIME RECEIVED
+                    logger.info("{ \"PREDI\" : " + data.time + ", \"address\" : " + data.address + ", \"global_time\" : " + syncClient.getTime() + " }");
+                    //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                    //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
                 }
-                if (data.address == "/middle") {
-                    instr = 1;
-                }
-                if (data.address == "/right") {
-                    instr = 2;
-                }
-                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
-                scheduler.curIds[instr] = data.id;
-                //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
-                //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
-
             });
 
 
@@ -174,13 +230,15 @@ html
                 $('#m1-el-size-r').hide();
                 $('#m2-el-size-l').hide();
                 $('#m2-el-size-r').hide();
+
             });
+
+
 
 
             function choosePlayer(number) {
                 thisPerformerNum = number;
-                console.log("NumXPlayer " + number + " Click!");
-                $('#head').val = "NumXPlayer " + number + " Interface";
+                console.log("Player " + number + " Click!");
                 $('#playerChoice').hide();
                 $('#enableAudio').show();
                 $('#p' + number + 'head').show();
@@ -189,6 +247,23 @@ html
                 socket.emit('performerSetup', {
                     performerNumber: number
                 });
+
+                initLogger();
+            }
+
+            function initLogger() {
+                console.log("Init Logger");
+                var appender = JL.createAjaxAppender("Appender");
+                appender.setOptions({
+                    "batchSize": 5 //the number of logs that are acquired before they get sent
+                });
+                logger.setOptions({
+                    "appenders": [appender]
+                });
+                var dateTime = Date.now();
+                //log for when the logger is started (when the performer selects their player
+                logger.info("{ \"START\" : " + dateTime + ", \"global_time\" : NA }");
+
             }
 
             function logout() {
@@ -196,10 +271,15 @@ html
                 socket.emit('performerTeardown', {
                     performerNumber: thisPerformerNum
                 });
-
                 //refresh the page
+                clearInterval(stayAwake);
                 window.location.reload();
+            }
 
+            function updateMetro(newTempo) {
+                console.log("Update Metro");
+                currentBPM = newTempo;
+                metronome.setTempo(currentBPM);
             }
 
 
@@ -222,24 +302,23 @@ html
                         }
 
                         for (var i = 0; i < nPlayers; i++) {
-                            players.push(new NumXPlayer());
+                            players.push(new Player());
                         }
 
                         setupMetronome(currentBPM);
 
-                        // play sound to test audio
-                        //playSound(audioContext.currentTime);
-
-                        loadAudioFiles(true); //true since we are a performer
+                        loadAudioFiles(true); //true since we are a performer and need metronome
                         playSound(audioContext.currentTime);
 
+
                         if (!isSchedulerSetup) {
-                            initSyncAndScheduler(socket, amIperformer, isSeqOn, logger); // seq is not on.
+                            initSyncAndScheduler(); // seq is not on.
                             loadJSONandDOM();
                             isSchedulerSetup = true;
                         }
 
                         isAudioSetup = true;
+                        switchMetronomeOn(isMetroOn, currentBPM);
 
                     } else {
                         playSound(audioContext.currentTime);
@@ -277,6 +356,7 @@ html
                 }, timeSyncInterval);
 
                 var schedulerInterval = 20;
+
                 // checks scheduler
                 setInterval(function () {
                     //players[0].schedule(audioContext.currentTime+.5);
@@ -293,9 +373,40 @@ html
                     window.setTimeout(window.stop, 0); //stop it soon after
                 }, 25000);
 
+
+            }
+            // Setup our metronome and determine if the piece has started
+            function setupMetronome(tempo) {
+                metronome = new Metronome(audioContext);
+                metronome.setTempo(tempo);
+
+                metronome.watch('curBeatNum', function (id, oldvalue, newvalue) {
+                    //console.log('metronome.' + id + ' changed from ' + oldvalue + ' to ' + newvalue);
+                    $('#beats').sly('activate', newvalue - 1);
+                    if (hasPieceStarted == false) {
+                        $('#countdownNum').val = beatsUntilStart;
+                        beatsUntilStart--;
+                        console.log("Beats Until Start: " + beatsUntilStart);
+                    }
+                    return newvalue;
+
+                });
+
+
+                metronome.watch('curMeasureNum', function (id, oldval, newval) {
+                    //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
+                    $('#numbers').sly('activate', newval - startMeasure);
+                    if (newval >= startMeasure) {
+                        hasPieceStarted = true;
+                    }
+                    return newval;
+
+                });
+
             }
 
             function switchSequencerOn(isOn) {
+                logger.info("{ \"FLPSE\" : " + isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
                 if (isOn) {
                     sequencerID = setInterval(function () {
                         console.log('Timer, ' + tutorialSequencer);
@@ -320,27 +431,28 @@ html
                 }
             }
 
-            function setupMetronome(tempo) {
-                metronome = new Metronome(audioContext);
-                metronome.setTempo(tempo);
-            }
+            function switchMetronomeOn(isOn, bpm) {
+                logger.info("{ \"FLPME\" : " + isOn + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + bpm + "}");
 
-            function switchMetronomeOn(isOn) {
                 if (isOn) {
                     // make sound
                     ///metronome.stop();
+                    updateMetro(bpm);
                     metronome.start();
+                    console.log("Start Measure: " + startMeasure + " Cur Measure: " + metronome.curMeasureNum);
                     //console.log("Metro make sound");
+
                 } else {
                     //console.log("Metro stop makein sound");
+                    metronome.unwatch('curBeatNum');
+                    metronome.unwatch('curMeasureNum');
                     metronome.stop();
                 }
             }
 
-
-            // if logged out then stop it from staying awake.
-            function dontStayAwake() {
-                clearInterval(stayAwake);
+            function switchMalloOn(isOn) {
+                logger.info("{ \"FLPMA\" : " + isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
+                isMalloOn = isOn;
             }
 
             function playSound(time) {
@@ -361,6 +473,7 @@ html
 
             // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
             // when files have finished loaded.
+            // These functions are all located in the ourJsonFilesParser.js file
             function loadJSONandDOM() {
                 loadInstrumentsfile(function (response1) {
                     parseInstruments(response1);
@@ -384,7 +497,7 @@ html
                     itemNav: 'forceCentered',
                     smart: 1,
                     activateMiddle: 1,
-                    activateOn: null, //'click',
+                    activateOn: 'click', //'click',
                     mouseDragging: 0,
                     touchDragging: 0,
                     releaseSwing: 1,
@@ -442,7 +555,7 @@ html
                     itemNav: 'basic',
                     smart: 1,
                     activateMiddle: 1,
-                    activateOn: 'click'
+                    activateOn: null
                 };
 
                 //create our sly for the channels box slider
@@ -483,21 +596,10 @@ html
                     //get the id and extract the mallo id (m0, m1, m2)
                     var id = $(this).attr('id');
                     var playerNum = parseInt(id.slice(1));
-                    //console.log("Select NumXPlayer: " + playerNum);
+                    //console.log("Select Player: " + playerNum);
                     var malloId = id.slice(0, 2);
                     //get the value for the child that is selected
                     var nextpage = $(this).children('option:selected').attr('value');
-
-
-                    /*
-                     var active = $('#movement2').tabs('option', 'active');
-
-                     //if we are in mode 3 - then log the change!
-                     if (active == 2) {
-                     if (loggerOn) {
-                     logger.info("{ \"" + id + "\" : " + nextpage + ", \"global_time\" : " + syncClient.getTime() + "}");
-                     }
-                     }*/
 
                     //show/hide based on the selection.
                     if (nextpage == '0') {
@@ -533,8 +635,6 @@ html
 
                 refreshSliders();
             }
-
-
 
 
             function sliderChange(playerNum, params) {
@@ -650,9 +750,9 @@ html
                 .ui-block-a(style='width:10%')
                 .ui-block-b(style='width:80%')
                     form
-                        input#p1Button(type='button', data-inline='true', data-theme='b', value='NumXPlayer 1', onclick='choosePlayer(1)')
-                        input#p2Button(type='button', data-inline='true', data-theme='c', value='NumXPlayer 2', onclick='choosePlayer(2)')
-                        input#p3Button(type='button', data-inline='true', data-theme='d', value='NumXPlayer 3', onclick='choosePlayer(3)')
+                        input#p1Button(type='button', data-inline='true', data-theme='b', value='Player 1', onclick='choosePlayer(1)')
+                        input#p2Button(type='button', data-inline='true', data-theme='c', value='Player 2', onclick='choosePlayer(2)')
+                        input#p3Button(type='button', data-inline='true', data-theme='d', value='Player 3', onclick='choosePlayer(3)')
         #enableAudio.center.ui-content(data-role='main')
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')
@@ -677,8 +777,12 @@ html
 
             h1#p3head.center(data-role='header', data-theme='d', data-position='inline', role='banner') Player 3 Interface
             .ui-body.ui-body-a.ui-corner-all
-                .ui-block-a(style='width:90%')
-                .ui-block-b(style='width:10%')
+                .ui-block-a(style='width:10%')
+                .ui-block-b(style='width:80%')
+                    #coundownDiv.ui-field-contain
+                        label(for='countdownNum') Piece will Begin in:
+                        input#countdownNum(type='text', name='text-1', data-theme='c', value='0')
+                .ui-block-c(style='width:10%')
                     button#logoutButton.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name='logout', type='submit', onclick='logout()') Logout
 
 

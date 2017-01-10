@@ -1,7 +1,7 @@
 doctype html
 html
     head
-        title= "Server for MalLo March"
+        title= "Conductor for NumX"
         meta(charset='utf-8')
         meta(name='viewport', content='width=device-width, initial-scale=1')
 
@@ -20,24 +20,46 @@ html
 
         script(src='/socket.io/socket.io.js')
         script(src='/javascripts/Logger/jsnlog.min.js')
+        script(src='/javascripts/WebDrum/src/web-ahdsr.js')
+
         script(src='/javascripts/interfaceConstants.js')
+        script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
+        script(src='/javascripts/WebAudioInstruments/Metronome.js')
+        script(src='/javascripts/MalloTools/TimeTools.js')
+        script(src='/javascripts/object-watch.js')
 
 
     body(class="ui-mobile-viewport")
+
         script.
             var serverURL = 'http://localhost:3000';
             var isConsentFormOn;
             var isLoggerOn;
             var isMalloOn;
-            var isMetroOn;
             var isSeqOn;
+
             var doneInitializing = false;
 
+            var isMetroOn;
+            var currentBPM = 60; //starting BPM
+            var metronome;
+
+            var startMeasure = -1;
+            var currentMeasureOffset = -1;
+
+
+            var nPlayers = 0; // we have 0 players (we are the conductor);
 
             var channelPresets = {};
             var nPresetChannels = 0;
 
-            var currentBPM = 60; //bpm
+            var audioContext;
+            //var scheduler;
+            var syncClient;
+            var stayAwake;
+
+            var isAudioSetup = false;
+            var isSchedulerSetup = false;
 
             window.addEventListener('load', init, false);
 
@@ -49,25 +71,157 @@ html
                 isConsentFormOn = data.isConsentFormOn;
                 isLoggerOn = data.isLoggerOn;
                 isMalloOn = data.isMalloOn;
+                isMetroOn = data.isMetroOn;
                 isSeqOn = data.isSequencerOn;
 
                 console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
 
 
                 //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
-                $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');
-                $('#flipLogger').val(isLoggerOn).flipswitch('refresh');
-                $('#flipMetro').val(isMetroOn).flipswitch('refresh');
-                $('#flipSequencer').val(isSeqOn).flipswitch('refresh');
-                $('#flipMallo').val(isMalloOn).flipswitch('refresh');
+
+                $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');  // consent form for audience
+                $('#flipLogger').val(isLoggerOn).flipswitch('refresh');  // logger for audience
+                $('#flipMetro').val(isMetroOn).flipswitch('refresh');  // metronome for performers
+                $('#flipSequencer').val(isSeqOn).flipswitch('refresh'); // sequence for audience
+                $('#flipMallo').val(isMalloOn).flipswitch('refresh'); // Mallos on/off for audience
 
 
-                console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
                 doneInitializing = true;
+
             });
 
+            socket.on('time_res', function (data) {
+                var receive_time = audioContext.currentTime;
+                var instant_offset = data.serverTime / 1000.0 - (receive_time + data.clientTime) / 2;
+                syncClient.addTimeOffset(instant_offset);
+                // console.log("instant_offset: " + instant_offset + ", syncClient.getOffset(): " + syncClient.getOffset());
+            });
+
+
             function init() {
-                loadJSONandDOM();
+
+            }
+
+            $(document).ready(function () {
+                $('#conductorInterface').hide();
+            });
+
+            // Setup an event listener for clicks on the choosePlayer button
+            // This will initialize our audio context so that it works on ios.
+            // Setup an event listener for clicks on the choosePlayer button
+            // This will initialize our audio context so that it works on ios.
+            $(function () {
+                $("#soundCheck").on("click", function () {
+
+                    if (!isAudioSetup) {
+
+                        try {
+                            // Fix up for prefixing
+                            if (isAudioContextSupported()) {
+                                //console.log("Web Audio is supported!");
+                                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            }
+                        } catch (e) {
+                            $('#notSupported').show();
+                            alert('You need webaudio support - try another browser or device');
+                        }
+
+                        setupMetronome(currentBPM);
+
+
+                        loadAudioFiles(true); //true since we need metronome
+                        playSound(audioContext.currentTime);
+
+
+                        if (!isSchedulerSetup) {
+                            initSyncAndScheduler(); // seq is not on.
+                            loadJSONandDOM();
+                            isSchedulerSetup = true;
+                        }
+
+                        isAudioSetup = true;
+                        switchMetronomeOn(isMetroOn, currentBPM);
+
+                    } else {
+                        playSound(audioContext.currentTime);
+
+                    }
+                    $('#enableAudio').hide();
+                    $('#conductorInterface').show();
+
+                });
+            });
+
+            function isAudioContextSupported() {
+                // This feature is still prefixed in Safari
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                return window.AudioContext;
+            }
+
+            function playSound(time) {
+                //console.log("Play Sound");
+                var beepGain = audioContext.createGain();
+                var beepLevel = audioContext.createGain();
+                beepLevel.gain.value = 0.4;
+                var envelope = new WebAHDSR(audioContext, beepGain.gain);
+                var oscillator = audioContext.createOscillator();
+                oscillator.frequency.value = 400;
+                oscillator.connect(beepGain);
+                beepGain.connect(beepLevel);
+                beepLevel.connect(audioContext.destination);
+                envelope.on();
+                oscillator.start(time);
+                oscillator.stop(time + 0.5);    // you can set this to zero, but I left it here for testing.
+            }
+
+
+            function initSyncAndScheduler() {
+                syncClient = new SyncClient();
+                if (syncClient != undefined) {
+                    console.log("syncClient is defined");
+                    metronome.setSyncClient(syncClient);
+                } else {
+                    console.log("syncClient is undefined");
+                }
+                var timeSyncInterval = 500;
+                // starts time sync
+                setInterval(function () {
+                    socket.emit('time_req', {
+                        clientTime: audioContext.currentTime,
+                    });
+                }, timeSyncInterval);
+
+                var schedulerInterval = 20;
+
+                // checks scheduler
+                /*
+                 setInterval(function () {
+                 scheduler.checkSchedule();
+                 }, schedulerInterval);
+                 */
+
+                if (isMetroOn) {
+                    switchMetronomeOn(true);
+                }
+
+                stayAwake = setInterval(function () {
+                    //console.log("stay awake!");
+                    location.href = location.href; //try refreshing
+                    window.setTimeout(window.stop, 0); //stop it soon after
+                }, 25000);
+            }
+
+            function switchMetronomeOn(isOn, bpm) {
+                if (isOn) {
+                    //console.log("Metro make sound");
+                    updateBPM(bpm);
+                    metronome.start();
+                } else {
+                    //console.log("Metro stop makein sound");
+                    metronome.unwatch('curBeatNum');
+                    metronome.unwatch('curMeasureNum');
+                    metronome.stop();
+                }
             }
 
             function loadJSONandDOM() {
@@ -83,7 +237,6 @@ html
                 });
             }
 
-
             function loadPresetsfile(callback) {
                 //console.log("load Presets File");
                 var request = new XMLHttpRequest();
@@ -98,6 +251,10 @@ html
             }
 
 
+
+            /*
+             Loads the DOM elements for audience channel slider
+             */
             function loadDOMStuff() {
                 //setup channels slider
                 var $channels_frame = $('#channels');
@@ -161,13 +318,114 @@ html
 
 
 
+            /*
+             Triggered when the set BPM button is clicked
+             Used to set the BPM of the performer metronomes according to the #bpm HTML field
+             */
             function setBPM() {
                 currentBPM = $('#bpm').val();
-                console.log("New BMP: " + currentBPM)
+                console.log("New BMP: " + currentBPM);
+                metronome.setTempo(currentBPM);
                 //TODO: emit socket message to update all performers with the new BPM
+
+                socket.emit('updateTempo', {
+                    newTempo: currentBPM
+                });
+
             }
 
 
+            function setupMetronome(tempo) {
+                metronome = new Metronome(audioContext);
+                metronome.setTempo(tempo);
+
+                metronome.watch('curBeatNum', function (id, oldvalue, newvalue) {
+                    //console.log('metronome.' + id + ' changed from ' + oldvalue + ' to ' + newvalue);
+                    return newvalue;
+
+                });
+                metronome.watch('curMeasureNum', function (id, oldval, newval) {
+                    //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
+                    //$('#numbers').sly('activate', newvalue-1);
+
+                    var measureNum = newval - startMeasure;
+                    //SCORE FOR PIECE:
+                    //switch()
+
+
+                    return newval;
+                });
+
+            }
+
+
+
+            /*
+             Sends an update message for a sound parameter to the server to pass on to all clients
+             Performer is an int (0-2), param is the parameter string, value is the new parameter value
+             */
+            function updateParameter(performer, param, value) {
+
+            }
+
+
+            /*
+             Sets the tempo for the performer metronomes using a newBPM value
+             */
+            function updateBPM(newBPM) {
+                $('#bpm').val = newBPM;
+                setBPM();
+            }
+
+
+            /*
+             Triggered when the "Begin Piece" button is clicked.
+             Sends starting message to all performers
+
+             */
+
+            function beginPiece() {
+                console.log("Begin!");
+                startMeasure = metronome.curMeasureNum + 2;
+                console.log("Send starting measure: " + startMeasure);
+                socket.emit('sendStartMeasure', {
+                    startMeasure: startMeasure
+                });
+
+                $('#begin').button('disable');
+                $('#pause').button('enable');
+                $('#stop').button('enable');
+            }
+
+            /*
+             Used to pause the piece - i.e. keep track of what measure we are on
+             TODO: send out a pause message to all performers?
+             */
+            function pausePiece() {
+
+                console.log("Pause!");
+                $('#begin').button('enable');
+
+
+            }
+
+
+            /*
+             Used to stop the piece - doesn't keep track of where we are in the piece
+             TODO: send out a stop message to all performers
+             */
+            function stopPiece() {
+                console.log("Stop!");
+                $('#begin').button('enable');
+            }
+
+
+            //INTERFACE FUNCTIONS:
+
+            $(document).ready(function () {
+                $('#pause').button('disable');
+                $('#stop').button('disable');
+            });
 
             $(function () {
                 $("input[name='radio-choice-1']").on("click", function () {
@@ -215,15 +473,18 @@ html
             $(function () {
                 $('#flipMetro').change(function () {
                     if (doneInitializing) {
-                        console.log("metro clicked " + isMetroOn);
+                        console.log("metro clicked " + isMetroOn + " " + currentBPM);
+
                         // if it is on - send a message to turn it off
                         if (isMetroOn) {
-                            socket.emit('flipMetro', {isOn: 0});
+                            socket.emit('flipMetro', {isOn: 0, bpm: currentBPM});
                             isMetroOn = 0;
                         } else {
-                            socket.emit('flipMetro', {isOn: 1});
+                            socket.emit('flipMetro', {isOn: 1, bpm: currentBPM});
                             isMetroOn = 1;
                         }
+                        switchMetronomeOn(isMetroOn, currentBPM);
+
                     }
                 });
             });
@@ -268,20 +529,46 @@ html
 
 
 
-        div(data-role='page')
-            h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') MalLo March Server Controller
+        #enableAudio.center.ui-content(data-role='main')
+            .ui-block-a(style='width:10%')
+            .ui-block-b(style='width:80%')
+                div(style='margin: 10px 0 0 0;')
+                    p
+                        | Put in your headphones and click the button below.button
+                        #soundCheck.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.center(type='button') Enable Audio and Check Sound
+
+                div#audioSetup(style='margin: 10px 0 0 0;',)
+                    p
+                        | You must click the sound check button to enable the audio for this piece.
+
+                div#notSupported(style='margin: 10px 0 0 0;',)
+                    p.player2_color
+                        | You need WebAudio support - try another browser or device
+
+        #conductorInterface.center.ui-content(data-role='main')
+            h1.center(data-role='header', data-theme='c', data-position='inline', role='banner') NumX Server Conductor
             .ui-body.ui-body-a.ui-corner-all
                 .ui-block-a(style='width:10%')
                 .ui-block-b(style='width:80%')
                     .ui-body.ui-body-a.ui-corner-all.center
-                        .ui-block-a(style='width:50%')
+                        .ui-block-a(style='width:25%')
                             label(for='flipConsent') Consent Form:
                             select#flipConsent(name='flipConsent', data-role='flipswitch', data-theme='b', data-track-theme='b')
                                 option(value='0') Off
                                 option(value='1') On
-                        .ui-block-b(style='width:50%')
+                        .ui-block-b(style='width:25%')
                             label(for='flipLogger') Logger:
                             select#flipLogger(name='flipLogger', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                                option(value='0') Off
+                                option(value='1') On
+                        .ui-block-c(style='width:25%')
+                            label(for='flipSequencer') Sequencer:
+                            select#flipSequencer(name='flipSequencer', data-role='flipswitch', data-theme='b', data-track-theme='b')
+                                option(value='0') Off
+                                option(value='1') On
+                        .ui-block-d(style='width:25%')
+                            label(for='flipMallo') MalLos:
+                            select#flipMallo(name='flipMallo', data-role='flipswitch', data-theme='b', data-track-theme='b')
                                 option(value='0') Off
                                 option(value='1') On
                     .ui-body.ui-body-a.ui-corner-all.center
@@ -290,16 +577,13 @@ html
                             select#flipMetro(name='flipMetro', data-role='flipswitch', data-theme='c', data-track-theme='c')
                                 option(value='0') Off
                                 option(value='1') On
-                        .ui-block-b(style='width:30%')
-                            label(for='flipSequencer') Sequencer:
-                            select#flipSequencer(name='flipSequencer', data-role='flipswitch', data-theme='b', data-track-theme='b')
-                                option(value='0') Off
-                                option(value='1') On
+                        .ui-block-b(style='width:40%')
+                            .ui-field-contain
+                                label(for='bpm') BPM:
+                                input#bpm(type='text', name='text-1', data-theme='c', value='60')
                         .ui-block-c(style='width:30%')
-                            label(for='flipMallo') MalLos:
-                            select#flipMallo(name='flipMallo', data-role='flipswitch', data-theme='b', data-track-theme='b')
-                                option(value='0') Off
-                                option(value='1') On
+                            .ui-field-contain
+                                button#bpmSet.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name= 'bmpSet', type='submit', onclick="setBPM()") Set BPM
 
                     fieldset(data-role='controlgroup', data-theme='d' )
                         h2.center Interface Modes
@@ -313,16 +597,24 @@ html
                         label(for='radio-choice-4') Movement 2
                         input#radio-choice-5(type='radio', name='radio-choice-1', value='4')
                         label(for='radio-choice-5') Survey
-                    .ui-body.ui-body-a.ui-corner-all.center
-                        .ui-block-a(style='width:60%')
-                            .ui-field-contain
-                                label(for='bpm') Metronome BPM:
-                                input#bpm(type='text', name='text-1', data-theme='c', value='60')
-                        .ui-block-b(style='width:30%')
-                            .ui-field-contain
-                                button#bpmSet.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name= 'bmpSet', type='submit', onclick="setBPM()") Set BPM
 
                 .ui-body.ui-body-a.ui-corner-all.center
+                    .ui-content(role='main')
+                        .ui-body.ui-body-a.ui-corner-all.center
+                            .ui-block-a(style='width:30%')
+                                form
+                                    input#begin(type='submit', value='Begin Piece', data-theme='c', onclick="beginPiece()")
+                            .ui-block-b(style='width:30%')
+                                form
+                                    input#pause(type='submit', value='Pause Piece', data-theme='c', onclick="pausePiece()")
+                            .ui-block-c(style='width:30%')
+                                form
+                                    input#stop(type='submit', value='Stop Piece', data-theme='c', onclick="stopPiece()")
+
+
+
+                .ui-body.ui-body-a.ui-corner-all.center
+
                     .form.wrap
                         label(for='channels') Audience Channel:
                         #ch_scrollbar.scrollbar
