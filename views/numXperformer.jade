@@ -201,9 +201,9 @@ html
                     if (data.address == "/right") {
                         instr = 2;
                     }
-                    scheduler.curPredictions[instr] = (data.time / 1000.0) - offset;
-                    //TO DO: LOG ALL INCOMING PREDICTIONS: ID, TIME SENT, TIME RECEIVED
-                    logger.info("{ \"PREDI\" : " + data.time + ", \"address\" : " + data.address + ", \"global_time\" : " + syncClient.getTime() + " }");
+                    scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
+                    scheduler.curIds[instr] = data.id;
+                    logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.id +", \"address\" : " + data.address +", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos +", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
                     //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                     //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
                 }
