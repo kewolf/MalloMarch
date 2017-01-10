@@ -44,6 +44,7 @@ var udpPort = new osc.UDPPort({
 });
 
 // Listen for incoming OSC Messages
+// NEEDS TO CHAGE FOR NEW OSC MESSAGES!
 udpPort.on("bundle", function (oscBundle, timeTag, info) {
 
     var path = oscBundle.packets[0].address;
@@ -75,7 +76,9 @@ var isLoggerOn = 1;
 var isConsentFormOn = 1;
 var isSeqOn = 0;
 var isMalloOn = 0;
-
+var isMetroOn = 0; // used to communicate between numXconductor and performer
+var currentBPM; // get this from conductor
+var startMeasure;
 
 // Setup the storage for the audience email addresses
 var emails = {};
@@ -112,7 +115,10 @@ io.on('connection', function (socket) {
         isConsentFormOn: isConsentFormOn,
         isSequencerOn: isSeqOn,
         isMalloOn: isMalloOn,
-        performerIPs: performerIPs
+        isMetroOn: isMetroOn,
+        bpm: currentBPM,
+        performerIPs: performerIPs,
+        startMeasure: startMeasure
     });
 
 
@@ -189,7 +195,9 @@ io.on('connection', function (socket) {
     });
 
     socket.on('flipMetro', function (newSocket) {
-        flipMetro(newSocket.isOn);
+        isMetroOn = newSocket.isOn;
+        currentBPM = newSocket.bpm;
+        flipMetro(newSocket.isOn, currentBPM);
     });
 
     socket.on('flipMallo', function (newSocket) {
@@ -226,6 +234,16 @@ io.on('connection', function (socket) {
         socket.emit('performerUnselected', {performerNumber: newSocket.performerNumber});
     });
 
+    socket.on('updateTempo', function (newSocket) {
+        console.log("Update Tempo!");
+        updateMetro(newSocket.newTempo);
+    });
+
+    socket.on('sendStartMeasure', function (newSocket) {
+        console.log("Send Starting Measure to Performers");
+        sendStartMeasure(newSocket.startMeasure)
+    });
+
 
     // specifically for ICAD_MM_Playback files:
     socket.on('startPlayingLogs', function (newSocket) {
@@ -241,15 +259,29 @@ io.on('connection', function (socket) {
 
 });
 
+function sendStartMeasure(measure) {
+    startMeasure = measure;
+    io.emit('startingMeasure', {
+        startMeasure: measure
+    });
+}
 
 function changeInterface(newMode) {
     io.emit('changeInterface', {
         newMode: newMode
     });
 }
-function flipMetro(isOn) {
+function flipMetro(isOn, bpm) {
     io.emit('flipMetro', {
-        isOn: isOn
+        isOn: isOn,
+        bpm: bpm
+
+    });
+}
+function updateMetro(newTempo) {
+    currentBPM = newTempo;
+    io.emit('updateMetro', {
+        newTempo: newTempo
     });
 }
 function flipSequencer(isOn) {
