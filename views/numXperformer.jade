@@ -121,9 +121,8 @@ html
                     console.log("performerPI[ip]: " + data.performerIPs[ip]);
                     var performerNum = Number(ip) + 1;
                     var ipStr = data.performerIPs[ip]
-                    if (ipStr) {
-                        console.log("HIDE Performer " + performerNum);
-                        $('#p' + performerNum + 'Button').hide();
+                    if (!ipStr) {
+                        $('#p' + performerNum + 'ButtonDiv').show();
                     }
                 }
             });
@@ -131,16 +130,24 @@ html
 
             socket.on('performerSelected', function (data) {
                 var performerNum = data.performerNumber;
-                if (performerNum != thisPerformerNum) {
-                    console.log("Performer " + performerNum + " Chosen");
-                    $('#p' + performerNum + 'Button').hide();
+                //if (performerNum != thisPerformerNum) {
+                console.log("Performer " + performerNum + " Chosen");
+                $('#p' + performerNum + 'ButtonDiv').hide();
+                if (thisPerformerNum == -1) {
+                    window.location.reload();
                 }
+
+                //}
             });
 
+            //
             socket.on('performerUnselected', function (data) {
                 var performerNum = data.performerNumber;
                 console.log("Performer " + performerNum + " UnChosen");
-                $('#p' + performerNum + 'Button').show();
+                $('#p' + performerNum + 'ButtonDiv').show();
+                if (thisPerformerNum == -1) {
+                    window.location.reload();
+                }
             });
 
             socket.on('startingMeasure', function (data) {
@@ -221,6 +228,11 @@ html
                 $('#playerInterface').hide();
                 $('#enableAudio').hide();
                 $('#notSupported').hide();
+
+                $('#p1ButtonDiv').hide();
+                $('#p2ButtonDiv').hide();
+                $('#p3ButtonDiv').hide();
+
                 $('#p1head').hide();
                 $('#p2head').hide();
                 $('#p3head').hide();
@@ -388,9 +400,6 @@ html
                         $('#countdownNum').val = beatsUntilStart;
                         beatsUntilStart--;
                         //console.log("Beats Until Start: " + beatsUntilStart);
-                    }
-                    if (syncClient) {
-                        logger.info("{ \"BEATS\" : " + newvalue + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
                     return newvalue;
 
@@ -757,10 +766,13 @@ html
             .ui-body.ui-body-a.ui-corner-all
                 .ui-block-a(style='width:10%')
                 .ui-block-b(style='width:80%')
-                    form
-                        input#p1Button(type='button', data-inline='true', data-theme='b', value='Player 1', onclick='choosePlayer(1)')
-                        input#p2Button(type='button', data-inline='true', data-theme='c', value='Player 2', onclick='choosePlayer(2)')
-                        input#p3Button(type='button', data-inline='true', data-theme='d', value='Player 3', onclick='choosePlayer(3)')
+                    form#buttonForm
+                        div#p1ButtonDiv
+                            input#p1Button(type='button', data-inline='true', data-theme='b', value='Player 1', onclick='choosePlayer(1)')
+                        div#p2ButtonDiv
+                            input#p2Button(type='button', data-inline='true', data-theme='c', value='Player 2', onclick='choosePlayer(2)')
+                        div#p3ButtonDiv
+                            input#p3Button(type='button', data-inline='true', data-theme='d', value='Player 3', onclick='choosePlayer(3)')
         #enableAudio.center.ui-content(data-role='main')
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')

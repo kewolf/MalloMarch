@@ -235,13 +235,13 @@ io.on('connection', function (socket) {
         console.log("Performer Setup!");
         var ip = socket.request.connection.remoteAddress;
         performerIPs[newSocket.performerNumber - 1] = ip;
-        socket.emit('performerSelected', {performerNumber: newSocket.performerNumber});
+        io.emit('performerSelected', {performerNumber: newSocket.performerNumber});
     });
 
     socket.on('performerTeardown', function (newSocket) {
         console.log("Performer Teardown!");
         performerIPs[newSocket.performerNumber - 1] = "";
-        socket.emit('performerUnselected', {performerNumber: newSocket.performerNumber});
+        io.emit('performerUnselected', {performerNumber: newSocket.performerNumber});
     });
 
     socket.on('updateTempo', function (newSocket) {

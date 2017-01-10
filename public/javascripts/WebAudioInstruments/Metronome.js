@@ -77,7 +77,9 @@ Metronome = function (audioContext, logger) {
 
     this.play = function (time) {
         //console.log("metronome.play()");
-
+        if (logger && this.syncClient) {
+            logger.info("{ \"METRO\" : " + this.curMeasureNum + ", \"beat\" : " + this.curBeatNum + ", \"global_time\" : " + syncClient.getTime() + "}");
+        }
         this.source = audioContext.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.connect(audioContext.destination);
