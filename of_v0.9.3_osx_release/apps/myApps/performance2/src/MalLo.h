@@ -268,7 +268,7 @@ public:
     
     int64_t get_server_time()
     {
-        return (int64_t) ofGetElapsedTimeMillis() + kalman_filter.posteri_est;
+        return (int64_t) ofGetElapsedTimeMillis() + get_offset();
     }
     
     int64_t get_offset()

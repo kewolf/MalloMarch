@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+const long long EPOCH_OFFSET = 1484000000000; //(used to reduce the number of bits in this timestamp)
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     
@@ -54,8 +56,8 @@ void ofApp::setup(){
     
     /****** Logging ******/
     
-    ofLogToFile("logs/" + ofToString(getMillisSinceEpoch()) + ".log",true);
-    
+    ofLogToFile("logs/" + ofToString(getMillisSinceEpoch()/1000) + ".log",true);
+    //chuck_log.open("logs/chuck_log.log", std::fstream::in | std::fstream::out | std::fstream::app);
 }
 
 //--------------------------------------------------------------
@@ -97,6 +99,7 @@ void ofApp::draw(){
         sendToChuck(mallo_predictor1->past_leap_position);
         hysteresis_reset_chuck = false;
         last_chuck_send_time = ofGetElapsedTimeMillis();
+        ofLog() << "Chuck: " << ofToString(last_chuck_send_time);
     }
     
     gui.draw();
@@ -343,7 +346,7 @@ void ofApp::initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or
     msg->addFloatArg(pos.tipPosition.x);   // x
     msg->addFloatArg(pos.tipPosition.z);   // y  (yes I know the letters are different...the leap motion SDK calls height y)
     msg->addFloatArg(pos.tipPosition.y);   // z
-    msg->addIntArg(getMillisSinceEpoch());     // real-world time
+    msg->addIntArg((int)(getMillisSinceEpoch()-EPOCH_OFFSET));     // real-world time
     msg->addFloatArg(9);                   // composer-determined 1
     msg->addFloatArg(10);                  // composer-determined 2
     msg->addFloatArg(11);                  // composer-determined 3
@@ -364,7 +367,7 @@ void ofApp::logPosition(LeapPosition & position_event)
             + ofToString(position_event.tipVelocity.x) + ", "
             + ofToString(position_event.tipVelocity.y) + ", "
             + ofToString(position_event.tipVelocity.z) + ", "
-            + ofToString(getMillisSinceEpoch()) + ", "
+            + ofToString(getMillisSinceEpoch()-EPOCH_OFFSET) + ", "
             + ofToString(ofGetElapsedTimeMillis()) + ", "
             + ofToString(sync_client->get_offset()) + ", "
             + ofToString(sync_client->get_server_time());
@@ -379,11 +382,11 @@ void ofApp::logPosition(LeapPosition & position_event)
     }
 }
 
-int ofApp::getMillisSinceEpoch()
+long long ofApp::getMillisSinceEpoch()
 {
     Poco::Timestamp epoch(0);
     Poco::Timestamp now;
     Poco::Timestamp::TimeDiff diffTime = (now - epoch);
-    return (int) (diffTime/1000);
+    return (long long) (diffTime/1000);
 }
 

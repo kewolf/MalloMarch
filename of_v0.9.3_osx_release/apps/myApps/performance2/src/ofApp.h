@@ -10,6 +10,7 @@
 #define CHUCK_MSG 0
 #define OSC_MSG 1
 
+
 class ofApp : public ofBaseApp{
     
 public:
@@ -31,7 +32,7 @@ public:
     void sendToChuck(LeapPosition pos);
     void initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or_osc, float predicted_time);
     void logPosition(LeapPosition & position_event);
-    int getMillisSinceEpoch();
+    long long getMillisSinceEpoch();
 
     
     //################# mine ######################
@@ -121,5 +122,6 @@ public:
     // Logging
     string log_text;
     int log_line_count = 0;
+    std::fstream chuck_log;
     
 };
