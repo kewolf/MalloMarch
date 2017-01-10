@@ -188,8 +188,9 @@ html
 
             //when we receive predictions, schedule them
             socket.on('note_prediction', function (data) {
-                if (isMalloOn) {
+                //if (isMalloOn) {
                     //todo: schedule the event
+                console.log("Note Pediction: " + data.msg_id);
                     var offset = syncClient.getOffset();
                     var instr;
                     if (data.address == "/left") {
@@ -202,11 +203,11 @@ html
                         instr = 2;
                     }
                     scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
-                    scheduler.curIds[instr] = data.id;
-                    logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.id +", \"address\" : " + data.address +", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos +", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
+                scheduler.curIds[instr] = data.msg_id;
+                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.msg_id + ", \"address\" : " + data.address + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
                     //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                     //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
-                }
+                //}
             });
 
 

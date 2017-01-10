@@ -63,7 +63,7 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
             address: info.address,
             predicted_time: oscBundle.packets[0].args[1],
             velocity: oscBundle.packets[0].args[3],
-            id: oscBundle.packets[0].args[0],
+            msg_id: oscBundle.packets[0].args[0],
             send_time: oscBundle.packets[0].args[2],
             x_pos: oscBundle.packets[0].args[4],
             y_pos: oscBundle.packets[0].args[5],
