@@ -77,13 +77,13 @@ html
                 console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
 
 
-                //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
-
                 $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');  // consent form for audience
                 $('#flipLogger').val(isLoggerOn).flipswitch('refresh');  // logger for audience
                 $('#flipMetro').val(isMetroOn).flipswitch('refresh');  // metronome for performers
                 $('#flipSequencer').val(isSeqOn).flipswitch('refresh'); // sequence for audience
                 $('#flipMallo').val(isMalloOn).flipswitch('refresh'); // Mallos on/off for audience
+                $('input[id="radio-choice-' + currentInterface + '"]').prop("checked", true).checkboxradio("refresh");
+
 
                 socket.emit('sendStartMeasure', {
                     startMeasure: startMeasure
@@ -106,12 +106,13 @@ html
 
             $(document).ready(function () {
                 $('#conductorInterface').hide();
+
             });
 
             // Setup an event listener for clicks on the choosePlayer button
             // This will initialize our audio context so that it works on ios.
             // Setup an event listener for clicks on the choosePlayer button
-            // This will initialize our audio context so that it works on ios.
+            // This will initialize our$("input[name='radio-choice-1']") audio context so that it works on ios.
             $(function () {
                 $("#soundCheck").on("click", function () {
 
@@ -149,6 +150,8 @@ html
                     }
                     $('#enableAudio').hide();
                     $('#conductorInterface').show();
+
+
                     doneInitializing = true;
 
                 });
@@ -351,6 +354,12 @@ html
                     //$('#numbers').sly('activate', newvalue-1);
 
                     var measureNum = newval - startMeasure;
+
+                    //if we are on movement 1: trigger changes in the interfaces:
+                    console.log("Current Interface: " + currentInterface);
+
+                    //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
+
                     //SCORE FOR PIECE:
                     //switch()
 
@@ -439,11 +448,11 @@ html
             });
 
             $(function () {
-                $("input[name='radio-choice-1']").on("click", function () {
-                    var interfaceSelected = $("input[name='radio-choice-1']:checked").val();
-                    console.log("Interface Selected Changed: " + interfaceSelected);
+                $("input[name='radio-choice']").on("click", function () {
+                    currentInterface = $("input[name='radio-choice']:checked").val();
+                    console.log("Interface Selected Changed: " + currentInterface);
                     socket.emit('serverChangedInterface', {
-                        newInterface: interfaceSelected
+                        newInterface: currentInterface
                     });
                 });
             });
@@ -595,19 +604,19 @@ html
                         .ui-block-c(style='width:30%')
                             .ui-field-contain
                                 button#bpmSet.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name= 'bmpSet', type='submit', onclick="setBPM()") Set BPM
-
-                    fieldset(data-role='controlgroup', data-theme='d' )
-                        h2.center Interface Modes
-                        input#radio-choice-1(type='radio', name='radio-choice-1', value='0', checked='checked')
-                        label(for='radio-choice-1') Welcome
-                        input#radio-choice-2(type='radio', name='radio-choice-1', value='1')
-                        label(for='radio-choice-2') Movement 1
-                        input#radio-choice-3(type='radio', name='radio-choice-1', value='2')
-                        label(for='radio-choice-3') Intermission
-                        input#radio-choice-4(type='radio', name='radio-choice-1', value='3')
-                        label(for='radio-choice-4') Movement 2
-                        input#radio-choice-5(type='radio', name='radio-choice-1', value='4')
-                        label(for='radio-choice-5') Survey
+                    form
+                        fieldset(data-role='controlgroup', data-theme='d' )
+                            h2.center Interface Modes
+                            input#radio-choice-0(type='radio', name='radio-choice', value='0')
+                            label(for='radio-choice-0') Welcome
+                            input#radio-choice-1(type='radio', name='radio-choice', value='1')
+                            label(for='radio-choice-1') Movement 1
+                            input#radio-choice-2(type='radio', name='radio-choice', value='2')
+                            label(for='radio-choice-2') Intermission
+                            input#radio-choice-3(type='radio', name='radio-choice', value='3')
+                            label(for='radio-choice-3') Movement 2
+                            input#radio-choice-4(type='radio', name='radio-choice', value='4')
+                            label(for='radio-choice-4') Survey
 
                 .ui-body.ui-body-a.ui-corner-all.center
                     .ui-content(role='main')
