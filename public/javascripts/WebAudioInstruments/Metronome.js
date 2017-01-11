@@ -35,7 +35,7 @@ Metronome = function (audioContext, logger) {
     this.start = function () {
         //console.log("metronome.start()");
         if (logger && this.syncClient) {
-            logger.info("{ \"FLPMA\" : " + 1 + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + this.tempo + "}");
+            logger.info("{ \"FLPME\" : " + 1 + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + this.tempo + "}");
         }
         this.check();
         self = this;
@@ -47,7 +47,7 @@ Metronome = function (audioContext, logger) {
     this.stop = function () {
         //console.log("metronome.stop()");
         if (logger && this.syncClient) {
-            logger.info("{ \"FLPMA\" : " + 0 + ", \"global_time\" : " + syncClient.getTime() + "}");
+            logger.info("{ \"FLPME\" : " + 0 + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + this.tempo + "}");
         }
         clearInterval(this.interval);
     };

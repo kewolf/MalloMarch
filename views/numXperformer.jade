@@ -119,6 +119,8 @@ html
                     hasPieceStarted = true;
                     var span1 = document.getElementById("countdownLabel");
                     span1.innerHTML = "Measure Number:";
+
+                    $('#coundownDiv').show();
                 }
 
                 console.log("IPS: " + data.performerIPs);
@@ -162,6 +164,7 @@ html
                     startMeasure = data.startMeasure;
                     //Trigger the piece countdown
                     if (startMeasure != -1) {
+                        $('#coundownDiv').show();
                         var measureUntilStart = startMeasure - metronome.curMeasureNum - 1;
                         beatsUntilStart = (nBeats - metronome.curBeatNum) + (measureUntilStart * nBeats);
                         console.log("Countdown: " + beatsUntilStart);
@@ -169,6 +172,7 @@ html
                         span.innerHTML = beatsUntilStart.toString();
                         console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
                     } else {
+                        $('#coundownDiv').hide();
                         console.log("Start Measure Reset");
                         hasPieceStarted = false;
                         var span1 = document.getElementById("countdownLabel");
@@ -241,7 +245,7 @@ html
                     console.log("RECV TIME DIFF: " + diff);
                     console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                 }
-                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + data.path + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
+                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
             });
 
 
@@ -263,6 +267,8 @@ html
                 $('#p1head').hide();
                 $('#p2head').hide();
                 $('#p3head').hide();
+
+                $('#coundownDiv').hide();
 
                 $('#m0-el-size-l').hide();
                 $('#m0-el-size-r').hide();
@@ -441,7 +447,9 @@ html
 
                 metronome.watch('curMeasureNum', function (id, oldval, newval) {
                     //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
+
                     var measureNum = newval - startMeasure;
+
                     console.log("NewVal - StartMeasure: " + measureNum);
                     if ((hasPieceStarted == true) && (measureNum > 0)) {
                         $('#numbers').sly('activate', measureNum);
@@ -450,7 +458,7 @@ html
                     }
 
                     if (syncClient) {
-                        logger.info("{ \"MEASR\" : " + measureNum + ", \"global_time\" : " + syncClient.getTime() + "}");
+                        logger.info("{ \"MEASR\" : " + newval + ", \"piece_measure_num\" : " + measureNum + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
 
                     if (measureNum == 0) {
