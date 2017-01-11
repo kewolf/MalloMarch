@@ -142,7 +142,6 @@ html
                         }
 
                         isAudioSetup = true;
-                        switchMetronomeOn(isMetroOn, currentBPM);
 
                     } else {
                         playSound(audioContext.currentTime);
@@ -216,11 +215,11 @@ html
 
             function switchMetronomeOn(isOn, bpm) {
                 if (isOn) {
-                    //console.log("Metro make sound");
+                    console.log("Metro make sound");
                     updateBPM(bpm);
                     metronome.start();
                 } else {
-                    //console.log("Metro stop makein sound");
+                    console.log("Metro stop makein sound");
                     metronome.unwatch('curBeatNum');
                     metronome.unwatch('curMeasureNum');
                     metronome.stop();

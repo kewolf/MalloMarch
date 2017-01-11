@@ -4,9 +4,8 @@ var router = express.Router();
 
 /* GET home page - right now our version1.jade file */
 router.get('/', function (req, res, next) {
-    res.render('numXaudience', {title: 'MalLo March'});
+    res.render('numXaudience', {title: 'Num X'});
 });
-
 
 router.get('/playerInterface', function (req, res, next) {
     res.render('numXperformer', {title: 'Num X Performer Interface'});
