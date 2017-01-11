@@ -11,7 +11,7 @@ var Player = function () {
     this.glimmer = 0;
     this.shift = 0;
 
-    //setup reverb
+    //the output chain, starting from the destination, instruments connect to this.out
     this.muteGain = audioContext.createGain();
     this.muteGain.connect(audioContext.destination);
     this.mainGain = audioContext.createGain();
@@ -28,8 +28,16 @@ var Player = function () {
     this.out.connect(this.reverb);
     this.out.connect(this.dryGain);
 
+    this.source = audioContext.createOscillator();
+    // this.panner = audioContext.createStereoPanner();
+    this.adsrAmp = audioContext.createGain();
+    this.source.connect(this.adsrAmp);
+    this.adsrAmp.gain.value = 1.0;
+    this.env = new WebAHDSR(audioContext, this.adsrAmp.gain);
+    this.adsrAmp.connect(this.out);
 
-    this.voice1 = new NumXVoice(self);
+
+    // this.voice1 = new NumXVoice(self);
 
     // methods for muting and unmuting
     this.mute = function () {
@@ -45,10 +53,10 @@ var Player = function () {
     };
 
     this.schedule = function (time) {
-        this.reverbGain.gain.value = this.size / 100.0;
-        this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
-        this.mainGain.gain.value = this.level;
-        this.voice1.play(time, this);
+        // this.reverbGain.gain.value = this.size / 100.0;
+        // this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
+        // this.mainGain.gain.value = this.level;
+        this.env.on();
     };
 
 // todo: needed for backward compatibility (for now)
@@ -57,7 +65,7 @@ var Player = function () {
     };
 
     this.unschedule = function () {
-        //do something
+        this.env.off();
     };
 
     this.getParameters = function () {

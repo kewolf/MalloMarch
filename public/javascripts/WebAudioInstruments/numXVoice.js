@@ -13,6 +13,7 @@ var NumXVoice = function (player) {
         this.env.on();
     };
 
+
     this.stop = function () {
         this.env.off();
     };
