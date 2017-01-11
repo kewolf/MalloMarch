@@ -69,6 +69,7 @@ var Player = function () {
     };
 
     this.getParameters = function () {
+        console.log("Get Parameters");
         var params = {};
         params['pitch1'] = this.pitch1;
         params['pitch2'] = this.pitch2;
@@ -82,7 +83,11 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
-        this.pitch = params['pitch'];
+        console.log("Set Parameters: ");
+        console.dir(params);
+        this.pitch1 = params['pitch1'];
+        this.pitch2 = params['pitch2'];
+        this.pitch3 = params['pitch3'];
         this.volume = params['volume'];
         this.echo = params['echo'];
         this.etheriality = params['etheriality'];

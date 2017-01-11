@@ -1,119 +1,22 @@
 {
   "i0": {
-    "activeInstrument": 0,
-    "size": "14",
-    "decay": "4",
-    "level": "0.4",
-    "nDrummers": "10",
-    "drumPitch": "3",
-    "dynamics": "0"
+    "pitch1": "0.5",
+    "pitch2": "0.5",
+    "pitch3": "0.5",
+    "echo": "0.5",
+    "etherialtly": "0.5",
+    "glimmer": "0.5",
+    "shift": "0.5",
+    "volume": "0.5"
   },
   "i1": {
-    "activeInstrument": 1,
-    "size": "50",
-    "decay": "80",
-    "level": "0.5",
-    "range": "1",
-    "vibrato": "0",
-    "trippiness": "0"
-  },
-  "i2": {
-    "activeInstrument": 2,
-    "size": "50",
-    "decay": "55",
-    "level": "0.5",
-    "grunge": "25",
-    "electronicPitch": "3",
-    "fatness": "10"
-  },
-  "i3": {
-    "activeInstrument": 1,
-    "size": "49",
-    "decay": "69",
-    "level": "0.5",
-    "range": "2",
-    "vibrato": "66",
-    "trippiness": "72"
-  },
-  "i4": {
-    "activeInstrument": 0,
-    "size": "31",
-    "decay": "70",
-    "level": "0.5",
-    "nDrummers": "2",
-    "drumPitch": "50",
-    "dynamics": "1"
-  },
-  "i5": {
-    "activeInstrument": 2,
-    "size": "0",
-    "decay": "71",
-    "level": "0.5",
-    "grunge": "94",
-    "electronicPitch": "3",
-    "fatness": "0"
-  },
-  "i6": {
-    "activeInstrument": 0,
-    "size": "98",
-    "decay": "2",
-    "level": "0.5",
-    "nDrummers": "7",
-    "drumPitch": "27",
-    "dynamics": "9"
-  },
-  "i7": {
-    "activeInstrument": 1,
-    "size": "96",
-    "decay": "34",
-    "level": "0.6",
-    "range": "4",
-    "vibrato": "5",
-    "trippiness": "2"
-  },
-  "i8": {
-    "activeInstrument": 1,
-    "size": "52",
-    "decay": "97",
-    "level": "0.1",
-    "range": "2",
-    "vibrato": "93",
-    "trippiness": "98"
-  },
-  "i9": {
-    "activeInstrument": 0,
-    "size": "92",
-    "decay": "1",
-    "level": "0.5",
-    "nDrummers": "4",
-    "drumPitch": "88",
-    "dynamics": "2"
-  },
-  "i10": {
-    "activeInstrument": 1,
-    "size": "96",
-    "decay": "45",
-    "level": "0.5",
-    "range": "3",
-    "vibrato": "41",
-    "trippiness": "69"
-  },
-  "i11": {
-    "activeInstrument": 1,
-    "size": "53",
-    "decay": "9",
-    "level": "1",
-    "range": "4",
-    "vibrato": "98",
-    "trippiness": "29"
-  },
-  "i12": {
-    "activeInstrument": 2,
-    "size": "24",
-    "decay": "7",
-    "level": "0.13",
-    "grunge": "2",
-    "electronicPitch": "3",
-    "fatness": "2"
+    "pitch1": "0.75",
+    "pitch2": "0.75",
+    "pitch3": "0.75",
+    "echo": "0.75",
+    "etherialtly": "0.75",
+    "glimmer": "0.75",
+    "shift": "0.75",
+    "volume": "0.75"
   }
 }
