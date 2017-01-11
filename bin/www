@@ -70,7 +70,7 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
             y_pos: oscBundle.packets[0].args[7],
             z_pos: oscBundle.packets[0].args[8]
         });
-       // console.log("path: " + path + +", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (timeNum - (new Date).getTime()));
+        console.log("path: " + path + ", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime());
        //  console.log("predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (predicted_time - (new Date).getTime()));
         //console.log("velocity: ")
     }

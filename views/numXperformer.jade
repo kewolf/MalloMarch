@@ -46,7 +46,7 @@ html
     body(class="ui-mobile-viewport")
         script.
 
-            var customIPflag = 0;
+            var customIPflag = 1;
             var serverURL = 'http://localhost:3000';
             var customServerURL = '192.168.1.9:3000';
 
@@ -241,7 +241,7 @@ html
                     console.log("RECV TIME DIFF: " + diff);
                     console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                 }
-                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.msg_id + ", \"path\" : " + data.path + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
+                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + data.path + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
             });
 
 
@@ -297,7 +297,7 @@ html
                 console.log("Init Logger");
                 var appender = JL.createAjaxAppender("Appender");
                 appender.setOptions({
-                    "batchSize": 5 //the number of logs that are acquired before they get sent
+                    "batchSize": 10 //the number of logs that are acquired before they get sent
                 });
                 logger.setOptions({
                     "appenders": [appender]

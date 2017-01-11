@@ -85,7 +85,8 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
                 this.players[i].schedule(playTime);
                 //this.curPredictions[i] = -1;
                 var time = playTime + syncClient.getOffset();
-                logger.info("{ \"EVPL" + i + "\" : " + time + ", \"msg_id\" : " + this.curIds[i] + "}"); // i indicates the player, playTime + syncClient.getOffset() indicates when in global time
+                var logtime = time * 1000;
+                logger.info("{ \"EVPL" + i + "\" : " + logtime + ", \"msg_id\" : " + this.curIds[i] + "}"); // i indicates the player, playTime + syncClient.getOffset() indicates when in global time
             } /*
             else
             {
