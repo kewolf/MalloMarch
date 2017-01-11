@@ -1,8 +1,10 @@
 /* Player */
 
-var NumXPlayer = function () {
+var Player = function () {
 
-    this.pitch = 0;
+    this.pitch1 = 0;
+    this.pitch2 = 0;
+    this.pitch3 = 0;
     this.volume = 0;
     this.echo = 0;
     this.etheriality = 0;
@@ -26,11 +28,8 @@ var NumXPlayer = function () {
     this.out.connect(this.reverb);
     this.out.connect(this.dryGain);
 
-    //create instruments
-    this.activeInstrument = PITCHED;
-    this.drum_corp = new Drum_Corp();
-    this.pitched = new Pitched();
-    this.electronic = new Electronic(self);
+
+    this.voice1 = new NumXVoice(self);
 
     // methods for muting and unmuting
     this.mute = function () {
@@ -46,105 +45,40 @@ var NumXPlayer = function () {
     };
 
     this.schedule = function (time) {
-
         this.reverbGain.gain.value = this.size / 100.0;
         this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
         this.mainGain.gain.value = this.level;
-        // this.dryGain.gain.value = 0;
-        //console.log('this.reverbGain.gain.value: ' + this.reverbGain.gain.value);
-
-        switch (this.activeInstrument) {
-            case DRUM_CORP:
-                this.drum_corp.play(time, this);
-                break;
-            case PITCHED:
-                this.pitched.play(time, this);
-                break;
-            case ELECTRONIC:
-                this.electronic.play(time, this);
-                break;
-            default:
-                console.log("fell to the bottom of the active instrument switch statement (we should not have)");
-        }
+        this.voice1.play(time, this);
     };
 
-    // todo: needed for backward compatibility (for now)
+// todo: needed for backward compatibility (for now)
     this.play = function (time) {
         this.schedule(time);
     };
 
     this.unschedule = function () {
-        switch (this.activeInstrument) {
-            case DRUM_CORP:
-                this.drum_corp.unschedule(this);
-                break;
-            case PITCHED:
-                this.pitched.unschedule();
-                break;
-            case ELECTRONIC:
-                this.electronic.unschedule();
-                break;
-            default:
-                console.log("fell to the bottom of the active instrument switch statement (we should not have)");
-        }
+        //do something
     };
 
     this.getParameters = function () {
-
         var params = {};
-        params['activeInstrument'] = this.activeInstrument;
-        params['size'] = this.size;
-        params['decay'] = this.decay;
-        params['level'] = this.level;
-
-        switch (this.activeInstrument) {
-            case DRUM_CORP:
-                params['nDrummers'] = this.nDrummers;
-                params['drumPitch'] = this.drumPitch;
-                params['dynamics'] = this.dynamics;
-                break;
-            case PITCHED:
-                params['range'] = this.range;
-                params['vibrato'] = this.vibrato;
-                params['trippiness'] = this.trippiness;
-                break;
-            case ELECTRONIC:
-                params['grunge'] = this.grunge;
-                params['electronicPitch'] = this.electronicPitch;
-                params['fatness'] = this.fatness;
-                break;
-            default:
-                console.log("fell to the bottom of the getParameters switch statement (we should not have)");
-        }
-
+        params['pitch1'] = this.pitch1;
+        params['pitch2'] = this.pitch2;
+        params['pitch3'] = this.pitch3;
+        params['volume'] = this.volume;
+        params['echo'] = this.echo;
+        params['etheriality'] = this.etheriality;
+        params['glimmer'] = this.glimmer;
+        params['shift'] = this.shift;
         return params;
     };
 
     this.setParameters = function (params) {
-        this.activeInstrument = params['activeInstrument'];
-        this.size = params['size'];
-        this.decay = params['decay'];
-        this.level = params['level'];
-
-        switch (params['activeInstrument']) {
-            case DRUM_CORP:
-                this.nDrummers = params['nDrummers'];
-                this.drumPitch = params['drumPitch'];
-                this.dynamics = params['dynamics'];
-                break;
-            case PITCHED:
-                this.range = params['range'];
-                this.vibrato = params['vibrato'];
-                this.trippiness = params['trippiness'];
-                break;
-            case ELECTRONIC:
-                this.grunge = params['grunge'];
-                this.electronicPitch = params['electronicPitch'];
-                this.fatness = params['fatness'];
-                break;
-            default:
-                console.log("fell to the bottom of the setParameters switch statement (we should not have)");
-        }
+        this.pitch = params['pitch'];
+        this.volume = params['volume'];
+        this.echo = params['echo'];
+        this.etheriality = params['etheriality'];
+        this.glimmer = params['glimmer'];
+        this.shift = params['shift'];
     };
-
-};
+}
