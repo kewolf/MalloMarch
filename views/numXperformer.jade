@@ -46,7 +46,7 @@ html
     body(class="ui-mobile-viewport")
         script.
 
-            var customIPflag = 1;
+            var customIPflag = 0;
             var serverURL = 'http://localhost:3000';
             var customServerURL = '192.168.1.9:3000';
 
@@ -215,27 +215,33 @@ html
 
             //when we receive predictions, schedule them
             socket.on('note_prediction', function (data) {
-                console.log("Note Pediction: " + data.msg_id);
+                //console.log("Note Pediction: " + data.msg_id);
                 var offset = syncClient.getOffset();
                 var instr;
-                if (data.address == "/left") {
+                if (data.path == "/left") {
                     instr = 0;
                 }
-                if (data.address == "/middle") {
+                else if (data.path == "/middle") {
                     instr = 1;
                 }
-                if (data.address == "/right") {
+                else if (data.path == "/right") {
                     instr = 2;
                 }
-                var pred = (data.predicted_time / 1000.0) - offset;
-                var diff = pred - syncClient.getTime();
+                else {
+                    console.log("Didn't recognize path: " + data.path);
+                }
 
-                console.log("PRED Time BEFORE: " + data.predicted_time + " PRED Time AFTER: " + pred + " Global Time: " + syncClient.getTime());
-                console.log("TIME DIFF: " + diff);
-
+                // we divide by 1000 because the audio context works in ms
+                var diff = data.predicted_time / 1000.0 - syncClient.getTime();
                 scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
                 scheduler.curIds[instr] = data.msg_id;
-                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.msg_id + ", \"address\" : " + data.address + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
+
+                if (Math.abs(diff) < 0.02) {
+                    console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
+                    console.log("RECV TIME DIFF: " + diff);
+                    console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                }
+                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"id\" : " + data.msg_id + ", \"path\" : " + data.path + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
             });
 
 

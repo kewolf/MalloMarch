@@ -1,7 +1,6 @@
 /**
  * Created by roda on 5/23/16.
  */
-
 var KalmanFilter = function (the_process_variance, the_est_measure_variance, the_posteri_est) {
     this.process_variance = the_process_variance;
     this.est_measure_variance = the_est_measure_variance;
@@ -57,11 +56,12 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
     this.syncClient = syncClient;
     this.preThreshold = 0.02; //schedule 20 ms in advance
     this.postThreshold = 0.03; //30 ms after
-    this.waitPeriod = 0.2; //
+    this.waitPeriod = 0.5; //
     this.players = players;
     this.curPredictions = [];
     this.curIds = [];
     this.lastPlayTime = [];
+    this.logCounter = 0;
     console.log('players.length: ' + players.length);
     for (var i = 0; i < players.length; i++) {
         this.curPredictions.push(0);
@@ -75,18 +75,27 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
 
             if (diff > -this.postThreshold && diff < this.preThreshold
                 && this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod) {
-                // console.log("diff: " + diff);
-                // console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
-                // console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
-                // console.log("#########################################################");
+                console.log("diff: " + diff);
+                console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
+                console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
+                console.log("#########################################################");
 
                 var playTime = (diff < 0) ? this.audioContext.currentTime : this.curPredictions[i];
-                this.players[i].schedule(playTime);
                 this.lastPlayTime[i] = playTime;
-                this.curPredictions[i] = -1;
+                this.players[i].schedule(playTime);
+                //this.curPredictions[i] = -1;
                 var time = playTime + syncClient.getOffset();
                 logger.info("{ \"EVPL" + i + "\" : " + time + ", \"msg_id\" : " + this.curIds[i] + "}"); // i indicates the player, playTime + syncClient.getOffset() indicates when in global time
-            }
+            } /*
+            else
+            {
+                //console.log('Did not find any events to schedule');
+                if (this.logCounter % 100 == 0) {
+                    console.log("this.curPredictions[0]: " + this.curPredictions[0]);
+                }
+                this.logCounter = this.logCounter + 1;
+
+            } */
         }
     };
 

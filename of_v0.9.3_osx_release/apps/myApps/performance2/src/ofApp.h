@@ -30,7 +30,7 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     void sendToChuck(LeapPosition pos);
-    void initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or_osc, float predicted_time);
+    void initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or_osc, int64_t predicted_time);
     void logPosition(LeapPosition & position_event);
     long long getMillisSinceEpoch();
 
@@ -45,7 +45,8 @@ public:
     void middleChanged(bool & param);
     void rightChanged(bool & param);
     void setIp();
-    void sendOsc(float & scheduled_time);
+    void sendOsc(double & scheduled_time);
+    void setIpChuck(bool & param);
     
     LeapToolTrackerMulti * toolTrackerMulti;
     ofEvent<LeapPosition> leapPositionEvent1;
@@ -55,7 +56,7 @@ public:
     
     MalLoPredictor * mallo_predictor1;
     MalLoPredictor * mallo_predictor2;
-    ofEvent<float> receiverEvent;
+    ofEvent<double> receiverEvent;
     
     SyncClient * sync_client;
     uint64_t last_time_query = 0;

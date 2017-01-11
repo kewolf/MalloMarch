@@ -46,7 +46,6 @@ var udpPort = new osc.UDPPort({
 // Listen for incoming OSC Messages
 // NEEDS TO CHAGE FOR NEW OSC MESSAGES!
 udpPort.on("bundle", function (oscBundle, timeTag, info) {
-
     var path = oscBundle.packets[0].address;
     if (path == '/time_req') {
         var client_send_time = oscBundle.packets[0].args[0];
@@ -55,24 +54,25 @@ udpPort.on("bundle", function (oscBundle, timeTag, info) {
         var server_time = Long.fromValue((new Date).getTime());
         udpPort.send({
             address: "/time_res",
-
             args: [client_send_time, server_time]
         }, info.address, 6448);
     } else {
-        var timeStr = oscBundle.packets[0].args[1];
-        var timeNum = Number(timeStr);
-        console.log("PREDICTED TIME: " + timeStr);
+        var divider = 1000000;
+        var predicted_time = Number(oscBundle.packets[0].args[1]) * divider + Number(oscBundle.packets[0].args[2]);
+        var send_time = Number(oscBundle.packets[0].args[3]) * divider + Number(oscBundle.packets[0].args[4]);
         io.emit('note_prediction', {
-            address: info.address,
-            predicted_time: timeNum,
-            velocity: oscBundle.packets[0].args[3],
+            path: path,
+            predicted_time: predicted_time,
+            send_time: send_time,
+            velocity: oscBundle.packets[0].args[5],
             msg_id: oscBundle.packets[0].args[0],
-            send_time: oscBundle.packets[0].args[2],
-            x_pos: oscBundle.packets[0].args[4],
-            y_pos: oscBundle.packets[0].args[5],
-            z_pos: oscBundle.packets[0].args[6]
+            x_pos: oscBundle.packets[0].args[6],
+            y_pos: oscBundle.packets[0].args[7],
+            z_pos: oscBundle.packets[0].args[8]
         });
-        console.log("path: " + path + ", prediction_time (NUM): " + timeNum + ", prediction_time (str): " + timeStr + ", current_time: " + (new Date).getTime());
+       // console.log("path: " + path + +", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (timeNum - (new Date).getTime()));
+       //  console.log("predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (predicted_time - (new Date).getTime()));
+        //console.log("velocity: ")
     }
 });
 

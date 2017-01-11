@@ -38,7 +38,7 @@ class FutureHeight
 {
 
 public:
-    FutureHeight(float height_val, float * predicted_height, LeapPosition leap_pos, LeapPosition * past_leap_position)
+    FutureHeight(double height_val, double * predicted_height, LeapPosition leap_pos, LeapPosition * past_leap_position)
     {
         height = height_val;
         predicted_height_ptr = predicted_height;
@@ -53,8 +53,8 @@ public:
     }
 
 protected:
-    float height;
-    float * predicted_height_ptr;
+    double height;
+    double * predicted_height_ptr;
     LeapPosition pos;
     LeapPosition * past_leap_position_ptr;
 };
@@ -72,7 +72,7 @@ class MalLoPredictor
 {
     
 public:
-    MalLoPredictor(ofEvent<float> * receiver_ofEvent)
+    MalLoPredictor(ofEvent<double> * receiver_ofEvent)
     {
         receiver = receiver_ofEvent;
         n_points = 13; // determined experimentally
@@ -101,7 +101,7 @@ public:
             heights.pop_front();
             times.pop_front();
             
-            float prediction_time = predict();
+            double prediction_time = predict();
             // send the message
             ofNotifyEvent(*receiver, prediction_time);
             predicted_heights.push_back(new FutureHeight(new_predicted_height, &predicted_height, position_event, &past_leap_position));
@@ -112,7 +112,7 @@ public:
         }
     }
     
-    float predicted_height = 0;
+    double predicted_height = 0;
     LeapPosition past_leap_position = LeapPosition(Vector(0,0,0), Vector(0,0,0), 0);
     
 protected:
@@ -121,32 +121,32 @@ protected:
     std::deque<float> times;
     int n_points; // # of points in regression
     
-    float latency;
-    float alpha;
-    float beta;
-    float new_predicted_height;
+    double latency;
+    double alpha;
+    double beta;
+    double new_predicted_height;
     
     // These are
     string message_action;
-    float message_time;
+    double message_time;
     vector<Timer *> timers;
     //vector<MalloMessage *> messages;
     vector<FutureHeight *> predicted_heights;
     
-    ofEvent<float> * receiver;
+    ofEvent<double> * receiver;
     
     /* Predicts the time of a mallet hit. If there is no predicted mallet hit, returns -1
      * which is interpreted by the receiver as an "unschdule" event */
     
     
-    float predict()
+    double predict()
     {
         
         Eigen::MatrixXf A(13,3);
         Eigen::VectorXf b(13);
         
         
-        float offset;
+        double offset;
         // for testing
         
         offset = times[6];
@@ -175,7 +175,7 @@ protected:
         Eigen::Vector3f poly = (A.transpose() * A).ldlt().solve(A.transpose() * b);
         
         // evaluate the polynomial <latency> seconds in the future
-        float future_time = times[12] - offset + latency;
+        double future_time = times[12] - offset + latency;
         new_predicted_height = poly(0) + poly(1) * future_time + poly(2) * pow(future_time, 2);
         
         
@@ -189,9 +189,9 @@ protected:
             Eigen::Matrix2f companion;
             companion << 0, -poly(0)/poly(2),
             1, -poly(1)/poly(2);
-            float root1 = companion.eigenvalues()(0,0).real();
-            float root2 = companion.eigenvalues()(1,0).real();
-            float the_root = (root1 > root2) ? root1 : root2;
+            double root1 = companion.eigenvalues()(0,0).real();
+            double root2 = companion.eigenvalues()(1,0).real();
+            double the_root = (root1 > root2) ? root1 : root2;
             return the_root + offset;
         } else if (heights[1] - heights[0] > 0 &&
                    heights[2] - heights[1] > 0 &&

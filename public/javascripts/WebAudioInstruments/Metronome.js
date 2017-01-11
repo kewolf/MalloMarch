@@ -65,7 +65,7 @@ Metronome = function (audioContext, logger) {
         }
         if (this.curMeasureNum != oldMeasureNum)
         {
-            console.log("Measure: " + this.curMeasureNum);
+            //console.log("Measure: " + this.curMeasureNum);
         }
         var nextTickTime = (numTicksSoFar + 1) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
