@@ -123,6 +123,7 @@ public:
     // Logging
     string log_text;
     int log_line_count = 0;
-    std::fstream chuck_log;
+    int log_file_size = 0;
+    int max_log_file_size = 10000;
     
 };

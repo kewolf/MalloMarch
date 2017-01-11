@@ -101,7 +101,13 @@ void ofApp::draw(){
         sendToChuck(mallo_predictor1->past_leap_position);
         hysteresis_reset_chuck = false;
         last_chuck_send_time = ofGetElapsedTimeMillis();
+        if (log_file_size > max_log_file_size)
+        {
+            ofLogToFile("logs/" + ofToString(getMillisSinceEpoch()/1000) + ".log",true);
+            log_file_size = 0;
+        }
         ofLog() << "Chuck: " << ofToString(last_chuck_send_time);
+        log_file_size++;
     }
     
     gui.draw();
@@ -413,12 +419,18 @@ void ofApp::logPosition(LeapPosition & position_event)
             + ofToString(position_event.tipVelocity.x) + ", "
             + ofToString(position_event.tipVelocity.y) + ", "
             + ofToString(position_event.tipVelocity.z) + ", "
-            + ofToString(epoch_high_part) + ofToString(server_time_low_part) + ", "
+            + ofToString(epoch_high_part) + ofToString(epoch_low_part) + ", "
             + ofToString(ofGetElapsedTimeMillis()) + ", "
             + ofToString(sync_client->get_offset()) + ", "
             + ofToString(sync_client->get_server_time());
     log_line_count++;
+    log_file_size++;
     if (log_line_count >= max_lines) {
+        if (log_file_size > max_log_file_size)
+        {
+            ofLogToFile("logs/" + ofToString(getMillisSinceEpoch()/1000) + ".log",true);
+            log_file_size = 0;
+        }
         ofLog() << log_text;
         log_text = "";
         log_line_count = 0;
