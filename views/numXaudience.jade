@@ -9,10 +9,8 @@ block content
     link(rel='stylesheet', href='/stylesheets/sly.css')
     link(rel='stylesheet', href='/stylesheets/jquerymobile.css')
     script(src='/javascripts/WebDrum/src/web-ahdsr.js')
-    script(src='/javascripts/WebAudioInstruments/Drum_Corp.js')
-    script(src='/javascripts/WebAudioInstruments/Electronic.js')
-    script(src='/javascripts/WebAudioInstruments/Pitched.js')
-    script(src='/javascripts/WebAudioInstruments/NumXPlayer.js')
+    script(src='/javascripts/WebAudioInstruments/numXPlayer.js')
+    script(src='/javascripts/WebAudioInstruments/numXVoice.js')
     script(src='/javascripts/WebAudioInstruments/loadAudioFiles.js')
     script(src='/javascripts/Logger/jsnlog.min.js')
     script(src='/javascripts/MalloTools/TimeTools.js')
@@ -66,7 +64,7 @@ block content
         var currentInterface;
 
         //create the logger
-        var logger = JL("Version1-Logger");
+        var logger = JL("Audience-Logger");
 
         window.addEventListener('load', init, false); //does nothing right now.
 
@@ -170,27 +168,37 @@ block content
         });
 
         //when we receive predictions, schedule them (if our MalLo is on)
+        //when we receive predictions, schedule them
         socket.on('note_prediction', function (data) {
-            if (isMalloOn) {
-                console.log("isMalloOn prediction: " + isMalloOn);
-                //todo: schedule the event
-                var offset = syncClient.getOffset();
-                var offset = syncClient.getOffset();
-                var instr;
-                if (data.address == "/left") {
-                    instr = 0;
-                }
-                if (data.address == "/middle") {
-                    instr = 1;
-                }
-                if (data.address == "/right") {
-                    instr = 2;
-                }
-                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
-                //console.log("diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
-                //console.log("currentTime: " + audioContext.currentTime + ", scheduler.curPredictions[instr]: " + scheduler.curPredictions[instr]);
+            //console.log("Note Pediction: " + data.msg_id);
+            var offset = syncClient.getOffset();
+            var instr;
+            if (data.path == "/left") {
+                instr = 0;
             }
+            else if (data.path == "/middle") {
+                instr = 1;
+            }
+            else if (data.path == "/right") {
+                instr = 2;
+            }
+            else {
+                console.log("Didn't recognize path: " + data.path);
+            }
+
+            // we divide by 1000 because the audio context works in ms
+            var diff = data.predicted_time / 1000.0 - syncClient.getTime();
+            scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
+            scheduler.curIds[instr] = data.msg_id;
+
+            if (Math.abs(diff) < 0.02) {
+                console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
+                console.log("RECV TIME DIFF: " + diff);
+                console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+            }
+            logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
         });
+
 
         socket.on('error', console.error.bind(console));
 
@@ -220,7 +228,7 @@ block content
 
                     //create our three players
                     for (var i = 0; i < nPlayers; i++) {
-                        players.push(new NumXPlayer());
+                        players.push(new Player());
                     }
 
                     // play sound to test audio
@@ -406,12 +414,6 @@ block content
             $('#popupPlayer').hide();
             $('#popupChannel').hide();
             $('#popupParams').hide();
-            $('#m0-el-size-l').hide();
-            $('#m0-el-size-r').hide();
-            $('#m1-el-size-l').hide();
-            $('#m1-el-size-r').hide();
-            $('#m2-el-size-l').hide();
-            $('#m2-el-size-r').hide();
         });
 
         function changeInterface(newMode) {
@@ -707,14 +709,16 @@ block content
                 }
             });
 
+            /* DON'T NEED FOR NUM X:
 
             //show or hide sliders for mode 3 depending on the selector
             //Selector for ids that end in '-select'
+
             $('[id$="-select"]').change(function () {
                 //get the id and extract the mallo id (m0, m1, m2)
                 var id = $(this).attr('id');
                 var playerNum = parseInt(id.slice(1));
-                //console.log("Select NumXPlayer: " + playerNum);
+             //console.log("Select Player: " + playerNum);
                 var malloId = id.slice(0, 2);
                 //get the value for the child that is selected
                 var nextpage = $(this).children('option:selected').attr('value');
@@ -760,53 +764,60 @@ block content
                     $('#' + malloId + '-el').show();
                 }
             });
+             */
         }
 
+
+        /*
         function sliderChange(playerNum, params) {
             //set active Instrument - which will trigger changes to the params
-            var activeInstrument = params["activeInstrument"];
-            $('#m' + playerNum + '-select').val(activeInstrument).trigger('change');
+
+         var id = $(this).attr('id');
+         var playerNum = parseInt(id.slice(1));
+         //console.log("Select Player: " + playerNum);
+         var malloId = id.slice(0, 2);
+
+         var active = $('#movement2').tabs('option', 'active');
+
+         //if we are in mode 3 - then log the change!
+         if (active == 2) {
+         if (loggerOn) {
+         logger.info("{ \"" + id + "\" : " + nextpage + ", \"global_time\" : " + syncClient.getTime() + "}");
+         }
+         }
+
+         //show/hide based on the selection.
+         //console.log("Selected 1!");
+         players[playerNum].activeInstrument = 0;
+         $('#' + malloId + '-volume').val(players[playerNum].volume).trigger('change');
+         $('#' + malloId + '-pitch1').val(players[playerNum].pitch1).trigger('change');
+         $('#' + malloId + '-pitch2').val(players[playerNum].pitch2).trigger('change');
+         $('#' + malloId + '-pitch3').val(players[playerNum].pitch3).trigger('change');
+         $('#' + malloId + '-echo').val(players[playerNum].echo).trigger('change');
+         $('#' + malloId + '-etherialtly').val(players[playerNum].etherialtly).trigger('change');
+         $('#' + malloId + '-glimmer').val(players[playerNum].glimmer).trigger('change');
+         $('#' + malloId + '-shift').val(players[playerNum].shift).trigger('change');
         }
+
+         */
 
         //gets parameters from the players and sets
         function refreshSliders() {
             for (var i = 0; i < nPlayers; i++) {
                 params = players[i].getParameters();
 
-                //console.log("REFRESH: " + i + " " + params);
+                console.log("REFRESH: " + i + " " + params);
                 //set active Instrument;
-                var activeInstrument = params["activeInstrument"];
-                $('#m' + i + '-select').val(activeInstrument).trigger('change');
 
-                switch (activeInstrument) {
-                    case DRUM_CORP:
-                        //console.log("Reset player" + i + " drum pitch: " + params["drumPitch"]);
-                        $('#m' + i + '-dc-vol').val(params["level"]).trigger('change');
-                        $('#m' + i + '-dc-size').val(params["size"]).trigger('change');
-                        $('#m' + i + '-dc-decay').val(params["decay"]).trigger('change');
-                        $('#m' + i + '-dc-pitch').val(params["drumPitch"]).trigger('change');
-                        $('#m' + i + '-dc-drums').val(params["nDrummers"]).trigger('change');
-                        $('#m' + i + '-dc-dyn').val(params["dynamics"]).trigger('change');
-                        break;
-                    case PITCHED:
-                        $('#m' + i + '-pp-vol').val(params["level"]).trigger('change');
-                        $('#m' + i + '-pp-size').val(params["size"]).trigger('change');
-                        $('#m' + i + '-pp-decay').val(params["decay"]).trigger('change');
-                        $('#m' + i + '-pp-scale').val(params["range"]).trigger('change');
-                        $('#m' + i + '-pp-vib').val(params["vibrato"]).trigger('change');
-                        $('#m' + i + '-pp-trip').val(params["trippiness"]).trigger('change');
-                        break;
-                    case ELECTRONIC:
-                        $('#m' + i + '-el-vol').val(params["level"]).trigger('change');
-                        $('#m' + i + '-el-size').val(params["size"]).trigger('change');
-                        $('#m' + i + '-el-decay').val(params["decay"]).trigger('change');
-                        $('#m' + i + '-el-grunge').val(params["grunge"]).trigger('change');
-                        $('#m' + i + '-el-pitch').val(params["electronicPitch"]).trigger('change');
-                        $('#m' + i + '-el-fat').val(params["fatness"]).trigger('change');
-                        break;
-                    default:
-                        console.log("fell to the bottom of the getParameters switch statement (we should not have)");
-                }
+                $('#' + i + '-volume').val(players[playerNum].volume).trigger('change');
+                $('#' + i + '-pitch1').val(players[playerNum].pitch1).trigger('change');
+                $('#' + i + '-pitch2').val(players[playerNum].pitch2).trigger('change');
+                $('#' + i + '-pitch3').val(players[playerNum].pitch3).trigger('change');
+                $('#' + i + '-echo').val(players[playerNum].echo).trigger('change');
+                $('#' + i + '-etherialtly').val(players[playerNum].etherialtly).trigger('change');
+                $('#' + i + '-glimmer').val(players[playerNum].glimmer).trigger('change');
+                $('#' + i + '-shift').val(players[playerNum].shift).trigger('change');
+
             }
         }
 
@@ -864,32 +875,23 @@ block content
                 var id = event.target.id;
                 var playerNumber = parseInt(id.slice(1));
                 var value = $(this).text();
-                //console.log("Slider Changes: " + event.target.id + " " + playerNumber + " " + value);
-                var instrType = players[playerNumber].activeInstrument;
-                if (id.indexOf("vol") > -1) {
-                    players[playerNumber].level = value;
-                } else if (id.indexOf("decay") > -1) {
-                    players[playerNumber].decay = value;
-                } else if (id.indexOf("size") > -1) {
-                    players[playerNumber].size = value;
-                } else if (id.indexOf("dc-pitch") > -1) {
-                    players[playerNumber].drumPitch = value;
-                } else if (id.indexOf("dc-dyn") > -1) {
-                    players[playerNumber].dynamics = value;
-                } else if (id.indexOf("dc-drums") > -1) {
-                    players[playerNumber].nDrummers = value;
-                } else if (id.indexOf("pp-vib") > -1) {
-                    players[playerNumber].vibrato = value;
-                } else if (id.indexOf("pp-trip") > -1) {
-                    players[playerNumber].trippiness = value;
-                } else if (id.indexOf("pp-scale") > -1) {
-                    players[playerNumber].range = value;
-                } else if (id.indexOf("el-fat") > -1) {
-                    players[playerNumber].fatness = value;
-                } else if (id.indexOf("el-pitch") > -1) {
-                    players[playerNumber].electronicPitch = value;
-                } else if (id.indexOf("el-grunge") > -1) {
-                    players[playerNumber].grunge = value;
+                console.log("Slider Changes: " + event.target.id + " " + playerNumber + " " + value);
+                if (id.indexOf("volume") > -1) {
+                    players[playerNumber].volume = value;
+                } else if (id.indexOf("pitch1") > -1) {
+                    players[playerNumber].pitch1 = value;
+                } else if (id.indexOf("pitch2") > -1) {
+                    players[playerNumber].pitch2 = value;
+                } else if (id.indexOf("ptich3") > -1) {
+                    players[playerNumber].pitch3 = value;
+                } else if (id.indexOf("echo") > -1) {
+                    players[playerNumber].echo = value;
+                } else if (id.indexOf("etherialtly") > -1) {
+                    players[playerNumber].etherialtly = value;
+                } else if (id.indexOf("glimmer") > -1) {
+                    players[playerNumber].glimmer = value;
+                } else if (id.indexOf("shifter") > -1) {
+                    players[playerNumber].shifter = value;
                 }
             });
         });
@@ -1127,7 +1129,7 @@ block content
                 li
                     a#tabButton1(href='#one', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external', name = 'Change the Channel') Channels
                 li
-                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Each NumXPlayer') Players
+                    a#tabButton2(href='#two', data-icon='star' data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Each Player') Players
                 li
                     a#tabButton3(href='#three', data-icon='star', data-iconpos='bottom', data-ajax='false', rel='external',name = 'Change Parameters') Parameters
         .ui-bar-a.ui(role='banner', data-mini='true', style='text-align:center;')
@@ -1165,70 +1167,39 @@ block content
             form#m-form
                 #m0-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='b')
                     h3 Player 1
-                    .ui-content
-                        label.leftItem(for='m0-select') Type
+                        label.leftItem(for='m0-pitch1') Pitch 1
                         .rightItem
-                            select#m0-select(name='m0-select', data-mini='true', data-theme='b', data-iconpos='left')
-                                option(value='0') Drum Corp
-                                option(value='1') Pitched Percussion
-                                option(value='2') Electronic
-                    .ui-content#m0-dc
-                        label.leftItem(for='m0-dc-vol') Volume
+                            input#m0-pitch1(type='range', name='m0-pitch1', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-pitch2') Pitch 2
                         .rightItem
-                            input#m0-dc-vol(type='range', name='m0-dc-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-size') Echo
+                            input#m0-pitch2(type='range', name='m0-pitch2', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-pitch3')
                         .rightItem
-                            input#m0-dc-size(type='range', name='m0-dc-size', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-decay') Sustain
+                            input#m0-pitch3(type='range', name='m0-pitch3', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-echo') Echo
                         .rightItem
-                            input#m0-dc-decay(type='range', name='m0-dc-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-pitch') Pitch
+                            input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-etherialtly') etherialtly
                         .rightItem
-                            input#m0-dc-pitch(type='range', name='m0-dc-pitch', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-drums') # o'Drums
+                            input#m0-etherialtly(type='range', name='m0-etherialtly', data-track-theme='b', data-theme='b', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-glimmer') Glimmer
                         .rightItem
-                            input#m0-dc-drums(type='range', name='m0-dc-drums', data-track-theme='b', data-theme='b', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-dc-dyn') Dynamics
+                            input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-shift') Shift
                         .rightItem
-                            input#m0-dc-dyn(type='range', name='m0-dc-dyn', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
-                    .ui-content#m0-pp
-                        label.leftItem(for='m0-pp-vol') Volume
+                            input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+
+                        label.leftItem(for='m0-volume') Volume
                         .rightItem
-                            input#m0-pp-vol(type='range', name='m0-pp-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-size') Echo
-                        .rightItem
-                            input#m0-pp-size(type='range', name='m0-pp-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-decay') Sustain
-                        .rightItem
-                            input.ui-hidden-accessible#m0-pp-decay(type='range', name='m0-pp-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-scale') Pattern
-                        .rightItem
-                            input.ui-hidden-accessible#m0-pp-scale(type='range', name='m0-pp-scale', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-vib') Vibrato
-                        .rightItem
-                            input.ui-hidden-accessible#m0-pp-vib(type='range', name='m0-pp-vib', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-pp-trip') Glimmer
-                        .rightItem
-                            input.ui-hidden-accessible#m0-pp-trip(type='range', name='m0-pp-trip', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                    .ui-content#m0-el
-                        label.leftItem(for='m0-el-vol') Volume
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-vol(type='range', name='m0-el-vol', data-track-theme='b', data-theme='b', min='0', max='1', value='.5', step='.01', data-popup-enabled='true', data-mini='true')
-                        label.leftItem#m0-el-size-l(for='m0-el-size') Echo
-                        .rightItem#m0-el-size-r
-                            input.ui-hidden-accessible#m0-el-size(type='range', name='m0-el-size', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-el-decay') Sustain
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-decay(type='range', name='m0-el-decay', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-el-grunge') Grunge
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-grunge(type='range', name='m0-el-grunge', data-track-theme='b', data-theme='b', min='0', max='99', value='0', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-el-pitch') Pattern
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-pitch(type='range', name='m0-el-pitch', data-track-theme='b', data-theme='b', min='1', max='4', value='1', data-popup-enabled='true', data-mini='true')
-                        label.leftItem(for='m0-el-fat') Pitch
-                        .rightItem
-                            input.ui-hidden-accessible#m0-el-fat(type='range', name='m0-el-fat', data-track-theme='b', data-theme='b',min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-volume(type='range', name='m0-volume', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+
+
                 #m1-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='c')
                     h3 Player 2
                     .ui-content
