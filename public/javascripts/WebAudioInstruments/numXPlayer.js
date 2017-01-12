@@ -118,7 +118,10 @@ var Player = function () {
     };
 
     //setters for the individual parameters
-    this.setPitch1 = function(pitch) { this.voice1.setPitch(this.pitch1); };
+    this.setPitch1 = function (pitch) {
+        console.log("CHANGING PITCH 1");
+        this.voice1.setPitch(this.pitch1);
+    };
     this.setPitch2 = function(pitch) { this.voice2.setPitch(this.pitch1); };
     this.setPitch3 = function(pitch) { this.voice3.setPitch(this.pitch1); };
     this.setVolume = function(gain) { this.mainGain.gain.value = Math.min(1, gain); };

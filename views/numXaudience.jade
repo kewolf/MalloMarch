@@ -790,21 +790,21 @@ block content
                 var value = $(this).text();
                 console.log("Slider Changes: " + event.target.id + " " + playerNumber + " " + value);
                 if (id.indexOf("volume") > -1) {
-                    players[playerNumber].volume = value;
+                    players[playerNumber].setVolume(value);
                 } else if (id.indexOf("pitch1") > -1) {
-                    players[playerNumber].pitch1 = value;
+                    players[playerNumber].setPitch1(value);
                 } else if (id.indexOf("pitch2") > -1) {
-                    players[playerNumber].pitch2 = value;
+                    players[playerNumber].setPitch2(value);
                 } else if (id.indexOf("ptich3") > -1) {
-                    players[playerNumber].pitch3 = value;
+                    players[playerNumber].setPitch3(value);
                 } else if (id.indexOf("echo") > -1) {
-                    players[playerNumber].echo = value;
+                    players[playerNumber].setEcho(value);
                 } else if (id.indexOf("etherialtly") > -1) {
-                    players[playerNumber].etherialtly = value;
+                    players[playerNumber].setEtheriality(value);
                 } else if (id.indexOf("glimmer") > -1) {
-                    players[playerNumber].glimmer = value;
-                } else if (id.indexOf("shifter") > -1) {
-                    players[playerNumber].shifter = value;
+                    players[playerNumber].setGlimmer(value);
+                } else if (id.indexOf("shift") > -1) {
+                    players[playerNumber].setShift(value);
                 }
             });
         });

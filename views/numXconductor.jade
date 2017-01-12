@@ -355,8 +355,14 @@ html
 
                     var measureNum = newval - startMeasure;
 
-                    //if we are on movement 1: trigger changes in the interfaces:
                     console.log("Current Interface: " + currentInterface);
+                    //if we are on movement 1: trigger changes in the interfaces:
+                    if (currentInterface == 1) {
+                        console.log("We are in Movement 1, Measure: " + measureNum);
+
+
+                    }
+
 
                     //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
 
