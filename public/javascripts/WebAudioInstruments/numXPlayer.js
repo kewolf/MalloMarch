@@ -1,5 +1,4 @@
 /* Player */
-
 var Player = function () {
 
     this.pitch1 = 500;
@@ -21,15 +20,94 @@ var Player = function () {
     this.panner = audioContext.createPanner();
     this.panner.connect(this.muteGain);
 
+    // // Pitch shift copied from https://github.com/urtzurd/html-audio/blob/gh-pages/static/js/pitch-shifter.js
+    this.hannWindow = function (length) {
+
+        var window = new Float32Array(length);
+        for (var i = 0; i < length; i++) {
+            window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
+        }
+        return window;
+    };
+    //
+    this.pitchShifterProcessor;
+    var validGranSizes = [256, 512, 1024, 2048, 4096, 8192],
+        grainSize = validGranSizes[1],
+        // pitchRatio = 4.0,
+        overlapRatio = 0.50,
+        spectrumFFTSize = 128,
+        spectrumSmoothing = 0.8,
+        sonogramFFTSize = 2048,
+        sonogramSmoothing = 0;
+
+    if (audioContext.createScriptProcessor) {
+        this.pitchShifterProcessor = audioContext.createScriptProcessor(grainSize, 1, 1);
+    } else if (audioContext.createJavaScriptNode) {
+        this.pitchShifterProcessor = audioContext.createJavaScriptNode(grainSize, 1, 1);
+    }
+
+    this.pitchShifterProcessor.buffer = new Float32Array(grainSize * 2);
+    this.pitchShifterProcessor.grainWindow = this.hannWindow(grainSize);
+    this.pitchShifterProcessor.pitchRatio = 4.0;
+    this.pitchShifterProcessor.onaudioprocess = function (event) {
+        var linearinterpolation = function (a, b, t) {
+            return a + (b - a) * t;
+        };
+
+        var inputData = event.inputBuffer.getChannelData(0);
+        var outputData = event.outputBuffer.getChannelData(0);
+
+        for (i = 0; i < inputData.length; i++) {
+
+            // Apply the window to the input buffer
+            inputData[i] *= this.grainWindow[i];
+
+            // Shift half of the buffer
+            this.buffer[i] = this.buffer[i + grainSize];
+
+            // Empty the buffer tail
+            this.buffer[i + grainSize] = 0.0;
+        }
+
+        // Calculate the pitch shifted grain re-sampling and looping the input
+        var grainData = new Float32Array(grainSize * 2);
+        for (var i = 0, j = 0.0;
+             i < grainSize;
+             i++, j += this.pitchRatio) {
+
+            var index = Math.floor(j) % grainSize;
+            var a = inputData[index];
+            var b = inputData[(index + 1) % grainSize];
+            grainData[i] += linearinterpolation(a, b, j % 1.0) * this.grainWindow[i];
+        }
+
+        // Copy the grain multiple times overlapping it
+        for (i = 0; i < grainSize; i += Math.round(grainSize * (1 - overlapRatio))) {
+            for (j = 0; j <= grainSize; j++) {
+                this.buffer[i + j] += grainData[j];
+            }
+        }
+
+        // Output the first half of the buffer
+        for (i = 0; i < grainSize; i++) {
+            outputData[i] = this.buffer[i];
+        }
+    };
+    //
+    this.pitchShifterProcessor.connect(this.panner);
+
+
     // NRev
     this.nReverbGain = audioContext.createGain();
-    this.nReverbGain.connect(this.panner);
+    this.nReverbGain.connect(this.pitchShifterProcessor);
+    // this.nReverbGain.connect(this.panner);
 
     this.nReverb = audioContext.createConvolver();
     this.nReverb.connect(this.nReverbGain);
 
     this.nDryGain = audioContext.createGain();
-    this.nDryGain.connect(this.panner);
+    this.nDryGain.connect(this.pitchShifterProcessor);
+    // this.nDryGain.connect(this.panner);
 
     // JCRev
     this.jcReverbGain = audioContext.createGain();
@@ -76,7 +154,6 @@ var Player = function () {
             z = 1 - Math.abs(x);
         this.panner.setPosition(x,y,z);
     };
-
 
     // methods for muting and unmuting
     this.mute = function () {
@@ -149,7 +226,7 @@ var Player = function () {
         this.nDryGain.gain.value = 1 - (this.ethereality / 100.0) * 0.25;
         this.jcReverbGain.gain.value = this.glimmer / 100.0;
         this.jcDryGain.gain.value = 1 - (this.glimmer / 100.0) * 0.25;
-        // shift
+        this.pitchShifterProcessor.pitchRatio = Math.pow(2,3*this.shift/100.0-1);
     };
 
     //setters for the individual parameters
@@ -182,6 +259,6 @@ var Player = function () {
     };
     this.setShift = function(val) {
         this.shift = val;
-
+        this.pitchShifterProcessor.pitchRatio = Math.pow(2,3*val/100.0-1);
     };
 };

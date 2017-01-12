@@ -1,0 +1,1 @@
+var PitchShift = require('soundbank-pitch-shift');
