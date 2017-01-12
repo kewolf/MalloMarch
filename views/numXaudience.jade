@@ -736,7 +736,7 @@ block content
                 $('#m' + i + '-pitch2').val(players[i].pitch2).trigger('change');
                 $('#m' + i + '-pitch3').val(players[i].pitch3).trigger('change');
                 $('#m' + i + '-echo').val(players[i].echo).trigger('change');
-                $('#m' + i + '-etheriality').val(players[i].etheriality).trigger('change');
+                $('#m' + i + '-ethereality').val(players[i].ethereality).trigger('change');
                 $('#m' + i + '-glimmer').val(players[i].glimmer).trigger('change');
                 $('#m' + i + '-shift').val(players[i].shift).trigger('change');
 
@@ -808,8 +808,8 @@ block content
                     players[playerNumber].setPitch3(value);
                 } else if (id.indexOf("echo") > -1) {
                     players[playerNumber].setEcho(value);
-                } else if (id.indexOf("etheriality") > -1) {
-                    players[playerNumber].setEtheriality(value);
+                } else if (id.indexOf("ethereality") > -1) {
+                    players[playerNumber].setEthereality(value);
                 } else if (id.indexOf("glimmer") > -1) {
                     players[playerNumber].setGlimmer(value);
                 } else if (id.indexOf("shift") > -1) {
@@ -1110,9 +1110,9 @@ block content
                         .rightItem
                             input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
-                        label.leftItem(for='m0-etheriality') Etheriality
+                        label.leftItem(for='m0-ethereality') Ethereality
                         .rightItem
-                            input#m0-etheriality(type='range', name='m0-etheriality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m0-ethereality(type='range', name='m0-ethereality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-glimmer') Glimmer
                         .rightItem
@@ -1146,9 +1146,9 @@ block content
                         .rightItem
                             input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
-                        label.leftItem(for='m1-etheriality') Etheriality
+                        label.leftItem(for='m1-ethereality') Ethereality
                         .rightItem
-                            input#m1-etheriality(type='range', name='m1-etheriality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m1-ethereality(type='range', name='m1-ethereality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-glimmer') Glimmer
                         .rightItem
@@ -1181,9 +1181,9 @@ block content
                         .rightItem
                             input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
-                        label.leftItem(for='m2-etheriality') Etheriality
+                        label.leftItem(for='m2-ethereality') Ethereality
                         .rightItem
-                            input#m2-etheriality(type='range', name='m2-etheriality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m2-ethereality(type='range', name='m2-ethereality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-glimmer') Glimmer
                         .rightItem
