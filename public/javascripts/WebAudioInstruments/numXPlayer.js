@@ -20,16 +20,14 @@ var Player = function () {
     this.panner = audioContext.createPanner();
     this.panner.connect(this.muteGain);
 
-    // // Pitch shift copied from https://github.com/urtzurd/html-audio/blob/gh-pages/static/js/pitch-shifter.js
+    // Pitch shift copied from https://github.com/urtzurd/html-audio/blob/gh-pages/static/js/pitch-shifter.js
     this.hannWindow = function (length) {
-
         var window = new Float32Array(length);
         for (var i = 0; i < length; i++) {
             window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (length - 1)));
         }
         return window;
     };
-    //
     this.pitchShifterProcessor;
     var validGranSizes = [256, 512, 1024, 2048, 4096, 8192],
         grainSize = validGranSizes[1],
@@ -95,7 +93,6 @@ var Player = function () {
     };
     //
     this.pitchShifterProcessor.connect(this.panner);
-
 
     // NRev
     this.nReverbGain = audioContext.createGain();
