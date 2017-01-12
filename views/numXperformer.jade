@@ -44,7 +44,7 @@ html
     body(class="ui-mobile-viewport")
         script.
 
-            var customIPflag = 0;
+            var customIPflag = 1;
             var serverURL = 'http://localhost:3000';
             var customServerURL = '192.168.1.9:3000';
 
@@ -167,6 +167,7 @@ html
                         var span = document.getElementById("countdown");
                         span.innerHTML = beatsUntilStart.toString();
                         console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
+                        //TODO: LOG PIECE START!
                     } else {
                         resetPiece();
                     }
@@ -194,7 +195,7 @@ html
             //receive message from conductor when to update the metronome
             socket.on('updateMetro', function (data) {
                 console.log("Update Tempo: " + data.newTempo);
-                updateMetro(data.newTempo)
+                updateMetro(data.newTempo);
             });
 
             socket.on('time_res', function (data) {
@@ -266,9 +267,6 @@ html
                 $('#m2-el-size-r').hide();
 
             });
-
-
-
 
             function choosePlayer(number) {
                 thisPerformerNum = number;
@@ -451,7 +449,7 @@ html
 
                     var measureNum = newval - startMeasure;
 
-                    console.log("NewVal - StartMeasure: " + measureNum);
+                    console.log("NewVal - StartMeasure: " + measureNum + "new measure: " + newval + " start: " + startMeasure);
                     if ((hasPieceStarted == true) && (measureNum > 0)) {
                         $('#numbers').sly('activate', measureNum);
                         var span_measure = document.getElementById("countdown");
@@ -740,9 +738,6 @@ html
 
                 });
             });
-
-
-
 
             $(function () {
                 $('#saveButton').click(function () {

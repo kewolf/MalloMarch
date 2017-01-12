@@ -1,0 +1,33 @@
+{
+  "0": {
+    "pitch1": "830",
+    "pitch2": "269",
+    "pitch3": "524",
+    "volume": "1",
+    "echo": "9",
+    "ethereality": "30",
+    "glimmer": "64",
+    "shift": "28"
+  },
+  "1": {
+    "pitch1": "728",
+    "pitch2": "397",
+    "pitch3": "720",
+    "volume": "0.79",
+    "echo": "0",
+    "ethereality": "0",
+    "glimmer": "96",
+    "shift": "4"
+  },
+  "2": {
+    "pitch1": "473",
+    "pitch2": "159",
+    "pitch3": "711",
+    "volume": "0.94",
+    "echo": "7",
+    "ethereality": "0",
+    "glimmer": "0",
+    "shift": "19"
+  },
+  "ip": "::ffff:192.168.1.8"
+}

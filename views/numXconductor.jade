@@ -83,7 +83,8 @@ html
                 $('#flipMallo').val(isMalloOn).flipswitch('refresh'); // Mallos on/off for audience
                 $('input[id="radio-choice-' + currentInterface + '"]').prop("checked", true).checkboxradio("refresh");
 
-                setAndSendStartMeasure(startMeasure);
+
+                sendStartMeasure(startMeasure);
 
             });
 
@@ -124,7 +125,7 @@ html
                             alert('You need webaudio support - try another browser or device');
                         }
 
-                        setupMetronome(currentBPM, null);
+                        setupMetronome(currentBPM);
 
 
                         loadAudioFiles(true); //true since we need metronome
@@ -316,8 +317,7 @@ html
                 });
             }
 
-            function setAndSendStartMeasure(measure) {
-                startMeasure = measure;
+            function sendStartMeasure(measure) {
                 console.log("Send starting measure: " + measure);
                 socket.emit('sendStartMeasure', {
                     startMeasure: measure
@@ -351,6 +351,8 @@ html
                     return newvalue;
 
                 });
+
+
                 metronome.watch('curMeasureNum', function (id, oldval, newval) {
                     //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
                     //$('#numbers').sly('activate', newvalue-1);
@@ -359,9 +361,10 @@ html
 
                     console.log("Current Interface: " + currentInterface);
                     //if we are on movement 1: trigger changes in the interfaces:
+
                     if ((currentInterface == 1) && (startMeasure != -1)) {
                         console.log("We are in Movement 1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
-
+                        /*
                         switch (measureNum) {
                             case -1:
                                 //update params for the start of our piece:
@@ -423,6 +426,7 @@ html
                             default:
                                 console.log("Nothing happening");
                         }
+                         */
 
                     }
 
@@ -462,8 +466,9 @@ html
 
             function beginPiece() {
                 console.log("Begin!");
-
-                setAndSendStartMeasure(metronome.curMeasureNum + 3);
+                var thisMeasure = metronome.curMeasureNum + 3;
+                startMeasure = thisMeasure;
+                sendStartMeasure(thisMeasure);
 
                 $('#begin').button('disable');
                 $('#pause').button('enable');
@@ -489,7 +494,7 @@ html
              */
             function stopPiece() {
                 console.log("Stop!");
-                setAndSendStartMeasure(-1);
+                sendStartMeasure(-1);
 
                 $('#begin').button('enable');
                 $('#pause').button('disable');

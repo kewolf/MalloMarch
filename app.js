@@ -22,8 +22,8 @@ var clientLogger = new winston.Logger({
         new (winston.transports.File)({
             name: 'somefile.log',
             filename: logFileName,
-            maxFiles: 100,
-            maxsize: 1000000,
+            maxFiles: 1000000,
+            maxsize: 10000000,
             colorize: true
         })]
 });
