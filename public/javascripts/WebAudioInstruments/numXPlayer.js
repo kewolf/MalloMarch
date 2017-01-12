@@ -114,7 +114,7 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
-        console.log(params)
+        console.log(params);
         this.pitch1 = params['pitch1'];
         this.pitch2 = params['pitch2'];
         this.pitch3 = params['pitch3'];
