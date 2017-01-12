@@ -76,7 +76,6 @@ html
 
                 console.log("Welcome Mode: " + currentInterface + " logger " + isLoggerOn + " consentForm: " + isConsentFormOn + " seq: " + isSeqOn + " Mallo " + isMalloOn);
 
-
                 $('#flipConsent').val(isConsentFormOn).flipswitch('refresh');  // consent form for audience
                 $('#flipLogger').val(isLoggerOn).flipswitch('refresh');  // logger for audience
                 $('#flipMetro').val(isMetroOn).flipswitch('refresh');  // metronome for performers
@@ -84,11 +83,7 @@ html
                 $('#flipMallo').val(isMalloOn).flipswitch('refresh'); // Mallos on/off for audience
                 $('input[id="radio-choice-' + currentInterface + '"]').prop("checked", true).checkboxradio("refresh");
 
-
-                socket.emit('sendStartMeasure', {
-                    startMeasure: startMeasure
-                });
-
+                setAndSendStartMeasure(startMeasure);
 
             });
 
@@ -321,6 +316,13 @@ html
                 });
             }
 
+            function setAndSendStartMeasure(measure) {
+                startMeasure = measure;
+                console.log("Send starting measure: " + measure);
+                socket.emit('sendStartMeasure', {
+                    startMeasure: measure
+                });
+            }
 
 
             /*
@@ -357,32 +359,89 @@ html
 
                     console.log("Current Interface: " + currentInterface);
                     //if we are on movement 1: trigger changes in the interfaces:
-                    if (currentInterface == 1) {
-                        console.log("We are in Movement 1, Measure: " + measureNum);
+                    if ((currentInterface == 1) && (startMeasure != -1)) {
+                        console.log("We are in Movement 1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
 
+                        switch (measureNum) {
+                            case -1:
+                                //update params for the start of our piece:
+                                updateParameter(0, 'pitch1', 200);
+                                updateParameter(1, 'pitch1', 200);
+                                updateParameter(2, 'pitch1', 200);
+                                break;
+
+                            case 0:
+                                console.log("BEGINNING PIECE!");
+                                break;
+
+                            case 19:
+                                console.log("MEASURE 19");
+                                // P1 increase echo by .25
+                                // P2 increase glimmer by .25
+                                // P3 increase etheriality by .25
+                                break;
+
+                            case 24:
+                                console.log("MEASURE 24");
+                                // P1 increase echo by .25
+                                // P2 increase glimmer by .25
+                                // P3 increase etheriality by .25
+                                break;
+
+                            case 29:
+                                console.log("MEASURE 29");
+                                // P1 increase echo by .25
+                                // P2 increase glimmer by .25
+                                // P3 increase etheriality by .25
+                                break;
+
+                            case 34:
+                                console.log("MEASURE 34");
+                                // P1 increase echo by .25
+                                // P2 increase glimmer by .25
+                                // P3 increase etheriality by .25
+                                break;
+
+                            case 38:
+                                console.log("MEASURE 38");
+                                // P1 max etheriality
+                                // P2 max etheriality
+                                // P3 max etheriality
+                                break;
+
+                            case 59:
+                                console.log("MEASURE 59");
+                                // Slow Metronome
+                                updateBPM(60);
+                                break;
+
+                            case 75:
+                                console.log("DONE!");
+                                stopPiece();
+                                break;
+
+                            default:
+                                console.log("Nothing happening");
+                        }
 
                     }
-
-
-                    //$('[id="radio-choice-' + currentInterface + ']').setAttribute("checked", "checked");
-
-                    //SCORE FOR PIECE:
-                    //switch()
-
 
                     return newval;
                 });
 
             }
 
-
-
             /*
              Sends an update message for a sound parameter to the server to pass on to all clients
-             Performer is an int (0-2), param is the parameter string, value is the new parameter value
+             Performer is an int (0-2), param is the parameter string (lowercase), value is the new parameter value
              */
             function updateParameter(performer, param, value) {
-
+                console.log("Update Player " + performer + " Parameter: " + param + " value: " + value);
+                socket.emit('updateParameter', {
+                    performerNum: performer,
+                    parameter: param,
+                    value: value
+                });
             }
 
 
@@ -403,12 +462,8 @@ html
 
             function beginPiece() {
                 console.log("Begin!");
-                startMeasure = metronome.curMeasureNum + 3;
-                console.log("Send starting measure: " + startMeasure);
 
-                socket.emit('sendStartMeasure', {
-                    startMeasure: startMeasure
-                });
+                setAndSendStartMeasure(metronome.curMeasureNum + 3);
 
                 $('#begin').button('disable');
                 $('#pause').button('enable');
@@ -434,10 +489,7 @@ html
              */
             function stopPiece() {
                 console.log("Stop!");
-
-                socket.emit('sendStartMeasure', {
-                    startMeasure: -1
-                });
+                setAndSendStartMeasure(-1);
 
                 $('#begin').button('enable');
                 $('#pause').button('disable');

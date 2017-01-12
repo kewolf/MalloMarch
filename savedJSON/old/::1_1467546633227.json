@@ -1,0 +1,30 @@
+{
+  "0": {
+    "activeInstrument": 1,
+    "size": "96",
+    "decay": "34",
+    "level": "",
+    "range": "1",
+    "vibrato": "5",
+    "trippiness": "2"
+  },
+  "1": {
+    "activeInstrument": 1,
+    "size": "49",
+    "decay": "69",
+    "level": "",
+    "range": "2",
+    "vibrato": "66",
+    "trippiness": "72"
+  },
+  "2": {
+    "activeInstrument": 1,
+    "size": "50",
+    "decay": "80",
+    "level": "",
+    "range": "1",
+    "vibrato": "0",
+    "trippiness": "0"
+  },
+  "ip": "::1"
+}

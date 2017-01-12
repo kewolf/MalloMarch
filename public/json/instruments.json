@@ -3,20 +3,20 @@
     "pitch1": "500",
     "pitch2": "510",
     "pitch3": "490",
-    "echo": "0.5",
-    "etherialtly": "0.5",
-    "glimmer": "0.5",
-    "shift": "0.5",
+    "echo": "50",
+    "etherialtly": "50",
+    "glimmer": "50",
+    "shift": "50",
     "volume": "0.5"
   },
   "i1": {
     "pitch1": "600",
     "pitch2": "700",
     "pitch3": "800",
-    "echo": "0.75",
-    "etherialtly": "0.75",
-    "glimmer": "0.75",
-    "shift": "0.75",
+    "echo": "75",
+    "etherialtly": "75",
+    "glimmer": "75",
+    "shift": "75",
     "volume": "0.75"
   }
 }

@@ -224,6 +224,11 @@ io.on('connection', function (socket) {
         changeChannel(newSocket.newChannel);
     });
 
+    socket.on('updateParameter', function (newSocket) {
+        console.log("Update Player " + newSocket.performerNum + " Parameter: " + newSocket.parameter + " Value: " + newSocket.value);
+        updateParameter(newSocket.performerNum, newSocket.parameter, newSocket.value);
+    });
+
     socket.on('saveEmails', function (newSocket) {
         //console.log("Server Saved Emails!");
         saveEmails();
@@ -295,7 +300,15 @@ function flipMallo(isOn) {
 function changeChannel(newChannel) {
     io.emit('changeChannel', {
         newChannel: newChannel
-    })
+    });
+}
+
+function updateParameter(performerNum, param, value) {
+    io.emit('updateParameter', {
+        performerNum: performerNum,
+        parameter: param,
+        value: value
+    });
 }
 
 

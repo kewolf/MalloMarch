@@ -119,8 +119,7 @@ html
                     hasPieceStarted = true;
                     var span1 = document.getElementById("countdownLabel");
                     span1.innerHTML = "Measure Number:";
-
-                    $('#coundownDiv').show();
+                    $('#countdownDiv').show();
                 }
 
                 console.log("IPS: " + data.performerIPs);
@@ -164,7 +163,7 @@ html
                     startMeasure = data.startMeasure;
                     //Trigger the piece countdown
                     if (startMeasure != -1) {
-                        $('#coundownDiv').show();
+                        $('#countdownDiv').show();
                         var measureUntilStart = startMeasure - metronome.curMeasureNum - 1;
                         beatsUntilStart = (nBeats - metronome.curBeatNum) + (measureUntilStart * nBeats);
                         console.log("Countdown: " + beatsUntilStart);
@@ -172,12 +171,7 @@ html
                         span.innerHTML = beatsUntilStart.toString();
                         console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
                     } else {
-                        $('#coundownDiv').hide();
-                        console.log("Start Measure Reset");
-                        hasPieceStarted = false;
-                        var span1 = document.getElementById("countdownLabel");
-                        span1.innerHTML = "Countdown Until Piece Starts:";
-                        $('#numbers').sly('activate', 0);
+                        resetPiece();
                     }
                 }
 
@@ -268,7 +262,7 @@ html
                 $('#p2head').hide();
                 $('#p3head').hide();
 
-                $('#coundownDiv').hide();
+                $('#countdownDiv').hide();
 
                 $('#m0-el-size-l').hide();
                 $('#m0-el-size-r').hide();
@@ -330,6 +324,15 @@ html
                     console.log("Update Metro");
                     metronome.setTempo(currentBPM);
                 }
+            }
+
+            function resetPiece() {
+                $('#countdownDiv').hide();
+                console.log("Reset Piece");
+                hasPieceStarted = false;
+                var span1 = document.getElementById("countdownLabel");
+                span1.innerHTML = "Countdown Until Piece Starts:";
+                $('#numbers').sly('activate', 0);
             }
 
 
@@ -425,6 +428,7 @@ html
 
 
             }
+
             // Setup our metronome and determine if the piece has started
             function setupMetronome(tempo) {
                 metronome = new Metronome(audioContext, logger);
@@ -461,6 +465,9 @@ html
                         logger.info("{ \"MEASR\" : " + newval + ", \"piece_measure_num\" : " + measureNum + ", \"global_time\" : " + syncClient.getTime() + "}");
                     }
 
+                    // if this is our starting measure - update the interface to show measures and set the
+                    //    hasPieceStarted flag to true
+
                     if (measureNum == 0) {
 
                         var span2 = document.getElementById("countdown");
@@ -470,6 +477,12 @@ html
                         span1.innerHTML = "Measure Number:";
 
                         hasPieceStarted = true;
+                    }
+
+                    // if we reach the end of the piece, reset our hasPieceStarted flag, starting measure
+                    //    and the interface
+                    if (measureNum > nNumbers) {
+                        resetPiece();
                     }
 
                     return newval;
@@ -853,7 +866,7 @@ html
             .ui-body.ui-body-a.ui-corner-all
                 .ui-block-a(style='width:10%')
                 .ui-block-b(style='width:80%')
-                    #coundownDiv.ui-field-contain
+                    #countdownDiv.ui-field-contain
                         p#countdownLabel Countdown Until Piece Starts:
                         p#countdown 0
                 .ui-block-c(style='width:10%')

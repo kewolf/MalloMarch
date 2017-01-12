@@ -1,0 +1,30 @@
+{
+  "0": {
+    "activeInstrument": 0,
+    "size": "24",
+    "decay": "2",
+    "level": "0.13",
+    "nDrummers": "2",
+    "drumPitch": "27",
+    "dynamics": "4"
+  },
+  "1": {
+    "activeInstrument": 1,
+    "size": "96",
+    "decay": "45",
+    "level": "0.5",
+    "range": "3",
+    "vibrato": "41",
+    "trippiness": "69"
+  },
+  "2": {
+    "activeInstrument": 1,
+    "size": "17",
+    "decay": "98",
+    "level": "0.26",
+    "range": "2",
+    "vibrato": "57",
+    "trippiness": "43"
+  },
+  "ip": "::1"
+}

@@ -158,6 +158,15 @@ block content
             $('#channels').sly('activate', data.newChannel);
         });
 
+        socket.on('updateParameter', function (data) {
+            //console.log("Update Player " + data.performerNum + " Parameter: " + data.parameter + " Value: " + data.value);
+            var playerNum = data.performerNum;
+            var param = data.parameter;
+            var value = data.value;
+
+            $('#m' + playerNum + '-' + param).val(value).trigger('change');
+        });
+
 
         //receive messages from the server as a response to our time requests - for synchronization
         socket.on('time_res', function (data) {
@@ -292,7 +301,7 @@ block content
         function initLogger() {
             var appender = JL.createAjaxAppender("Appender");
             appender.setOptions({
-                "batchSize": 10 //the number of logs that are acquired before they get sent
+                "batchSize": 5 //the number of logs that are acquired before they get sent
             });
             logger.setOptions({
                 "appenders": [appender]
@@ -406,7 +415,7 @@ block content
             $('#survey').hide();
             $('#credits').hide();
             $('#footer').hide();
-            $('#saveFooter').hide();
+            //$('#saveFooter').hide();
             $('#sequencerOn').hide();
             $('#notSupported').hide();
 
@@ -722,14 +731,14 @@ block content
                 console.log("REFRESH: " + i + " " + params);
                 //set active Instrument;
 
-                $('#' + i + '-volume').val(players[i].volume).trigger('change');
-                $('#' + i + '-pitch1').val(players[i].pitch1).trigger('change');
-                $('#' + i + '-pitch2').val(players[i].pitch2).trigger('change');
-                $('#' + i + '-pitch3').val(players[i].pitch3).trigger('change');
-                $('#' + i + '-echo').val(players[i].echo).trigger('change');
-                $('#' + i + '-etherialtly').val(players[i].etherialtly).trigger('change');
-                $('#' + i + '-glimmer').val(players[i].glimmer).trigger('change');
-                $('#' + i + '-shift').val(players[i].shift).trigger('change');
+                $('#m' + i + '-volume').val(players[i].volume).trigger('change');
+                $('#m' + i + '-pitch1').val(players[i].pitch1).trigger('change');
+                $('#m' + i + '-pitch2').val(players[i].pitch2).trigger('change');
+                $('#m' + i + '-pitch3').val(players[i].pitch3).trigger('change');
+                $('#m' + i + '-echo').val(players[i].echo).trigger('change');
+                $('#m' + i + '-etheriality').val(players[i].etheriality).trigger('change');
+                $('#m' + i + '-glimmer').val(players[i].glimmer).trigger('change');
+                $('#m' + i + '-shift').val(players[i].shift).trigger('change');
 
             }
         }
@@ -752,8 +761,8 @@ block content
 
         $(function () {
             $('#saveButton').click(function () {
-                //var str = JSON.stringify($('#m-form').serializeObject());
-                //console.log("Save");
+                var str = JSON.stringify($('#m-form').serializeObject());
+                console.log("Save");
                 var dateTime = Date.now();
                 var params = {};
                 for (var i = 0; i < nPlayers; i++) {
@@ -761,10 +770,10 @@ block content
                 }
 
                 var str = JSON.stringify(params);
-                //console.log(str);
+                console.log(str);
 
                 // Add string to the result element
-                // $('#result').text(str);
+                $('#result').text(str);
 
                 socket.emit('saveJSON', {
                     type: "params",
@@ -795,11 +804,11 @@ block content
                     players[playerNumber].setPitch1(value);
                 } else if (id.indexOf("pitch2") > -1) {
                     players[playerNumber].setPitch2(value);
-                } else if (id.indexOf("ptich3") > -1) {
+                } else if (id.indexOf("pitch3") > -1) {
                     players[playerNumber].setPitch3(value);
                 } else if (id.indexOf("echo") > -1) {
                     players[playerNumber].setEcho(value);
-                } else if (id.indexOf("etherialtly") > -1) {
+                } else if (id.indexOf("etheriality") > -1) {
                     players[playerNumber].setEtheriality(value);
                 } else if (id.indexOf("glimmer") > -1) {
                     players[playerNumber].setGlimmer(value);
@@ -841,8 +850,10 @@ block content
             $(".ui-slider").on('slidestop', function (event) {
                 if (loggerOn) {
                     var id = event.target.id;
+                    var idStr = id.substring(3);
+                    console.log("UPDATE PARAM: " + idStr);
                     var playerNumber = parseInt(id.slice(1));
-                    logger.info("{ \"PARAM\" : " + playerNumber + ", \"" + event.target.id + "\" : " + event.target.value + ", \"global_time\" : " + syncClient.getTime() + "}");
+                    logger.info("{ \"PARAM\" : " + playerNumber + ", \"" + idStr + "\" : " + event.target.value + ", \"global_time\" : " + syncClient.getTime() + "}");
                 }
             });
         });
@@ -1097,19 +1108,19 @@ block content
 
                         label.leftItem(for='m0-echo') Echo
                         .rightItem
-                            input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
-                        label.leftItem(for='m0-etherialtly') Etherialtly
+                        label.leftItem(for='m0-etheriality') Etheriality
                         .rightItem
-                            input#m0-etherialtly(type='range', name='m0-etherialtly', data-track-theme='b', data-theme='b', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-etheriality(type='range', name='m0-etheriality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-glimmer') Glimmer
                         .rightItem
-                            input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-shift') Shift
                         .rightItem
-                            input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-volume') Volume
                         .rightItem
@@ -1133,19 +1144,19 @@ block content
 
                         label.leftItem(for='m1-echo') Echo
                         .rightItem
-                            input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
-                        label.leftItem(for='m1-etherialtly') Etherialtly
+                        label.leftItem(for='m1-etheriality') Etheriality
                         .rightItem
-                            input#m1-etherialtly(type='range', name='m1-etherialtly', data-track-theme='c', data-theme='c', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-etheriality(type='range', name='m1-etheriality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-glimmer') Glimmer
                         .rightItem
-                            input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-shift') Shift
                         .rightItem
-                            input#m1-shift(type='range', name='m1-shift', data-track-theme='c', data-theme='c', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-shift(type='range', name='m1-shift', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-volume') Volume
                         .rightItem
@@ -1168,19 +1179,19 @@ block content
 
                         label.leftItem(for='m2-echo') Echo
                         .rightItem
-                            input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='99', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
-                        label.leftItem(for='m2-etherialtly') Etherialtly
+                        label.leftItem(for='m2-etheriality') Etheriality
                         .rightItem
-                            input#m2-etherialtly(type='range', name='m2-etherialtly', data-track-theme='d', data-theme='d', min='1', max='10', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-etheriality(type='range', name='m2-etheriality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-glimmer') Glimmer
                         .rightItem
-                            input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-shift') Shift
                         .rightItem
-                            input#m2-shift(type='range', name='m2-shift', data-track-theme='d', data-theme='d', min='0', max='9', value='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-shift(type='range', name='m2-shift', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-volume') Volume
                         .rightItem

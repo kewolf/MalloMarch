@@ -1,0 +1,27 @@
+{
+  "0": {
+    "activeInstrument": 2,
+    "size": "50",
+    "decay": "0",
+    "grunge": 0,
+    "electronicPitch": 0,
+    "fatness": 0
+  },
+  "1": {
+    "activeInstrument": 1,
+    "size": "50",
+    "decay": "0",
+    "range": 0,
+    "vibrato": 0,
+    "trippiness": 0
+  },
+  "2": {
+    "activeInstrument": 1,
+    "size": "50",
+    "decay": "0",
+    "range": 0,
+    "vibrato": 0,
+    "trippiness": 0
+  },
+  "ip": "::1"
+}

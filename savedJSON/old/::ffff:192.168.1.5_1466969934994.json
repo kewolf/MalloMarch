@@ -1,0 +1,27 @@
+{
+  "0": {
+    "activeInstrument": 1,
+    "size": "68",
+    "decay": "0",
+    "range": 0,
+    "vibrato": 0,
+    "trippiness": 0
+  },
+  "1": {
+    "activeInstrument": 2,
+    "size": "70",
+    "decay": "10",
+    "grunge": "39",
+    "electronicPitch": "9",
+    "fatness": "78"
+  },
+  "2": {
+    "activeInstrument": 0,
+    "size": "50",
+    "decay": "0",
+    "nDrummers": "2",
+    "drumPitch": "50",
+    "dynamics": "0"
+  },
+  "ip": "::ffff:192.168.1.5"
+}

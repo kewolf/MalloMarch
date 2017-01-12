@@ -1,0 +1,30 @@
+{
+  "0": {
+    "pitch1": "500",
+    "pitch2": "510",
+    "pitch3": "490",
+    "volume": "0.5",
+    "echo": "50",
+    "glimmer": "50",
+    "shift": "50"
+  },
+  "1": {
+    "pitch1": "500",
+    "pitch2": "510",
+    "pitch3": "490",
+    "volume": "0.5",
+    "echo": "50",
+    "glimmer": "50",
+    "shift": "50"
+  },
+  "2": {
+    "pitch1": "500",
+    "pitch2": "510",
+    "pitch3": "490",
+    "volume": "0.5",
+    "echo": "50",
+    "glimmer": "50",
+    "shift": "50"
+  },
+  "ip": "::1"
+}
