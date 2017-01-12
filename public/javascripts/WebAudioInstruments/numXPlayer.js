@@ -176,7 +176,7 @@ var Player = function () {
         this.voice2.play(time, this);
         this.voice3.play(time, this);
         // this.env.on();
-        console.log("scheduled audio for time: " + time);
+        //console.log("scheduled audio for time: " + time);
     };
 
 // todo: needed for backward compatibility (for now)
@@ -204,7 +204,7 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
-        console.log(params);
+        //console.log(params);
         this.pitch1 = params['pitch1'];
         this.pitch2 = params['pitch2'];
         this.pitch3 = params['pitch3'];

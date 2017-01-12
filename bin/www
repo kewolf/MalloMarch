@@ -81,7 +81,7 @@ udpPort.open();
 
 // Setup the mode for our interface
 // Initial Values
-var interfaceMode = interfaceConstants.InterfaceEnum.M2;
+var interfaceMode = interfaceConstants.InterfaceEnum.M1;
 var isLoggerOn = 1;
 var isConsentFormOn = 1;
 var isSeqOn = 0;
@@ -224,10 +224,18 @@ io.on('connection', function (socket) {
         changeChannel(newSocket.newChannel);
     });
 
-    socket.on('updateParameter', function (newSocket) {
-        console.log("Update Player " + newSocket.performerNum + " Parameter: " + newSocket.parameter + " Value: " + newSocket.value);
-        updateParameter(newSocket.performerNum, newSocket.parameter, newSocket.value);
+    socket.on('updateAudienceParameter', function (newSocket) {
+        console.log("Update Audience Param: Player " + newSocket.performerNum + " Parameter: " + newSocket.parameter + " Value: " + newSocket.value);
+        updateAudienceParameter(newSocket.performerNum, newSocket.parameter, newSocket.value);
     });
+
+    socket.on('updatePlayerParameter', function (newSocket) {
+        console.log("Update Performer  " + newSocket.performerInterface + " Param: Player " + newSocket.performerNum + " Parameter: " + newSocket.parameter + " Value: " + newSocket.value);
+        updatePlayerParameter(newSocket.performerInterface, newSocket.performerNum, newSocket.parameter, newSocket.value);
+
+    });
+
+
 
     socket.on('saveEmails', function (newSocket) {
         //console.log("Server Saved Emails!");
@@ -241,12 +249,18 @@ io.on('connection', function (socket) {
         var ip = socket.request.connection.remoteAddress;
         performerIPs[newSocket.performerNumber - 1] = ip;
         io.emit('performerSelected', {performerNumber: newSocket.performerNumber});
+
     });
 
     socket.on('performerTeardown', function (newSocket) {
         console.log("Performer Teardown!");
         performerIPs[newSocket.performerNumber - 1] = "";
         io.emit('performerUnselected', {performerNumber: newSocket.performerNumber});
+    });
+
+    socket.on('getPresetParameters', function (newSocket) {
+        console.log("Get Presets for Performer: " + newSocket.performerNumber);
+        io.emit('get_player_params', {playerNum: newSocket.performerNumber});
     });
 
     socket.on('updateTempo', function (newSocket) {
@@ -303,8 +317,17 @@ function changeChannel(newChannel) {
     });
 }
 
-function updateParameter(performerNum, param, value) {
-    io.emit('updateParameter', {
+function updateAudienceParameter(performerNum, param, value) {
+    io.emit('updateAudienceParameter', {
+        performerNum: performerNum,
+        parameter: param,
+        value: value
+    });
+}
+
+function updatePlayerParameter(performerInterface, performerNum, param, value) {
+    io.emit('updatePlayerParameter', {
+        performerInterface: performerInterface,
         performerNum: performerNum,
         parameter: param,
         value: value

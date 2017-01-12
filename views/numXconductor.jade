@@ -95,6 +95,16 @@ html
                 // console.log("instant_offset: " + instant_offset + ", syncClient.getOffset(): " + syncClient.getOffset());
             });
 
+            socket.on('get_player_params', function (data) {
+                if (data.playerNum == 1) {
+                    sendPlayer1Params();
+                } else if (data.playerNum == 2) {
+                    sendPlayer2Params();
+                } else if (data.playerNum == 3) {
+                    sendPLayer3Params();
+                }
+            });
+
 
             function init() {
 
@@ -219,8 +229,8 @@ html
                     metronome.start();
                 } else {
                     console.log("Metro stop makein sound");
-                    metronome.unwatch('curBeatNum');
-                    metronome.unwatch('curMeasureNum');
+                    //metronome.unwatch('curBeatNum');
+                    //metronome.unwatch('curMeasureNum');
                     metronome.stop();
                 }
             }
@@ -364,13 +374,22 @@ html
 
                     if ((currentInterface == 1) && (startMeasure != -1)) {
                         console.log("We are in Movement 1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
-                        /*
+
+                        sendPlayer1Params();
+
                         switch (measureNum) {
                             case -1:
                                 //update params for the start of our piece:
-                                updateParameter(0, 'pitch1', 200);
-                                updateParameter(1, 'pitch1', 200);
-                                updateParameter(2, 'pitch1', 200);
+                                updateAudienceParameter(0, 'pitch1', 150);
+                                updateAudienceParameter(0, 'pitch2', 150);
+                                updateAudienceParameter(0, 'pitch3', 150);
+                                updateAudienceParameter(0, 'volume', 1.0);
+                                updateAudienceParameter(0, 'echo', 0);
+                                updateAudienceParameter(0, 'ethereality', 74);
+                                updateAudienceParameter(0, 'glimmer', 9);
+                                updateAudienceParameter(0, 'shift', 32);
+
+
                                 break;
 
                             case 0:
@@ -380,6 +399,7 @@ html
                             case 19:
                                 console.log("MEASURE 19");
                                 // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 200);
                                 // P2 increase glimmer by .25
                                 // P3 increase ethereality by .25
                                 break;
@@ -426,7 +446,6 @@ html
                             default:
                                 console.log("Nothing happening");
                         }
-                         */
 
                     }
 
@@ -439,15 +458,24 @@ html
              Sends an update message for a sound parameter to the server to pass on to all clients
              Performer is an int (0-2), param is the parameter string (lowercase), value is the new parameter value
              */
-            function updateParameter(performer, param, value) {
-                console.log("Update Player " + performer + " Parameter: " + param + " value: " + value);
-                socket.emit('updateParameter', {
+            function updateAudienceParameter(performer, param, value) {
+                console.log("Update Audience Parameter Player " + performer + " Parameter: " + param + " value: " + value);
+                socket.emit('updateAudienceParameter', {
                     performerNum: performer,
                     parameter: param,
                     value: value
                 });
             }
 
+            function updatePlayerParameter(playerInterface, performer, param, value) {
+                console.log("Update Performer " + playerInterface + " Parameter Player " + performer + " Parameter: " + param + " value: " + value);
+                socket.emit('updatePlayerParameter', {
+                    performerInterface: playerInterface,
+                    performerNum: performer,
+                    parameter: param,
+                    value: value
+                });
+            }
 
             /*
              Sets the tempo for the performer metronomes using a newBPM value
@@ -461,9 +489,7 @@ html
             /*
              Triggered when the "Begin Piece" button is clicked.
              Sends starting message to all performers
-
              */
-
             function beginPiece() {
                 console.log("Begin!");
                 var thisMeasure = metronome.curMeasureNum + 3;
@@ -473,18 +499,6 @@ html
                 $('#begin').button('disable');
                 $('#pause').button('enable');
                 $('#stop').button('enable');
-            }
-
-            /*
-             Used to pause the piece - i.e. keep track of what measure we are on
-             TODO: send out a pause message to all performers?
-             */
-            function pausePiece() {
-
-                console.log("Pause!");
-                $('#begin').button('enable');
-
-
             }
 
 
@@ -499,6 +513,44 @@ html
                 $('#begin').button('enable');
                 $('#pause').button('disable');
                 $('#stop').button('disable');
+            }
+
+            function sendPlayer1Params() {
+                //updatePlayerParameter(playerInterface, performer, param, value)
+                console.log("Send Player 1 Parameters!");
+                updatePlayerParameter(1, 0, 'pitch1', 864);
+                updatePlayerParameter(1, 0, 'pitch2', 584);
+                updatePlayerParameter(1, 0, 'pitch3', 303);
+                updatePlayerParameter(1, 0, 'volume', 1.0);
+                updatePlayerParameter(1, 0, 'echo', 6);
+                updatePlayerParameter(1, 0, 'ethereality', 74);
+                updatePlayerParameter(1, 0, 'glimmer', 9);
+                updatePlayerParameter(1, 0, 'shift', 32);
+
+                updatePlayerParameter(1, 1, 'pitch1', 533);
+                updatePlayerParameter(1, 1, 'pitch2', 439);
+                updatePlayerParameter(1, 1, 'pitch3', 227);
+                updatePlayerParameter(1, 1, 'volume', 0.33);
+                updatePlayerParameter(1, 1, 'echo', 1);
+                updatePlayerParameter(1, 1, 'ethereality', 1);
+                updatePlayerParameter(1, 1, 'glimmer', 4);
+                updatePlayerParameter(1, 1, 'shift', 2);
+
+                updatePlayerParameter(1, 2, 'pitch1', 329);
+                updatePlayerParameter(1, 2, 'pitch2', 269);
+                updatePlayerParameter(1, 2, 'pitch3', 227);
+                updatePlayerParameter(1, 2, 'volume', 0.33);
+                updatePlayerParameter(1, 2, 'echo', 1);
+                updatePlayerParameter(1, 2, 'ethereality', 13);
+                updatePlayerParameter(1, 2, 'glimmer', 13);
+                updatePlayerParameter(1, 2, 'shift', 8);
+
+            }
+            function sendPlayer2Params() {
+
+            }
+            function sendPlayer3Params() {
+
             }
 
 
@@ -567,7 +619,6 @@ html
                             isMetroOn = 1;
                         }
                         switchMetronomeOn(isMetroOn, currentBPM);
-
                     }
                 });
             });

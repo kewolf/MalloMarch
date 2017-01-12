@@ -57,7 +57,7 @@ html
             var socket = io(serverURL);
 
             var amIperformer = 1;
-            var isSeqOn = 0;
+            var isSeqOn;
 
             var nPlayers = 3;
             var players = [];
@@ -65,7 +65,7 @@ html
             var isMetroOn;
             var isMalloOn;
 
-            var thisPerformerNum = -1;
+            var thisPerformerNum = -1; // once the player selects their number this will be 1, 2, or 3
             var isAudioSetup = false;
             var isSchedulerSetup = false;
 
@@ -108,8 +108,12 @@ html
                 isMalloOn = data.isMalloOn;
                 console.log("Is MalLo on? " + data.isMalloOn);
 
+                isSeqOn = data.isSequencerOn;
+                console.log("Is MalLo on? " + data.isSequencerOn);
+
                 startMeasure = data.startMeasure;
                 console.log("Starting Measure: " + data.startMeasure);
+
 
                 // IF the starting measure is set, then set the flag, and update the label
                 if (startMeasure >= 0) {
@@ -134,14 +138,11 @@ html
 
             socket.on('performerSelected', function (data) {
                 var performerNum = data.performerNumber;
-                //if (performerNum != thisPerformerNum) {
                 console.log("Performer " + performerNum + " Chosen");
                 $('#p' + performerNum + 'ButtonDiv').hide();
                 if (thisPerformerNum == -1) {
                     window.location.reload();
                 }
-
-                //}
             });
 
 
@@ -196,6 +197,17 @@ html
             socket.on('updateMetro', function (data) {
                 console.log("Update Tempo: " + data.newTempo);
                 updateMetro(data.newTempo);
+            });
+
+            socket.on('updatePlayerParameter', function (data) {
+                console.log("Update Player " + data.performerInterface + " Interface: " + data.performerNum + " Parameter: " + data.parameter + " Value: " + data.value);
+                var playerInter = data.performerInterface;
+                if (playerInter == thisPerformerNum) {
+                    var playerNum = data.performerNum;
+                    var param = data.parameter;
+                    var value = data.value;
+                    $('#m' + playerNum + '-' + param).val(value).trigger('change');
+                }
             });
 
             socket.on('time_res', function (data) {
@@ -268,6 +280,7 @@ html
 
             });
 
+            //number will be 1, 2, or 3
             function choosePlayer(number) {
                 thisPerformerNum = number;
                 console.log("Player " + number + " Click!");
@@ -329,7 +342,7 @@ html
             }
 
 
-            // Setup an event listener for clicks on the choosePlayer button
+            // Setup an event listener for clicks on the soundCheck button
             // This will initialize our audio context so that it works on ios.
             $(function () {
                 $("#soundCheck").on("click", function () {
@@ -367,6 +380,13 @@ html
                         logger.info("{ \"SELPL\" : " + thisPerformerNum + ", \"global_time\" : " + syncClient.getTime() + " }");
 
                         switchMetronomeOn(isMetroOn, currentBPM);
+
+                        //Send Message to Server to let them know which performer was selected:
+                        socket.emit('getPresetParameters', {
+                            performerNumber: thisPerformerNum
+                        });
+
+                        setPanningParams();
 
                     } else {
                         playSound(audioContext.currentTime);
@@ -523,8 +543,8 @@ html
 
                 } else {
                     //console.log("Metro stop makein sound");
-                    metronome.unwatch('curBeatNum');
-                    metronome.unwatch('curMeasureNum');
+                    //metronome.unwatch('curBeatNum');
+                    //metronome.unwatch('curMeasureNum');
                     metronome.stop();
                 }
             }
@@ -548,6 +568,24 @@ html
                 envelope.on();
                 oscillator.start(time);
                 oscillator.stop(time + 0.5);    // you can set this to zero, but I left it here for testing.
+            }
+
+            //Sets the panning for the particular player
+            function setPanningParams() {
+                console.log("Set Panning!");
+
+                if (thisPerformerNum == 0) {
+                    // Between -1 (left) and 1 (right
+                    players[0].setPanPosition(1.0); //this me!
+                    players[1].setPanPosition(0); // you are to my left
+                    players[2].setPanPosition(-1.0); //  you are further to my left
+                } else if (thisPerformerNum == 1) {
+                    //values:
+
+                } else if (thisPerformerNum == 2) {
+                    //values:
+
+                }
             }
 
             // Have the JSON and DOM loaded in such an asynchronous sequence with a series of callbacks
