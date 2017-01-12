@@ -2,7 +2,8 @@ var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
 var reverbBasePath = '/audio/chuck_reverb_impulses/';
 var jcImpulse = 'jcrev.wav';
 var nImpulse = 'nrev.wav';
-var clickPath = '/audio/stick.mp3';
+var clickPath = '/audio/stick.wav';
+var clickPath2 = '/audio/stick2.wav';
 
 function loadAudioFiles(amIperformer) {
 
@@ -49,6 +50,22 @@ function loadAudioFiles(amIperformer) {
             });
         };
         clickRequest.send();
+    }
+
+    // get metronome click
+    if (amIperformer) {
+        var clickRequest2 = new XMLHttpRequest();
+        clickRequest2.open('GET', clickPath2, true);
+        clickRequest2.responseType = 'arraybuffer';
+        clickRequest2.onload = function () {
+            audioContext.decodeAudioData(clickRequest2.response, function (buffer) {
+                metronome.setClick2(buffer);
+                console.log("Loaded metronome click");
+            }, function (e) {
+                console.log("Error setting up the reverb buffer: " + e.err);
+            });
+        };
+        clickRequest2.send();
     }
 }
 

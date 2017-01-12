@@ -1,7 +1,7 @@
 var nSnares = 10;
 var nVibraphoneSamples = 37;
 var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
-var clickPath = '/audio/stick.mp3';
+var clickPath = '/audio/stick.wav';
 
 function loadAudioFiles(amIperformer) {
     // get the snare samples from the server

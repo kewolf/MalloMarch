@@ -38,7 +38,7 @@ block content
         const CONSENT_COOKIE_NAME = "consentFormAgreement";
         const DAYS_TO_KEEP_COOKIE = 1;
 
-        var customIPflag = 1;
+        var customIPflag = 0;
         var serverURL = 'http://localhost:3000';
         var customServerURL = '192.168.1.9:3000';
 
@@ -199,11 +199,12 @@ block content
             var diff = data.predicted_time / 1000.0 - syncClient.getTime();
             scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
             scheduler.curIds[instr] = data.msg_id;
+            scheduler.curParams[instr] = {velocity: data.velocity, x_pos: data.x_pos, y_pos: data.y_pos, z_pos: data.z_pos};
 
             if (Math.abs(diff) < 0.02) {
-                console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
-                console.log("RECV TIME DIFF: " + diff);
-                console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                //console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
+                //console.log("RECV TIME DIFF: " + diff);
+                //console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
             }
             logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
         });

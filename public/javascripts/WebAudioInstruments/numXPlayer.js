@@ -4,6 +4,7 @@ var Player = function () {
     this.pitch1 = 500;
     this.pitch2 = 490;
     this.pitch3 = 510;
+    this.x_pos = 0;
     this.volume = 1;
     this.echo = 0;
     this.ethereality = 0;
@@ -171,10 +172,15 @@ var Player = function () {
         this.jcReverb.buffer = buffer;
     };
 
-    this.schedule = function (time) {
-        this.voice1.play(time, this);
-        this.voice2.play(time, this);
-        this.voice3.play(time, this);
+    this.schedule = function (time, params) {
+        this.x_pos = parseFloat(params['x_pos']);
+        console.log('x_pos: ' + this.x_pos);
+        this.setPitch1(this.pitch1);
+        this.setPitch2(this.pitch2);
+        this.setPitch3(this.pitch3);
+        this.voice1.play(time, params['velocity'], this);
+        this.voice2.play(time, params['velocity'], this);
+        this.voice3.play(time, params['velocity'], this);
         // this.env.on();
         //console.log("scheduled audio for time: " + time);
     };
@@ -204,57 +210,61 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
-        //console.log(params);
-        this.pitch1 = params['pitch1'];
-        this.pitch2 = params['pitch2'];
-        this.pitch3 = params['pitch3'];
-        this.volume = params['volume'];
-        this.echo = params['echo'];
-        this.ethereality = params['ethereality'];
-        this.glimmer = params['glimmer'];
-        this.shift = params['shift'];
-
-        this.voice1.setPitch(this.pitch1);
-        this.voice2.setPitch(this.pitch2);
-        this.voice3.setPitch(this.pitch3);
-        this.mainGain.gain.value = this.volume;
-        this.delay.delayTime.value = this.echo / 200.00;
-        this.nReverbGain.gain.value = this.ethereality / 100.0;
-        this.nDryGain.gain.value = 1 - (this.ethereality / 100.0) * 0.25;
-        this.jcReverbGain.gain.value = this.glimmer / 100.0;
-        this.jcDryGain.gain.value = 1 - (this.glimmer / 100.0) * 0.25;
-        this.pitchShifterProcessor.pitchRatio = Math.pow(2,3*this.shift/100.0-1);
+        console.log(params);
+        this.setPitch1(params['pitch1']);
+        this.setPitch2(params['pitch2']);
+        this.setPitch3(params['pitch3']);
+        this.setVolume(params['volume']);
+        this.setEcho(params['echo']);
+        this.setEthereality(params['ethereality']);
+        this.setGlimmer(params['glimmer']);
+        this.setShift(params['shift']);
     };
 
     //setters for the individual parameters
     this.setPitch1 = function (pitch) {
+        pitch = parseFloat(pitch);
         this.pitch1 = pitch;
-        this.voice1.setPitch(pitch);
+        this.voice1.setPitch(pitch + this.x_pos);
     };
     this.setPitch2 = function(pitch) {
+        pitch = parseFloat(pitch);
         this.pitch2 = pitch;
-        this.voice2.setPitch(pitch); };
+        this.voice2.setPitch(pitch + this.x_pos);
+    };
     this.setPitch3 = function(pitch) {
+        pitch = parseFloat(pitch);
         this.pitch3 = pitch;
-        this.voice3.setPitch(pitch); };
+        this.voice3.setPitch(pitch + this.x_pos);
+    };
     this.setVolume = function(volume) {
+        volume = parseFloat(volume);
         this.volume = volume;
-        this.mainGain.gain.value = volume; };
+        if (volume < 0.02) {
+            this.mainGain.gain.value = 0;
+        } else {
+            this.mainGain.gain.value = volume;
+        }
+    };
     this.setEcho = function(val) {
+        val = parseFloat(val);
         this.echo = val;
         this.delay.delayTime.value = val / 200.00;
     };
     this.setEthereality = function(val) {
+        val = parseFloat(val);
         this.ethereality = val;
         this.nReverbGain.gain.value = val / 100.0;
-        this.nDryGain.gain.value = 1 - (val / 100.0) * 0.25;
+        this.nDryGain.gain.value = 1 - (val / 100.0) * 0.5;
     };
     this.setGlimmer = function(val) {
+        val = parseFloat(val);
         this.glimmer = val;
         this.jcReverbGain.gain.value = val / 100.0;
-        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.25;
+        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.5;
     };
     this.setShift = function(val) {
+        val = parseFloat(val);
         this.shift = val;
         this.pitchShifterProcessor.pitchRatio = Math.pow(2,3*val/100.0-1);
     };

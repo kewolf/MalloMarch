@@ -60,6 +60,7 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
     this.players = players;
     this.curPredictions = [];
     this.curIds = [];
+    this.curParams = [];
     this.lastPlayTime = [];
     this.logCounter = 0;
     console.log('players.length: ' + players.length);
@@ -82,7 +83,7 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
 
                 var playTime = (diff < 0) ? this.audioContext.currentTime : this.curPredictions[i];
                 this.lastPlayTime[i] = playTime;
-                this.players[i].schedule(playTime);
+                this.players[i].schedule(playTime, this.curParams[i]);
                 //this.curPredictions[i] = -1;
                 var time = playTime + syncClient.getOffset();
                 var logtime = time * 1000;
