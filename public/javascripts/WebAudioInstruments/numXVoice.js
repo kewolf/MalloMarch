@@ -1,6 +1,5 @@
 var NumXVoice = function (player) {
     this.source = audioContext.createOscillator();
-    this.source.frequency = 1000;
     this.source.start();
     this.adsrAmp = audioContext.createGain();
     this.source.connect(this.adsrAmp);
@@ -10,7 +9,10 @@ var NumXVoice = function (player) {
     this.env.decayTime = 0.5;
     this.env.sustainValue = 0.0;
     this.env.releaseTime = 0.1;
-    this.adsrAmp.connect(player.out);
+    this.outAmp = audioContext.createGain();
+    this.outAmp.gain.value = 0.33;
+    this.adsrAmp.connect(this.outAmp);
+    this.outAmp.connect(player.out);
 
 
     this.play = function (time, player) {
@@ -23,7 +25,7 @@ var NumXVoice = function (player) {
     };
 
     this.setPitch = function(frequency) {
-        this.source.frequency = frequency;
+        this.source.frequency.value = frequency;
     }
 
 };
