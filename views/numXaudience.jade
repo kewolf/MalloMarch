@@ -710,97 +710,9 @@ block content
                 }
             });
 
-            /* DON'T NEED FOR NUM X:
-
-            //show or hide sliders for mode 3 depending on the selector
-            //Selector for ids that end in '-select'
-
-            $('[id$="-select"]').change(function () {
-                //get the id and extract the mallo id (m0, m1, m2)
-                var id = $(this).attr('id');
-                var playerNum = parseInt(id.slice(1));
-             //console.log("Select Player: " + playerNum);
-                var malloId = id.slice(0, 2);
-                //get the value for the child that is selected
-                var nextpage = $(this).children('option:selected').attr('value');
-
-
-                var active = $('#movement2').tabs('option', 'active');
-
-                //if we are in mode 3 - then log the change!
-                if (active == 2) {
-                    if (loggerOn) {
-                        logger.info("{ \"" + id + "\" : " + nextpage + ", \"global_time\" : " + syncClient.getTime() + "}");
-                    }
-                }
-
-                //show/hide based on the selection.
-                if (nextpage == '0') {
-                    //console.log("Selected 1!");
-                    players[playerNum].activeInstrument = 0;
-                    $('#' + malloId + '-dc-vol').val(players[playerNum].level).trigger('change');
-                    $('#' + malloId + '-dc-size').val(players[playerNum].size).trigger('change');
-                    $('#' + malloId + '-dc-decay').val(players[playerNum].decay).trigger('change');
-                    $('#' + malloId + '-dc').show();
-                    $('#' + malloId + '-pp').hide();
-                    $('#' + malloId + '-el').hide();
-
-                } else if (nextpage == '1') {
-                    //console.log("Selected 2!");
-                    players[playerNum].activeInstrument = 1;
-                    $('#' + malloId + '-el-vol').val(players[playerNum].level).trigger('change');
-                    $('#' + malloId + '-el-size').val(players[playerNum].size).trigger('change');
-                    $('#' + malloId + '-el-decay').val(players[playerNum].decay).trigger('change');
-                    $('#' + malloId + '-dc').hide();
-                    $('#' + malloId + '-pp').show();
-                    $('#' + malloId + '-el').hide();
-                } else {
-                    //console.log("Selected 3!");
-                    players[playerNum].activeInstrument = 2;
-                    $('#' + malloId + '-pp-vol').val(players[playerNum].level).trigger('change');
-                    $('#' + malloId + '-pp-size').val(players[playerNum].size).trigger('change');
-                    $('#' + malloId + '-pp-decay').val(players[playerNum].decay).trigger('change');
-                    $('#' + malloId + '-dc').hide();
-                    $('#' + malloId + '-pp').hide();
-                    $('#' + malloId + '-el').show();
-                }
-            });
-             */
         }
 
 
-        /*
-        function sliderChange(playerNum, params) {
-            //set active Instrument - which will trigger changes to the params
-
-         var id = $(this).attr('id');
-         var playerNum = parseInt(id.slice(1));
-         //console.log("Select Player: " + playerNum);
-         var malloId = id.slice(0, 2);
-
-         var active = $('#movement2').tabs('option', 'active');
-
-         //if we are in mode 3 - then log the change!
-         if (active == 2) {
-         if (loggerOn) {
-         logger.info("{ \"" + id + "\" : " + nextpage + ", \"global_time\" : " + syncClient.getTime() + "}");
-         }
-         }
-
-         //show/hide based on the selection.
-         //console.log("Selected 1!");
-         players[playerNum].activeInstrument = 0;
-         $('#' + malloId + '-volume').val(players[playerNum].volume).trigger('change');
-         $('#' + malloId + '-pitch1').val(players[playerNum].pitch1).trigger('change');
-         $('#' + malloId + '-pitch2').val(players[playerNum].pitch2).trigger('change');
-         $('#' + malloId + '-pitch3').val(players[playerNum].pitch3).trigger('change');
-         $('#' + malloId + '-echo').val(players[playerNum].echo).trigger('change');
-         $('#' + malloId + '-etherialtly').val(players[playerNum].etherialtly).trigger('change');
-         $('#' + malloId + '-glimmer').val(players[playerNum].glimmer).trigger('change');
-         $('#' + malloId + '-shift').val(players[playerNum].shift).trigger('change');
-        }
-
-         */
 
         //gets parameters from the players and sets
         function refreshSliders() {
@@ -1201,7 +1113,7 @@ block content
 
                         label.leftItem(for='m0-volume') Volume
                         .rightItem
-                            input#m0-volume(type='range', name='m0-volume', data-track-theme='b', data-theme='b', min='0', max='1', value='0.25', data-popup-enabled='true', data-mini='true')
+                            input#m0-volume(type='range', name='m0-volume', data-track-theme='b', data-theme='b', min='0', max='1', value='0.25', step='.01', data-popup-enabled='true', data-mini='true')
 
 
                 #m1-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='c')
@@ -1237,7 +1149,7 @@ block content
 
                         label.leftItem(for='m1-volume') Volume
                         .rightItem
-                            input#m1-volume(type='range', name='m1-volume', data-track-theme='c', data-theme='c', min='0', max='1', value='0.25', data-popup-enabled='true', data-mini='true')
+                            input#m1-volume(type='range', name='m1-volume', data-track-theme='c', data-theme='c', min='0', max='1', value='0.25', step='.01', data-popup-enabled='true', data-mini='true')
 
                 #m2-form.pop_countryBox(data-role='collapsible', data-inset='false', data-theme='d')
                     h3 Player 3
@@ -1272,7 +1184,7 @@ block content
 
                         label.leftItem(for='m2-volume') Volume
                         .rightItem
-                            input#m2-volume(type='range', name='m2-volume', data-track-theme='d', data-theme='d', min='0', max='1', value='0.25', data-popup-enabled='true', data-mini='true')
+                            input#m2-volume(type='range', name='m2-volume', data-track-theme='d', data-theme='d', min='0', max='1', value='0.25', step='.01', data-popup-enabled='true', data-mini='true')
 
         h2#result
         div#saveFooter(data-role='footer', role='banner', data-position='inline')
