@@ -2,20 +2,25 @@
 
 var Player = function () {
 
-    this.pitch1 = 0;
-    this.pitch2 = 0;
-    this.pitch3 = 0;
-    this.volume = 0;
+    this.pitch1 = 500;
+    this.pitch2 = 490;
+    this.pitch3 = 510;
+    this.volume = 1;
     this.echo = 0;
     this.etheriality = 0;
     this.glimmer = 0;
     this.shift = 0;
 
+    //TODO: delete later
+    this.size = 50;
+
     //the output chain, starting from the destination, instruments connect to this.out
     this.muteGain = audioContext.createGain();
     this.muteGain.connect(audioContext.destination);
+    this.panner = audioContext.createPanner();
+    this.panner.connect(this.muteGain);
     this.mainGain = audioContext.createGain();
-    this.mainGain.connect(this.muteGain);
+    this.mainGain.connect(this.panner);
     this.reverbGain = audioContext.createGain();
     this.reverbGain.connect(this.mainGain);
     this.reverb = audioContext.createConvolver();
@@ -28,21 +33,25 @@ var Player = function () {
     this.out.connect(this.reverb);
     this.out.connect(this.dryGain);
 
-    this.source = audioContext.createOscillator();
-    // this.panner = audioContext.createStereoPanner();
-    this.adsrAmp = audioContext.createGain();
-    this.source.connect(this.adsrAmp);
-    this.adsrAmp.gain.value = 1.0;
-    this.env = new WebAHDSR(audioContext, this.adsrAmp.gain);
-    this.adsrAmp.connect(this.out);
+    this.voice1 = new NumXVoice(this);
+    this.voice2 = new NumXVoice(this);
+    this.voice3 = new NumXVoice(this);
 
+    // -1 is hard left 1 is hard right
+    this.setPanPosition = function (position)
+    {
+        var x = position,
+            y = 0,
+            z = 1 - Math.abs(x);
+        this.panner.setPosition(x,y,z);
+    };
 
-    // this.voice1 = new NumXVoice(self);
 
     // methods for muting and unmuting
     this.mute = function () {
         this.muteGain.gain.value = 0;
     };
+
     this.unmute = function () {
         this.muteGain.gain.value = 1;
     };
@@ -53,10 +62,14 @@ var Player = function () {
     };
 
     this.schedule = function (time) {
-        // this.reverbGain.gain.value = this.size / 100.0;
-        // this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
-        // this.mainGain.gain.value = this.level;
-        this.env.on();
+        this.reverbGain.gain.value = this.size / 100.0;
+        this.dryGain.gain.value = 1 - (this.size / 100.0) * 0.25;
+        this.mainGain.gain.value = this.volume;
+        this.voice1.play(time, this);
+        this.voice2.play(time, this);
+        this.voice3.play(time, this);
+        // this.env.on();
+        console.log("scheduled audio for time: " + time);
     };
 
 // todo: needed for backward compatibility (for now)
@@ -65,11 +78,12 @@ var Player = function () {
     };
 
     this.unschedule = function () {
-        this.env.off();
+        this.voice1.stop();
+        this.voice2.stop();
+        this.voice3.stop();
     };
 
     this.getParameters = function () {
-        console.log("Get Parameters");
         var params = {};
         params['pitch1'] = this.pitch1;
         params['pitch2'] = this.pitch2;
@@ -83,8 +97,6 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
-        console.log("Set Parameters: ");
-        console.dir(params);
         this.pitch1 = params['pitch1'];
         this.pitch2 = params['pitch2'];
         this.pitch3 = params['pitch3'];
@@ -93,5 +105,14 @@ var Player = function () {
         this.etheriality = params['etheriality'];
         this.glimmer = params['glimmer'];
         this.shift = params['shift'];
+
+        this.voice1.setPitch(this.pitch1);
+        // this.voice2.setPitch(this.pitch2);
+        // this.voice3.setPitch(this.pitch3);
+        this.mainGain.gain.value = Math.min(1, this.volume);
+        // echo
+        // etheriality
+        // glimmer
+        // shift
     };
 }

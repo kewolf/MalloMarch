@@ -75,10 +75,10 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
 
             if (diff > -this.postThreshold && diff < this.preThreshold
                 && this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod) {
-                //console.log("diff: " + diff);
-                //console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
-                //console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
-                //console.log("#########################################################");
+                // console.log("diff: " + diff);
+                // console.log('this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod:' + (this.curPredictions[i] > this.lastPlayTime[i] + this.waitPeriod));
+                // console.log('diff > -this.postThreshold && diff < this.preThreshold: ' + (diff > -this.postThreshold && diff < this.preThreshold));
+                console.log("####################### scheduled audio ##################################");
 
                 var playTime = (diff < 0) ? this.audioContext.currentTime : this.curPredictions[i];
                 this.lastPlayTime[i] = playTime;
