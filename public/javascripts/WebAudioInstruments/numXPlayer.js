@@ -15,18 +15,18 @@ var Player = function () {
     this.size = 50;
 
     //the output chain, starting from the destination, instruments connect to this.out
+    this.mainGain = audioContext.createGain();
+    this.mainGain.connect(audioContext.destination);
     this.muteGain = audioContext.createGain();
-    this.muteGain.connect(audioContext.destination);
+    this.muteGain.connect(this.mainGain);
     this.panner = audioContext.createPanner();
     this.panner.connect(this.muteGain);
-    this.mainGain = audioContext.createGain();
-    this.mainGain.connect(this.panner);
     this.reverbGain = audioContext.createGain();
-    this.reverbGain.connect(this.mainGain);
+    this.reverbGain.connect(this.panner);
     this.reverb = audioContext.createConvolver();
     this.reverb.connect(this.reverbGain);
     this.dryGain = audioContext.createGain();
-    this.dryGain.connect(this.mainGain);
+    this.dryGain.connect(this.panner);
 
     //create output for instruments to connect to
     this.out = audioContext.createGain();
@@ -97,6 +97,7 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
+        console.log(params)
         this.pitch1 = params['pitch1'];
         this.pitch2 = params['pitch2'];
         this.pitch3 = params['pitch3'];
@@ -107,12 +108,24 @@ var Player = function () {
         this.shift = params['shift'];
 
         this.voice1.setPitch(this.pitch1);
-        // this.voice2.setPitch(this.pitch2);
-        // this.voice3.setPitch(this.pitch3);
-        this.mainGain.gain.value = Math.min(1, this.volume);
+        this.voice2.setPitch(this.pitch2);
+        this.voice3.setPitch(this.pitch3);
+        this.mainGain.gain.value = Math.min(1,this.volume);
         // echo
         // etheriality
         // glimmer
         // shift
     };
+
+    //setters for the individual parameters
+    this.setPitch1 = function(pitch) { this.voice1.setPitch(this.pitch1); };
+    this.setPitch2 = function(pitch) { this.voice2.setPitch(this.pitch1); };
+    this.setPitch3 = function(pitch) { this.voice3.setPitch(this.pitch1); };
+    this.setVolume = function(gain) { this.mainGain.gain.value = Math.min(1, gain); };
+    this.setEcho = function(val) { };
+    this.setEtheriality = function(val) { };
+    this.setGlimmer = function(val) { };
+    this.setShift = function(val) { };
+
+
 }
