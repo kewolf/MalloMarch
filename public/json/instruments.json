@@ -4,7 +4,7 @@
     "pitch2": "510",
     "pitch3": "490",
     "echo": "50",
-    "etherialtly": "50",
+    "ethereality": "50",
     "glimmer": "50",
     "shift": "50",
     "volume": "0.5"
@@ -14,7 +14,7 @@
     "pitch2": "700",
     "pitch3": "800",
     "echo": "75",
-    "etherialtly": "75",
+    "ethereality": "75",
     "glimmer": "75",
     "shift": "75",
     "volume": "0.75"

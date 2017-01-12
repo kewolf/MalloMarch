@@ -43,10 +43,26 @@ var Player = function () {
     this.jcDryGain.connect(this.nDryGain);
     this.jcDryGain.connect(this.nReverb);
 
+    // Echo
+    this.delay = audioContext.createDelay();
+    this.delay.delayTime.value = 0.5;
+
+    this.feedback = audioContext.createGain();
+    this.feedback.gain.value = 0.8;
+
+    this.delay.connect(this.feedback);
+    this.feedback.connect(this.delay);
+
+    this.delayDry = audioContext.createGain();
+    this.delayDry.connect(this.jcReverb);
+    this.delayDry.connect(this.jcDryGain);
+    this.delay.connect(this.jcReverb);
+    this.delay.connect(this.jcDryGain);
+
     //create output for instruments to connect to
     this.out = audioContext.createGain();
-    this.out.connect(this.jcReverb);
-    this.out.connect(this.jcDryGain);
+    this.out.connect(this.delay);
+    this.out.connect(this.delayDry);
 
     this.voice1 = new NumXVoice(this);
     this.voice2 = new NumXVoice(this);
@@ -128,7 +144,7 @@ var Player = function () {
         this.voice2.setPitch(this.pitch2);
         this.voice3.setPitch(this.pitch3);
         this.mainGain.gain.value = this.volume;
-        // echo
+        this.delay.delayTime.value = this.echo / 200.00;
         this.nReverbGain.gain.value = this.ethereality / 100.0;
         this.nDryGain.gain.value = 1 - (this.ethereality / 100.0) * 0.25;
         this.jcReverbGain.gain.value = this.glimmer / 100.0;
@@ -152,7 +168,7 @@ var Player = function () {
         this.mainGain.gain.value = volume; };
     this.setEcho = function(val) {
         this.echo = val;
-
+        this.delay.delayTime.value = val / 200.00;
     };
     this.setEthereality = function(val) {
         this.ethereality = val;
