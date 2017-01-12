@@ -1,8 +1,8 @@
 {
   "i0": {
-    "pitch1": "0.5",
-    "pitch2": "0.5",
-    "pitch3": "0.5",
+    "pitch1": "500",
+    "pitch2": "510",
+    "pitch3": "490",
     "echo": "0.5",
     "etherialtly": "0.5",
     "glimmer": "0.5",
@@ -10,9 +10,9 @@
     "volume": "0.5"
   },
   "i1": {
-    "pitch1": "0.75",
-    "pitch2": "0.75",
-    "pitch3": "0.75",
+    "pitch1": "600",
+    "pitch2": "700",
+    "pitch3": "800",
     "echo": "0.75",
     "etherialtly": "0.75",
     "glimmer": "0.75",
