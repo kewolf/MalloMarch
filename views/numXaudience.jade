@@ -661,7 +661,7 @@ block content
                         var instrNum = parseInt(el.id.slice(3));
                         if (loggerOn) {
                             logger.info("{ \"PLAY" + playerNum + "\" : " + instrNum + ", \"global_time\" : " + syncClient.getTime() + "}");
-                            ;
+
                         }
                     }
                 });
@@ -819,7 +819,7 @@ block content
         });
 
 
-        //creates the animation and activation for the navigation bar
+        // Creates the animation and activation for the navigation bar
         $(function () {
             $(document).delegate('[data-role="navbar"] a', 'click', function () {
                 $('[data-role="navbar"] a').removeClass("ui-btn-active");
@@ -870,7 +870,7 @@ block content
                 }
                 var dateTime = Date.now();
                 if (loggerOn) {
-                    logger.info("{ \"consent\" : " + didConsent + ", \"time\" : " + dateTime + "\"global_time\" : NA }");
+                    logger.info("{ \"CONST\" : " + didConsent + ", \"time\" : " + dateTime + "\"global_time\" : NA }");
                 }
                 //set cookies for whether the consent form was answered
                 setCookie(CONSENT_COOKIE_NAME, didConsent, DAYS_TO_KEEP_COOKIE);
