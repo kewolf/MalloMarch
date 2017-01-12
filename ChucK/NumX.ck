@@ -2,9 +2,9 @@ OscRecv recv;
 6449 => recv.port;
 spork ~ recv.listen();
 
-recv.event( "/left,   i,i,i, f,f,f,f, i, f,f,f,f,f" ) @=> OscEvent p1Event;
-recv.event( "/middle, i,i,i, f,f,f,f, i, f,f,f,f,f" ) @=> OscEvent p2Event;
-recv.event( "/right,  i,i,i, f,f,f,f, i, f,f,f,f,f" ) @=> OscEvent p3Event;
+recv.event( "/left,   i, i,i, i,i, f,f,f,f, i,i, f,f,f,f,f" ) @=> OscEvent p1Event;
+recv.event( "/middle, i, i,i, i,i, f,f,f,f, i,i, f,f,f,f,f" ) @=> OscEvent p2Event;
+recv.event( "/right,  i, i,i, i,i, f,f,f,f, i,i, f,f,f,f,f"  ) @=> OscEvent p3Event;
 
 
 // SETUP UGENS:
