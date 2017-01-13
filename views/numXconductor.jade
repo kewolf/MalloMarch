@@ -41,7 +41,7 @@ html
             var doneInitializing = false;
 
             var isMetroOn;
-            var currentBPM = 120; //starting BPM
+            var currentBPM = 110; //starting BPM
             var metronome;
 
             var startMeasure = -1;
@@ -390,6 +390,10 @@ html
 
                             case 0:
                                 console.log("BEGINNING PIECE!");
+                                updateBPM(55);
+                                break;
+                            case 3:
+                                console.log("SWITCH TEMPO");
                                 break;
 
                             case 19:
@@ -450,7 +454,7 @@ html
                             case 59:
                                 console.log("MEASURE 59");
                                 // Slow Metronome
-                                updateBPM(60);
+                                updateBPM(55);
                                 break;
 
                             case 75:
@@ -508,7 +512,17 @@ html
              */
             function beginPiece() {
                 console.log("Begin!");
-                startMeasure = metronome.curMeasureNum + 3;
+                //if our start measure is even - then setup the clock to countdown 2 measures,
+                // otherwise countdown 2 measures
+                // This is a hack to make sure when we switch tempo to half tempo we will be
+                // on an even measure
+                isEven = (metronome.curMeasureNum % 2 == 0);
+                if (isEven) {
+                    startMeasure = metronome.curMeasureNum + 2;
+                } else {
+                    startMeasure = metronome.curMeasureNum + 3;
+                }
+
                 sendStartMeasure(startMeasure);
 
                 $('#begin').button('disable');
@@ -789,7 +803,7 @@ html
                         .ui-block-b(style='width:40%')
                             .ui-field-contain
                                 label(for='bpm') BPM:
-                                input#bpm(type='text', name='text-1', data-theme='c', value='120')
+                                input#bpm(type='text', name='text-1', data-theme='c', value='110')
                         .ui-block-c(style='width:30%')
                             .ui-field-contain
                                 button#bpmSet.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name= 'bmpSet', type='submit', onclick="setBPM()") Set BPM
