@@ -21,6 +21,20 @@ var Player = function () {
     this.panner = audioContext.createPanner();
     this.panner.connect(this.muteGain);
 
+    // Echo
+    this.delay = audioContext.createDelay();
+    this.delay.delayTime.value = 0.5;
+
+    this.feedback = audioContext.createGain();
+    this.feedback.gain.value = 0.8;
+
+    this.delay.connect(this.feedback);
+    this.feedback.connect(this.delay);
+
+    this.delayDry = audioContext.createGain();
+    this.delayDry.connect(this.panner);
+    this.delay.connect(this.panner);
+
     // Pitch shift copied from https://github.com/urtzurd/html-audio/blob/gh-pages/static/js/pitch-shifter.js
     this.hannWindow = function (length) {
         var window = new Float32Array(length);
@@ -93,7 +107,9 @@ var Player = function () {
         }
     };
     //
-    this.pitchShifterProcessor.connect(this.panner);
+    this.pitchShifterProcessor.connect(this.delay);
+    this.pitchShifterProcessor.connect(this.delayDry);
+
 
     // NRev
     this.nReverbGain = audioContext.createGain();
@@ -119,26 +135,10 @@ var Player = function () {
     this.jcDryGain.connect(this.nDryGain);
     this.jcDryGain.connect(this.nReverb);
 
-    // Echo
-    this.delay = audioContext.createDelay();
-    this.delay.delayTime.value = 0.5;
-
-    this.feedback = audioContext.createGain();
-    this.feedback.gain.value = 0.8;
-
-    this.delay.connect(this.feedback);
-    this.feedback.connect(this.delay);
-
-    this.delayDry = audioContext.createGain();
-    this.delayDry.connect(this.jcReverb);
-    this.delayDry.connect(this.jcDryGain);
-    this.delay.connect(this.jcReverb);
-    this.delay.connect(this.jcDryGain);
-
     //create output for instruments to connect to
     this.out = audioContext.createGain();
-    this.out.connect(this.delay);
-    this.out.connect(this.delayDry);
+    this.out.connect(this.jcReverb);
+    this.out.connect(this.jcDryGain);
 
     this.voice1 = new NumXVoice(this);
     this.voice2 = new NumXVoice(this);
@@ -249,13 +249,13 @@ var Player = function () {
         val = parseFloat(val);
         this.ethereality = val;
         this.nReverbGain.gain.value = val / 100.0;
-        this.nDryGain.gain.value = 1 - (val / 100.0) * 0.5;
+        this.nDryGain.gain.value = 1 - (val / 100.0) * 0.25;
     };
     this.setGlimmer = function(val) {
         val = parseFloat(val);
         this.glimmer = val;
         this.jcReverbGain.gain.value = val / 100.0;
-        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.5;
+        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.25;
     };
     this.setShift = function(val) {
         val = parseFloat(val);
