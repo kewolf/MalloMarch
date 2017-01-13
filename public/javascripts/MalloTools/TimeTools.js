@@ -102,6 +102,7 @@ var Scheduler = function (players, audioContext, logger, syncClient) {
     };
 
     this.setPrediction = function (prediction, playerIndex) {
-        this.curPredictions[playerIndex] = prediction;
+        this.curPredictions[playerIndex] = prediction
+        this.curParams[playerIndex] = {x_pos: 0, velocity: -7000};
     };
 };
