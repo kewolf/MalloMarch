@@ -393,7 +393,7 @@ html
                                 break;
                             case 3:
                                 console.log("SWITCH TEMPO");
-                                updateBPM(55);
+                                //updateBPM(55);
                                 break;
 
                             case 19:
@@ -454,7 +454,7 @@ html
                             case 59:
                                 console.log("MEASURE 59");
                                 // Slow Metronome
-                                updateBPM(55);
+                                //updateBPM(55);
                                 break;
 
                             case 75:
@@ -516,12 +516,19 @@ html
                 // otherwise countdown 2 measures
                 // This is a hack to make sure when we switch tempo to half tempo we will be
                 // on an even measure
+
+
+                /*
                 isEven = (metronome.curMeasureNum % 2 == 0);
                 if (isEven) {
                     startMeasure = metronome.curMeasureNum + 2;
+                 console.log("Cur Measure: " + metronome.curMeasureNum + " is Odd, Start Measure: " + startMeasure);
                 } else {
                     startMeasure = metronome.curMeasureNum + 3;
-                }
+                 console.log("Cur Measure: " + metronome.curMeasureNum + " is Even, Start Measure: " + startMeasure);
+                 }*/
+
+                startMeasure = metronome.curMeasureNum + 3;
 
                 sendStartMeasure(startMeasure);
 
