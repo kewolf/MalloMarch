@@ -10,8 +10,17 @@ Metronome = function (audioContext, logger) {
     this.curMeasureNum = 0;
     this.curBeatNum = 0;
     this.volume = 0.7;
+    this.changedTo55 = false;
+    this.changeTickNum = 0;
+    this.numTicksSoFar = 0;
 
     this.setTempo = function (tempo) {
+        // if (tempo = 55 && !this.changedTo55)
+        // {
+        //     this.changeMeasureNum = this.curMeasureNum;
+        //     this.changedTo55 = true;
+        // }
+
         //console.log("this.setTempo()");
         if (logger && this.syncClient) {
             logger.info("{ \"UPBPM\" : " + this.numBeatsInMeasure + ", \"global_time\" : " + syncClient.getTime() + ", \"bpm\" : " + tempo + "}");
@@ -59,12 +68,24 @@ Metronome = function (audioContext, logger) {
 
     //checks if it should schedule a click or a measure change
     this.check = function () {
-        var numTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
+        if (this.tempo == 55 && !this.changedTo55)
+        {
+            this.changeTickNum = this.numTicksSoFar;
+        }
+
+        if (this.tempo == 110) {
+            this.numTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
+        } else if (this.tempo == 55)
+        {
+            var curTick = Math.floor(this.syncClient.getTime() / this.tickPeriod);
+            var newTicks = curTick - this.changeTickNum / 2;
+            this.numTicksSoFar = this.changeTickNum + newTicks;
+        }
         var oldMeasureNum = this.curMeasureNum;
         var oldBeatNum = this.curBeatNum;
-        this.curMeasureNum = (this.tempo == 55) ? Math.floor(Math.floor(numTicksSoFar / this.numBeatsInMeasure) / 2) + 1: Math.floor(numTicksSoFar / this.numBeatsInMeasure) + 1;
-        this.curBeatNum = numTicksSoFar % this.numBeatsInMeasure + 1;
-        var nextTickTime = (numTicksSoFar + 1) * this.tickPeriod;
+        this.curMeasureNum = Math.floor(this.numTicksSoFar / this.numBeatsInMeasure) + 1;
+        this.curBeatNum = this.numTicksSoFar % this.numBeatsInMeasure + 1;
+        var nextTickTime = (this.numTicksSoFar + 1) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
             syncClient.getTime() > this.lastTickTime + this.lookahead) {
             this.lastTickTime = (1 + Math.floor(syncClient.getTime() / this.tickPeriod)) * this.tickPeriod;
