@@ -267,6 +267,9 @@ block content
                     }
 
                     isAudioSetup = true;
+                    players[0].setPanPosition(1.0); //this me!
+                    players[1].setPanPosition(0); // you are to my left
+                    players[2].setPanPosition(-1.0); //  you are further to my left
 
                 } else {
                     // play sound to test audio

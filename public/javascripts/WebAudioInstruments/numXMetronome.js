@@ -9,6 +9,7 @@ Metronome = function (audioContext, logger) {
     this.syncClient = undefined;
     this.curMeasureNum = 0;
     this.curBeatNum = 0;
+    this.volume = 0.8;
 
     this.setTempo = function (tempo) {
         //console.log("this.setTempo()");
@@ -84,10 +85,15 @@ Metronome = function (audioContext, logger) {
         if (logger && this.syncClient) {
             logger.info("{ \"METRO\" : " + this.curMeasureNum + ", \"beat\" : " + this.curBeatNum + ", \"global_time\" : " + syncClient.getTime() + "}");
         }
-        this.source = audioContext.createBufferSource();
+        var source = audioContext.createBufferSource();
 
-        this.source.buffer = (this.curBeatNum == 7) ? this.buffer : this.buffer2;
-        this.source.connect(audioContext.destination);
-        this.source.start(time);
+        source.buffer = (this.curBeatNum == 7) ? this.buffer : this.buffer2;
+        var volume = audioContext.createGain();
+        volume.gain.value = this.volume;
+        source.connect(volume);
+        volume.connect(audioContext.destination);
+        source.start(time);
     }
+
+    this.setVolume = function(volume) { this.volume = volume; };
 };
