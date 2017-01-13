@@ -241,6 +241,11 @@ block content
                         players.push(new Player());
                     }
 
+                    //set panning:
+                    players[0].setPanPosition(-0.4);
+                    players[1].setPanPosition(0);
+                    players[2].setPanPosition(0.4);
+
                     // play sound to test audio
                     //playSound(audioContext.currentTime);
 
@@ -990,14 +995,14 @@ block content
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                        | The composers of this piece are interested in gathering the data from your interactions with this interface to be analyzed for research purposes.
+                        | The composers of this piece are interested in collecting data on you actions as you interact with this interface to be analyzed for research purposes.
             .ui-block-c(style='width:10%')
 
             a.consentButton.ui-btn.ui-btn-inline(id='1') Yes - You Can Use My Data
             a.consentButton.ui-btn.ui-btn-inline(id='0') No - Do not Use My Data
     #welcome.ui-content(data-role='main')
         .ui-body.ui-body-a.ui-corner-all
-            h3.center.player1_color(role='banner') Welcome to the March MalLo performance website!
+            h3.center.player1_color(role='banner') Welcome to the Numerical Experience performance website!
             .ui-block-a(style='width:10%')
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
@@ -1019,7 +1024,7 @@ block content
                         ul Do not navigate away from the page.
                         ul If things don't seem to be working right, try refreshing your browser.
                         ul Make sure to keep your computer awake during the piece.
-                        ul Reminder: You are not connected to the internet while you are on this router.
+                        ul Reminderer: You are not connected to the internet while you are on this router.
                     p#thanks(style='margin: 10px 0 0 0;',)
                         p.player2_color  Thank you for your patience as we get setup!
                         p.player1_color This screen will change when the piece begins.
@@ -1238,15 +1243,15 @@ block content
             .ui-block-b(style='width:80%')
                 div(style='margin: 10px 0 0 0;')
                     p
-                    p    Player 1 (Green):              Katie  Wolf
-                    p    Player 2 (Blue):               Steven Landry
-                    p    Player 3 (Player):             Daniel Verona
+                    p    Player 1 (Green):              Chris
+                    p    Player 2 (Blue):               Josh
+                    p    Player 3 (Player):             Nikitas
                     p
-                    p    Composers:                   Katie Wolf and Reid Oda
+                    p    Composers:                   Josh Collins
                     p    Interface Development:       Katie Wolf
-                    p    Sound Design:                Reid Oda
+                    p    Sound Design:                Josh Collins and Reid Oda
                     p    MalLo Creator and Developer: Reid Oda
-                    p    Speical Thanks to:           Rebecca Fiebrink, Andrew Nelson, Erin Hartman, Letizia Gionfrida, Marc St. Pierre
+                    p    Special Thanks to:           Jeff Snyder, Rebecca Fiebrink, Andrew Nelson, Erin Hartman
 
             .ui-block-c(style='width:10%')
     #footer.center.ui-content(data-role='main')
