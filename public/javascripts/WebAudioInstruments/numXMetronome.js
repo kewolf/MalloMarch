@@ -9,7 +9,7 @@ Metronome = function (audioContext, logger) {
     this.syncClient = undefined;
     this.curMeasureNum = 0;
     this.curBeatNum = 0;
-    this.volume = 0.8;
+    this.volume = 0.7;
 
     this.setTempo = function (tempo) {
         //console.log("this.setTempo()");
@@ -62,7 +62,7 @@ Metronome = function (audioContext, logger) {
         var numTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
         var oldMeasureNum = this.curMeasureNum;
         var oldBeatNum = this.curBeatNum;
-        this.curMeasureNum = Math.floor(numTicksSoFar / this.numBeatsInMeasure) + 1;
+        this.curMeasureNum = (this.tempo == 55) ? Math.floor(Math.floor(numTicksSoFar / this.numBeatsInMeasure) / 2) + 1: Math.floor(numTicksSoFar / this.numBeatsInMeasure) + 1;
         this.curBeatNum = numTicksSoFar % this.numBeatsInMeasure + 1;
         var nextTickTime = (numTicksSoFar + 1) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
