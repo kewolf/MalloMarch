@@ -524,11 +524,11 @@ html
             function stopPiece() {
                 console.log("Stop!");
 
-                var measureNum = -1;
-                sendStartMeasure(measureNum);
+                startMeasure = -1;
+                sendStartMeasure(startMeasure);
 
                 var span_measure = document.getElementById("countdown");
-                span_measure.innerHTML = measureNum.toString();
+                span_measure.innerHTML = startMeasure.toString();
 
                 $('#begin').button('enable');
                 $('#pause').button('disable');

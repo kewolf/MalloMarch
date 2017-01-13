@@ -142,11 +142,13 @@ io.on('connection', function (socket) {
         //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
         var date = newSocket.dateTime;
         var data = JSON.parse(newSocket.str);
+        var LOGTITLE = "practice"
+
         data["ip"] = id;
 
         if (newSocket.type == "email") {
             var saveStr = id + "_" + date;
-            var file = 'savedJSON/emails_' + saveStr + '.json';
+            var file = 'savedJSON/emails_' + LOGTITLE + '_' + saveStr + '.json';
 
             jsonfile.spaces = 4;
             jsonfile.writeFile(file, data, function (err) {
@@ -155,7 +157,7 @@ io.on('connection', function (socket) {
         }
         else if (newSocket.type == "params") {
             var saveStr = id + "_" + date;
-            var file = 'savedJSON/practice2_' + saveStr + '.json';
+            var file = 'savedJSON/' + LOGTITLE + '_' + saveStr + '.json';
 
             jsonfile.spaces = 4;
             jsonfile.writeFile(file, data, function (err) {
