@@ -16,7 +16,7 @@ var NumXVoice = function (player) {
 
 
     this.play = function (time, velocity, player) {
-        var gain = 0.1 + Math.min(0.6, -velocity/9000);
+        var gain = Math.min(0.6, -velocity/10000);
         this.outAmp.gain.value = gain;
         this.env.on();
     };

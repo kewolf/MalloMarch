@@ -575,16 +575,20 @@ html
             function setPanningParams() {
                 console.log("Set Panning!");
 
-                if (thisPerformerNum == 0) {
+                if (thisPerformerNum == 1) {
                     // Between -1 (left) and 1 (right
-                    players[0].setPanPosition(1.0); //this me!
-                    players[1].setPanPosition(0); // you are to my left
-                    players[2].setPanPosition(-1.0); //  you are further to my left
-                } else if (thisPerformerNum == 1) {
-                    //values:
-
+                    players[0].setPanPosition(0); // me
+                    players[1].setPanPosition(-0.3);
+                    players[2].setPanPosition(-0.75);
                 } else if (thisPerformerNum == 2) {
-                    //values:
+                    players[0].setPanPosition(0.4);
+                    players[1].setPanPosition(0); // me
+                    players[2].setPanPosition(-0.4);
+
+                } else if (thisPerformerNum == 3) {
+                    players[0].setPanPosition(0.75);
+                    players[1].setPanPosition(0.3);
+                    players[2].setPanPosition(0); // me
 
                 }
             }
