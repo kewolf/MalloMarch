@@ -64,14 +64,6 @@ Metronome = function (audioContext, logger) {
         var oldBeatNum = this.curBeatNum;
         this.curMeasureNum = Math.floor(numTicksSoFar / this.numBeatsInMeasure) + 1;
         this.curBeatNum = numTicksSoFar % this.numBeatsInMeasure + 1;
-        if (this.curBeatNum != oldBeatNum)
-        {
-            //console.log("Beat: " + this.curBeatNum);
-        }
-        if (this.curMeasureNum != oldMeasureNum)
-        {
-            //console.log("Measure: " + this.curMeasureNum);
-        }
         var nextTickTime = (numTicksSoFar + 1) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
             syncClient.getTime() > this.lastTickTime + this.lookahead) {
@@ -81,19 +73,17 @@ Metronome = function (audioContext, logger) {
     };
 
     this.play = function (time) {
-        //console.log("metronome.play()");
-        if (logger && this.syncClient) {
-            logger.info("{ \"METRO\" : " + this.curMeasureNum + ", \"beat\" : " + this.curBeatNum + ", \"global_time\" : " + syncClient.getTime() + "}");
-        }
         var source = audioContext.createBufferSource();
-
-        source.buffer = (this.curBeatNum == 7) ? this.buffer : this.buffer2;
+        source.buffer = (this.curBeatNum == 8) ? this.buffer : this.buffer2;
         var volume = audioContext.createGain();
         volume.gain.value = this.volume;
         source.connect(volume);
         volume.connect(audioContext.destination);
         source.start(time);
-    }
+        if (logger && this.syncClient) {
+            logger.info("{ \"METRO\" : " + this.curMeasureNum + ", \"beat\" : " + this.curBeatNum + ", \"global_time\" : " + syncClient.getTime() + "}");
+        }
+    };
 
     this.setVolume = function(volume) { this.volume = volume; };
 };

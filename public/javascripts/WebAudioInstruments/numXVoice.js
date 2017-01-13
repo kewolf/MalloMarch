@@ -19,7 +19,6 @@ var NumXVoice = function (player) {
         var gain = 0.1 + Math.min(0.6, -velocity/9000);
         this.outAmp.gain.value = gain;
         this.env.on();
-        console.log("gain: " + gain);
     };
 
 
@@ -28,7 +27,6 @@ var NumXVoice = function (player) {
     };
 
     this.setPitch = function(frequency) {
-        // console.log("frequency: " + frequency);
         this.source.frequency.value = frequency;
     }
 

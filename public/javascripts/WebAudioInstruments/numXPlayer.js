@@ -163,26 +163,21 @@ var Player = function () {
     };
 
     this.setNReverbBuffer = function (buffer) {
-        //console.log('loaded reverb impulse');
         this.nReverb.buffer = buffer;
     };
 
     this.setJcReverbBuffer = function (buffer) {
-        //console.log('loaded reverb impulse');
         this.jcReverb.buffer = buffer;
     };
 
     this.schedule = function (time, params) {
         this.x_pos = parseFloat(params['x_pos']);
-        console.log('x_pos: ' + this.x_pos);
         this.setPitch1(this.pitch1);
         this.setPitch2(this.pitch2);
         this.setPitch3(this.pitch3);
         this.voice1.play(time, params['velocity'], this);
         this.voice2.play(time, params['velocity'], this);
         this.voice3.play(time, params['velocity'], this);
-        // this.env.on();
-        //console.log("scheduled audio for time: " + time);
     };
 
 // todo: needed for backward compatibility (for now)
@@ -210,7 +205,6 @@ var Player = function () {
     };
 
     this.setParameters = function (params) {
-        console.log(params);
         this.setPitch1(params['pitch1']);
         this.setPitch2(params['pitch2']);
         this.setPitch3(params['pitch3']);

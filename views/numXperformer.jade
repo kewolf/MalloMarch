@@ -44,7 +44,7 @@ html
     body(class="ui-mobile-viewport")
         script.
 
-            var customIPflag = 1;
+            var customIPflag = 0;
             var serverURL = 'http://localhost:3000';
             var customServerURL = '192.168.1.9:3000';
 
@@ -240,6 +240,7 @@ html
                 var diff = data.predicted_time / 1000.0 - syncClient.getTime();
                 scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
                 scheduler.curIds[instr] = data.msg_id;
+                scheduler.curParams[instr] = {velocity: data.velocity, x_pos: data.x_pos, y_pos: data.y_pos, z_pos: data.z_pos};
 
                 if (Math.abs(diff) < 0.02) {
                     console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
