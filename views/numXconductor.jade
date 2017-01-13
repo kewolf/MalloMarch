@@ -376,9 +376,11 @@ html
                     console.log("Current Interface: " + currentInterface);
                     //if we are on movement 1: trigger changes in the interfaces:
 
+                    var span_measure = document.getElementById("countdown");
+                    span_measure.innerHTML = measureNum.toString();
+
                     if ((currentInterface == 1) && (startMeasure != -1)) {
-                        var span_measure = document.getElementById("countdown");
-                        span_measure.innerHTML = measureNum.toString();
+
 
                         console.log("Movement1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
 
@@ -457,7 +459,7 @@ html
                                 //updateBPM(55);
                                 break;
 
-                            case 75:
+                            case 93:
                                 console.log("DONE!");
                                 stopPiece();
                                 break;
