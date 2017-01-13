@@ -889,6 +889,11 @@ block content
                 //console.log("EMAIL: " + email);
                 params["email"] = email;
                 params["code"] = randCode;
+                if (loggerOn) {
+                    if (initMovements) {
+                        params["time"] = syncClient.getTime();
+                    }
+                }
 
                 var str = JSON.stringify(params);
                 //console.log(str);

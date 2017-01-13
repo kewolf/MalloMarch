@@ -212,7 +212,7 @@ html
                  */
 
                 if (isMetroOn) {
-                    switchMetronomeOn(true);
+                    switchMetronomeOn(true, currentBPM);
                 }
 
                 stayAwake = setInterval(function () {
@@ -297,9 +297,7 @@ html
                 //itemIndex: index of active item.
 
                 sly_channels.on('active', function (eventName, itemIndex) {
-                    socket.emit('changeChannel', {
-                        newChannel: itemIndex
-                    });
+                    setChannel(itemIndex);
                 });
 
                 //DO WE NEED TO LOG THESE EVENTS? OR WILL CLIENT LOG THEM?
@@ -334,6 +332,12 @@ html
                 });
             }
 
+            function setChannel(channelNum) {
+                socket.emit('changeChannel', {
+                    newChannel: channelNum
+                });
+            }
+
 
             /*
              Triggered when the set BPM button is clicked
@@ -364,7 +368,7 @@ html
 
 
                 metronome.watch('curMeasureNum', function (id, oldval, newval) {
-                    //console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
+                    console.log('metronome.' + id + ' changed from ' + oldval + ' to ' + newval);
                     //$('#numbers').sly('activate', newvalue-1);
 
                     var measureNum = newval - startMeasure;
@@ -373,23 +377,15 @@ html
                     //if we are on movement 1: trigger changes in the interfaces:
 
                     if ((currentInterface == 1) && (startMeasure != -1)) {
-                        console.log("We are in Movement 1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
+                        var span_measure = document.getElementById("countdown");
+                        span_measure.innerHTML = measureNum.toString();
 
-                        sendPlayer1Params();
+                        console.log("Movement1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
 
                         switch (measureNum) {
                             case -1:
-                                //update params for the start of our piece:
-                                updateAudienceParameter(0, 'pitch1', 150);
-                                updateAudienceParameter(0, 'pitch2', 150);
-                                updateAudienceParameter(0, 'pitch3', 150);
-                                updateAudienceParameter(0, 'volume', 1.0);
-                                updateAudienceParameter(0, 'echo', 0);
-                                updateAudienceParameter(0, 'ethereality', 74);
-                                updateAudienceParameter(0, 'glimmer', 9);
-                                updateAudienceParameter(0, 'shift', 32);
-
-
+                                //TODO: Make sure all audeince members are on channel 1!
+                                setChannel(0);
                                 break;
 
                             case 0:
@@ -399,37 +395,56 @@ html
                             case 19:
                                 console.log("MEASURE 19");
                                 // P1 increase echo by .25
-                                updateAudienceParameter(0, 'echo', 200);
+                                updateAudienceParameter(0, 'echo', 25);
                                 // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'glimmer', 25);
                                 // P3 increase ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 25);
+
                                 break;
 
                             case 24:
                                 console.log("MEASURE 24");
                                 // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 50);
                                 // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'glimmer', 50);
                                 // P3 increase ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 50);
                                 break;
 
                             case 29:
                                 console.log("MEASURE 29");
                                 // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 75);
                                 // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'glimmer', 75);
                                 // P3 increase ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 75);
                                 break;
 
                             case 34:
                                 console.log("MEASURE 34");
                                 // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 100);
                                 // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'glimmer', 100);
                                 // P3 increase ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 100);
+                                break;
+
+                            case 36:
+                                setChannel(0);
                                 break;
 
                             case 38:
                                 console.log("MEASURE 38");
                                 // P1 max ethereality
+                                updateAudienceParameter(0, 'ethereality', 100);
                                 // P2 max ethereality
+                                updateAudienceParameter(1, 'ethereality', 100);
                                 // P3 max ethereality
+                                updateAudienceParameter(2, 'ethereality', 100);
                                 break;
 
                             case 59:
@@ -481,7 +496,8 @@ html
              Sets the tempo for the performer metronomes using a newBPM value
              */
             function updateBPM(newBPM) {
-                $('#bpm').val = newBPM;
+                console.log("UPDATE: " + newBPM);
+                $('#bpm').val(newBPM);
                 setBPM();
             }
 
@@ -492,9 +508,8 @@ html
              */
             function beginPiece() {
                 console.log("Begin!");
-                var thisMeasure = metronome.curMeasureNum + 3;
-                startMeasure = thisMeasure;
-                sendStartMeasure(thisMeasure);
+                startMeasure = metronome.curMeasureNum + 3;
+                sendStartMeasure(startMeasure);
 
                 $('#begin').button('disable');
                 $('#pause').button('enable');
@@ -508,7 +523,12 @@ html
              */
             function stopPiece() {
                 console.log("Stop!");
-                sendStartMeasure(-1);
+
+                var measureNum = -1;
+                sendStartMeasure(measureNum);
+
+                var span_measure = document.getElementById("countdown");
+                span_measure.innerHTML = measureNum.toString();
 
                 $('#begin').button('enable');
                 $('#pause').button('disable');
@@ -547,9 +567,64 @@ html
 
             }
             function sendPlayer2Params() {
+                //updatePlayerParameter(playerInterface, performer, param, value)
+                console.log("Send Player 2 Parameters!");
+                updatePlayerParameter(1, 0, 'pitch1', 925);
+                updatePlayerParameter(1, 0, 'pitch2', 245);
+                updatePlayerParameter(1, 0, 'pitch3', 927);
+                updatePlayerParameter(1, 0, 'volume', 0.43);
+                updatePlayerParameter(1, 0, 'echo', 0);
+                updatePlayerParameter(1, 0, 'ethereality', 1);
+                updatePlayerParameter(1, 0, 'glimmer', 0);
+                updatePlayerParameter(1, 0, 'shift', 5);
+
+                updatePlayerParameter(1, 1, 'pitch1', 241);
+                updatePlayerParameter(1, 1, 'pitch2', 228);
+                updatePlayerParameter(1, 1, 'pitch3', 360);
+                updatePlayerParameter(1, 1, 'volume', 0.95);
+                updatePlayerParameter(1, 1, 'echo', 2);
+                updatePlayerParameter(1, 1, 'ethereality', 1);
+                updatePlayerParameter(1, 1, 'glimmer', 4);
+                updatePlayerParameter(1, 1, 'shift', 0);
+
+                updatePlayerParameter(1, 2, 'pitch1', 288);
+                updatePlayerParameter(1, 2, 'pitch2', 292);
+                updatePlayerParameter(1, 2, 'pitch3', 547);
+                updatePlayerParameter(1, 2, 'volume', 1);
+                updatePlayerParameter(1, 2, 'echo', 0);
+                updatePlayerParameter(1, 2, 'ethereality', 0);
+                updatePlayerParameter(1, 2, 'glimmer', 0);
+                updatePlayerParameter(1, 2, 'shift', 28);
 
             }
             function sendPlayer3Params() {
+                console.log("Send Player 3 Parameters!");
+                updatePlayerParameter(1, 0, 'pitch1', 150);
+                updatePlayerParameter(1, 0, 'pitch2', 176);
+                updatePlayerParameter(1, 0, 'pitch3', 167);
+                updatePlayerParameter(1, 0, 'volume', 0.66);
+                updatePlayerParameter(1, 0, 'echo', 1);
+                updatePlayerParameter(1, 0, 'ethereality', 42);
+                updatePlayerParameter(1, 0, 'glimmer', 63);
+                updatePlayerParameter(1, 0, 'shift', 5);
+
+                updatePlayerParameter(1, 1, 'pitch1', 609);
+                updatePlayerParameter(1, 1, 'pitch2', 320);
+                updatePlayerParameter(1, 1, 'pitch3', 558);
+                updatePlayerParameter(1, 1, 'volume', 0.85);
+                updatePlayerParameter(1, 1, 'echo', 1);
+                updatePlayerParameter(1, 1, 'ethereality', 6);
+                updatePlayerParameter(1, 1, 'glimmer', 16);
+                updatePlayerParameter(1, 1, 'shift', 88);
+
+                updatePlayerParameter(1, 2, 'pitch1', 686);
+                updatePlayerParameter(1, 2, 'pitch2', 354);
+                updatePlayerParameter(1, 2, 'pitch3', 686);
+                updatePlayerParameter(1, 2, 'volume', 1);
+                updatePlayerParameter(1, 2, 'echo', 1);
+                updatePlayerParameter(1, 2, 'ethereality', 88);
+                updatePlayerParameter(1, 2, 'glimmer', 3);
+                updatePlayerParameter(1, 2, 'shift', 24);
 
             }
 
@@ -731,6 +806,16 @@ html
                             label(for='radio-choice-3') Movement 2
                             input#radio-choice-4(type='radio', name='radio-choice', value='4')
                             label(for='radio-choice-4') Survey
+
+                .ui-body.ui-body-a.ui-corner-all
+                    .ui-block-a(style='width:10%')
+                    .ui-block-b(style='width:80%')
+                        #countdownDiv.ui-field-contain
+                            p#countdownLabel Measure Number:
+                            p#countdown 0
+                    .ui-block-c(style='width:10%')
+                        button#logoutButton.ui-btn.ui-btn-inline.ui-shadow.ui-btn.ui-corner-all.ui-mini.ui-btn-c(name='logout', type='submit', onclick='logout()') Logout
+
 
                 .ui-body.ui-body-a.ui-corner-all.center
                     .ui-content(role='main')

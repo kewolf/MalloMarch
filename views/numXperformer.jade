@@ -119,7 +119,7 @@ html
                 if (startMeasure >= 0) {
                     hasPieceStarted = true;
                     var span1 = document.getElementById("countdownLabel");
-                    span1.innerHTML = "Measure Number:";
+                    span1.innerHTML = "Measure Number: ";
                     $('#countdownDiv').show();
                 }
 
@@ -156,7 +156,6 @@ html
             });
 
             socket.on('startingMeasure', function (data) {
-
                 if (metronome) {
                     startMeasure = data.startMeasure;
                     //Trigger the piece countdown
@@ -200,7 +199,7 @@ html
             });
 
             socket.on('updatePlayerParameter', function (data) {
-                console.log("Update Player " + data.performerInterface + " Interface: " + data.performerNum + " Parameter: " + data.parameter + " Value: " + data.value);
+                //console.log("Update Player " + data.performerInterface + " Interface: " + data.performerNum + " Parameter: " + data.parameter + " Value: " + data.value);
                 var playerInter = data.performerInterface;
                 if (playerInter == thisPerformerNum) {
                     var playerNum = data.performerNum;
@@ -243,9 +242,9 @@ html
                 scheduler.curParams[instr] = {velocity: data.velocity, x_pos: data.x_pos, y_pos: data.y_pos, z_pos: data.z_pos};
 
                 if (Math.abs(diff) < 0.02) {
-                    console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
-                    console.log("RECV TIME DIFF: " + diff);
-                    console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                    //console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
+                    //console.log("RECV TIME DIFF: " + diff);
+                    //console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
                 }
                 logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
             });

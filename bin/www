@@ -90,25 +90,8 @@ var isMetroOn = 1; // used to communicate between numXconductor and performer
 var currentBPM = -1; // get this from conductor - if conductor not setup than -1
 var startMeasure;
 
-// Setup the storage for the audience email addresses
-var emails = {};
-var numEmails = 0;
-var numEmailsBeforeSaving = 5;
-
-
 var performerIPs = ["", "", ""];
 
-
-function saveEmails() {
-    var str = JSON.stringify(emails);
-    var obj = JSON.parse(str);
-    var date = (new Date).getTime();
-    var file = 'logs/emails_' + date + '.json';
-    jsonfile.spaces = 4;
-    jsonfile.writeFile(file, obj, function (err) {
-        console.error(err)
-    })
-}
 
 // Emit welcome message on when the socket connects and set up our listeners on this
 io.on('connection', function (socket) {
@@ -162,12 +145,13 @@ io.on('connection', function (socket) {
         data["ip"] = id;
 
         if (newSocket.type == "email") {
-            emails["email" + numEmails] = data;
-            numEmails++;
-            if (numEmails % numEmailsBeforeSaving == 0) {
-                //overwrite the emails file
-                saveEmails();
-            }
+            var saveStr = id + "_" + date;
+            var file = 'savedJSON/emails_' + saveStr + '.json';
+
+            jsonfile.spaces = 4;
+            jsonfile.writeFile(file, data, function (err) {
+                console.error(err)
+            })
         }
         else if (newSocket.type == "params") {
             var saveStr = id + "_" + date;
