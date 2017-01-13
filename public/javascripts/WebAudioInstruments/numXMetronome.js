@@ -13,6 +13,7 @@ Metronome = function (audioContext, logger) {
     this.changedTo55 = false;
     this.changeTickNum = 0;
     this.numTicksSoFar = 0;
+    this.numReportedTicksSoFar = 0;
 
     this.setTempo = function (tempo) {
         // if (tempo = 55 && !this.changedTo55)
@@ -73,17 +74,20 @@ Metronome = function (audioContext, logger) {
             this.changeTickNum = this.numTicksSoFar;
         }
 
+        this.numTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
+
         if (this.tempo == 110) {
-            this.numTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
+            this.numReportedTicksSoFar = Math.floor(this.syncClient.getTime() / this.tickPeriod);
         } else if (this.tempo == 55)
         {
             var curTick = Math.floor(this.syncClient.getTime() / this.tickPeriod);
             var newTicks = curTick - this.changeTickNum / 2;
-            this.numTicksSoFar = this.changeTickNum + newTicks;
+            this.numReportedTicksSoFar = this.changeTickNum + newTicks;
         }
+
         var oldMeasureNum = this.curMeasureNum;
         var oldBeatNum = this.curBeatNum;
-        this.curMeasureNum = Math.floor(this.numTicksSoFar / this.numBeatsInMeasure) + 1;
+        this.curMeasureNum = Math.floor(this.numReportedTicksSoFar / this.numBeatsInMeasure) + 1;
         this.curBeatNum = this.numTicksSoFar % this.numBeatsInMeasure + 1;
         var nextTickTime = (this.numTicksSoFar + 1) * this.tickPeriod;
         if (nextTickTime - this.syncClient.getTime() < this.lookahead &&
