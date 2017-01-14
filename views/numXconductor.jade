@@ -101,7 +101,7 @@ html
                 } else if (data.playerNum == 2) {
                     sendPlayer2Params();
                 } else if (data.playerNum == 3) {
-                    sendPLayer3Params();
+                    sendPlayer3Params();
                 }
             });
 
@@ -376,9 +376,11 @@ html
                     console.log("Current Interface: " + currentInterface);
                     //if we are on movement 1: trigger changes in the interfaces:
 
+                    var span_measure = document.getElementById("countdown");
+                    span_measure.innerHTML = measureNum.toString();
+
                     if ((currentInterface == 1) && (startMeasure != -1)) {
-                        var span_measure = document.getElementById("countdown");
-                        span_measure.innerHTML = measureNum.toString();
+
 
                         console.log("Movement1, Measure Num: " + newval + " Piece Measure Number: " + measureNum);
 
@@ -457,7 +459,7 @@ html
                                 //updateBPM(55);
                                 break;
 
-                            case 75:
+                            case 93:
                                 console.log("DONE!");
                                 stopPiece();
                                 break;
@@ -585,68 +587,67 @@ html
                 updatePlayerParameter(1, 2, 'ethereality', 13);
                 updatePlayerParameter(1, 2, 'glimmer', 13);
                 updatePlayerParameter(1, 2, 'shift', 8);
-
             }
+
             function sendPlayer2Params() {
                 //updatePlayerParameter(playerInterface, performer, param, value)
                 console.log("Send Player 2 Parameters!");
-                updatePlayerParameter(1, 0, 'pitch1', 925);
-                updatePlayerParameter(1, 0, 'pitch2', 245);
-                updatePlayerParameter(1, 0, 'pitch3', 927);
-                updatePlayerParameter(1, 0, 'volume', 0.43);
-                updatePlayerParameter(1, 0, 'echo', 0);
-                updatePlayerParameter(1, 0, 'ethereality', 1);
-                updatePlayerParameter(1, 0, 'glimmer', 0);
-                updatePlayerParameter(1, 0, 'shift', 5);
+                updatePlayerParameter(2, 0, 'pitch1', 925);
+                updatePlayerParameter(2, 0, 'pitch2', 245);
+                updatePlayerParameter(2, 0, 'pitch3', 927);
+                updatePlayerParameter(2, 0, 'volume', 0.33);
+                updatePlayerParameter(2, 0, 'echo', 0);
+                updatePlayerParameter(2, 0, 'ethereality', 1);
+                updatePlayerParameter(2, 0, 'glimmer', 0);
+                updatePlayerParameter(2, 0, 'shift', 5);
 
-                updatePlayerParameter(1, 1, 'pitch1', 241);
-                updatePlayerParameter(1, 1, 'pitch2', 228);
-                updatePlayerParameter(1, 1, 'pitch3', 360);
-                updatePlayerParameter(1, 1, 'volume', 0.95);
-                updatePlayerParameter(1, 1, 'echo', 2);
-                updatePlayerParameter(1, 1, 'ethereality', 1);
-                updatePlayerParameter(1, 1, 'glimmer', 4);
-                updatePlayerParameter(1, 1, 'shift', 0);
+                updatePlayerParameter(2, 1, 'pitch1', 241);
+                updatePlayerParameter(2, 1, 'pitch2', 228);
+                updatePlayerParameter(2, 1, 'pitch3', 360);
+                updatePlayerParameter(2, 1, 'volume', 0.95);
+                updatePlayerParameter(2, 1, 'echo', 2);
+                updatePlayerParameter(2, 1, 'ethereality', 1);
+                updatePlayerParameter(2, 1, 'glimmer', 4);
+                updatePlayerParameter(2, 1, 'shift', 0);
 
-                updatePlayerParameter(1, 2, 'pitch1', 288);
-                updatePlayerParameter(1, 2, 'pitch2', 292);
-                updatePlayerParameter(1, 2, 'pitch3', 547);
-                updatePlayerParameter(1, 2, 'volume', 1);
-                updatePlayerParameter(1, 2, 'echo', 0);
-                updatePlayerParameter(1, 2, 'ethereality', 0);
-                updatePlayerParameter(1, 2, 'glimmer', 0);
-                updatePlayerParameter(1, 2, 'shift', 28);
-
+                updatePlayerParameter(2, 2, 'pitch1', 288);
+                updatePlayerParameter(2, 2, 'pitch2', 292);
+                updatePlayerParameter(2, 2, 'pitch3', 547);
+                updatePlayerParameter(2, 2, 'volume', 0.33);
+                updatePlayerParameter(2, 2, 'echo', 0);
+                updatePlayerParameter(2, 2, 'ethereality', 0);
+                updatePlayerParameter(2, 2, 'glimmer', 0);
+                updatePlayerParameter(2, 2, 'shift', 28);
             }
+
             function sendPlayer3Params() {
                 console.log("Send Player 3 Parameters!");
-                updatePlayerParameter(1, 0, 'pitch1', 150);
-                updatePlayerParameter(1, 0, 'pitch2', 176);
-                updatePlayerParameter(1, 0, 'pitch3', 167);
-                updatePlayerParameter(1, 0, 'volume', 0.66);
-                updatePlayerParameter(1, 0, 'echo', 1);
-                updatePlayerParameter(1, 0, 'ethereality', 42);
-                updatePlayerParameter(1, 0, 'glimmer', 63);
-                updatePlayerParameter(1, 0, 'shift', 5);
+                updatePlayerParameter(3, 0, 'pitch1', 150);
+                updatePlayerParameter(3, 0, 'pitch2', 176);
+                updatePlayerParameter(3, 0, 'pitch3', 167);
+                updatePlayerParameter(3, 0, 'volume', 0.5);
+                updatePlayerParameter(3, 0, 'echo', 1);
+                updatePlayerParameter(3, 0, 'ethereality', 42);
+                updatePlayerParameter(3, 0, 'glimmer', 63);
+                updatePlayerParameter(3, 0, 'shift', 5);
 
-                updatePlayerParameter(1, 1, 'pitch1', 609);
-                updatePlayerParameter(1, 1, 'pitch2', 320);
-                updatePlayerParameter(1, 1, 'pitch3', 558);
-                updatePlayerParameter(1, 1, 'volume', 0.85);
-                updatePlayerParameter(1, 1, 'echo', 1);
-                updatePlayerParameter(1, 1, 'ethereality', 6);
-                updatePlayerParameter(1, 1, 'glimmer', 16);
-                updatePlayerParameter(1, 1, 'shift', 88);
+                updatePlayerParameter(3, 1, 'pitch1', 609);
+                updatePlayerParameter(3, 1, 'pitch2', 320);
+                updatePlayerParameter(3, 1, 'pitch3', 558);
+                updatePlayerParameter(3, 1, 'volume', 0.5);
+                updatePlayerParameter(3, 1, 'echo', 1);
+                updatePlayerParameter(3, 1, 'ethereality', 6);
+                updatePlayerParameter(3, 1, 'glimmer', 16);
+                updatePlayerParameter(3, 1, 'shift', 88);
 
-                updatePlayerParameter(1, 2, 'pitch1', 686);
-                updatePlayerParameter(1, 2, 'pitch2', 354);
-                updatePlayerParameter(1, 2, 'pitch3', 686);
-                updatePlayerParameter(1, 2, 'volume', 1);
-                updatePlayerParameter(1, 2, 'echo', 1);
-                updatePlayerParameter(1, 2, 'ethereality', 88);
-                updatePlayerParameter(1, 2, 'glimmer', 3);
-                updatePlayerParameter(1, 2, 'shift', 24);
-
+                updatePlayerParameter(3, 2, 'pitch1', 686);
+                updatePlayerParameter(3, 2, 'pitch2', 354);
+                updatePlayerParameter(3, 2, 'pitch3', 686);
+                updatePlayerParameter(3, 2, 'volume', 1);
+                updatePlayerParameter(3, 2, 'echo', 1);
+                updatePlayerParameter(3, 2, 'ethereality', 88);
+                updatePlayerParameter(3, 2, 'glimmer', 3);
+                updatePlayerParameter(3, 2, 'shift', 24);
             }
 
 

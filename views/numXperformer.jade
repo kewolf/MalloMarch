@@ -44,7 +44,7 @@ html
     body(class="ui-mobile-viewport")
         script.
 
-            var customIPflag = 0;
+            var customIPflag = 1;
             var serverURL = 'http://localhost:3000';
             var customServerURL = '192.168.1.9:3000';
 
@@ -69,7 +69,11 @@ html
             var isAudioSetup = false;
             var isSchedulerSetup = false;
 
-            var performanceNumbers = ["314159265358979323846264338327950288  4197169399375105820974944592307816406", "     2718281828459045235360287471352   662497757247093699959574966967627724", "          16180339887498948482045868    34365638117720309179805762862135448"];
+            var performanceNumbers = ["314159265358979323846264338327950288  419716939937510582097 22992222329911210034440133220033", "     2718281828459045235360287471352   66249775724709369995 99323422993333993334331134431122", "          16180339887498948482045868    3436568117720309179 44003234331144331111213222224433"];
+
+            //OLD NUMBERS WITHOUT TEMPO CHANGE: ["314159265358979323846264338327950288  4197169399375105820974944592307816406",
+            //"     2718281828459045235360287471352   662497757247093699959574966967627724",
+            //"          16180339887498948482045868    34365638117720309179805762862135448"];
             var nNumbers; //the number of numbers to display, assigned once the performance number is chosen.
             var nBeats = 8; //number of beats in a measure
 
@@ -109,11 +113,10 @@ html
                 console.log("Is MalLo on? " + data.isMalloOn);
 
                 isSeqOn = data.isSequencerOn;
-                console.log("Is MalLo on? " + data.isSequencerOn);
+                console.log("Is Seq on? " + data.isSequencerOn);
 
                 startMeasure = data.startMeasure;
                 console.log("Starting Measure: " + data.startMeasure);
-
 
                 // IF the starting measure is set, then set the flag, and update the label
                 if (startMeasure >= 0) {
@@ -123,10 +126,10 @@ html
                     $('#countdownDiv').show();
                 }
 
-                console.log("IPS: " + data.performerIPs);
+                //console.log("IPS: " + data.performerIPs);
                 for (ip in data.performerIPs) {
-                    console.log("IP: " + ip);
-                    console.log("performerPI[ip]: " + data.performerIPs[ip]);
+                    //console.log("IP: " + ip);
+                    //console.log("performerPI[ip]: " + data.performerIPs[ip]);
                     var performerNum = Number(ip) + 1;
                     var ipStr = data.performerIPs[ip]
                     if (!ipStr) {
@@ -148,7 +151,7 @@ html
 
             socket.on('performerUnselected', function (data) {
                 var performerNum = data.performerNumber;
-                console.log("Performer " + performerNum + " UnChosen");
+                //console.log("Performer " + performerNum + " UnChosen");
                 $('#p' + performerNum + 'ButtonDiv').show();
                 if (thisPerformerNum == -1) {
                     window.location.reload();
@@ -163,10 +166,10 @@ html
                         $('#countdownDiv').show();
                         var measureUntilStart = startMeasure - metronome.curMeasureNum - 1;
                         beatsUntilStart = (nBeats - metronome.curBeatNum) + (measureUntilStart * nBeats);
-                        console.log("Countdown: " + beatsUntilStart);
+                        //console.log("Countdown: " + beatsUntilStart);
                         var span = document.getElementById("countdown");
                         span.innerHTML = beatsUntilStart.toString();
-                        console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
+                        //console.log("Start Measure: " + data.startMeasure + " with beats: " + beatsUntilStart);
                         //TODO: LOG PIECE START!
                     } else {
                         resetPiece();
@@ -177,31 +180,32 @@ html
 
             //receive messages from conductor on when to turn on/off the metronome
             socket.on('flipMetro', function (data) {
-                console.log("Message from conductor, turn metronome: " + data.isOn);
+                //console.log("Message from conductor, turn metronome: " + data.isOn);
                 switchMetronomeOn(data.isOn, data.bpm);
             });
 
             socket.on('flipSeq', function (data) {
-                console.log("Message from conductor, turn sequencer: " + data.isOn);
+                //console.log("Message from conductor, turn sequencer: " + data.isOn);
                 switchSequencerOn(data.isOn);
             });
 
             //receive messages from conductor on when to turn on/off the mallos
             socket.on('flipMallo', function (data) {
-                console.log("Message from conductor, turn mallos: " + data.isOn);
+                //console.log("Message from conductor, turn mallos: " + data.isOn);
                 switchMalloOn(data.isOn);
             });
 
             //receive message from conductor when to update the metronome
             socket.on('updateMetro', function (data) {
-                console.log("Update Tempo: " + data.newTempo);
+                //console.log("Update Tempo: " + data.newTempo);
                 updateMetro(data.newTempo);
             });
 
             socket.on('updatePlayerParameter', function (data) {
-                //console.log("Update Player " + data.performerInterface + " Interface: " + data.performerNum + " Parameter: " + data.parameter + " Value: " + data.value);
                 var playerInter = data.performerInterface;
+                console.log("UPDATE PARAMS: " + playerInter);
                 if (playerInter == thisPerformerNum) {
+                    console.log("Update Player " + playerInter + " Interface: " + data.performerNum + " Parameter: " + data.parameter + " Value: " + data.value);
                     var playerNum = data.performerNum;
                     var param = data.parameter;
                     var value = data.value;
@@ -220,33 +224,40 @@ html
             //when we receive predictions, schedule them
             socket.on('note_prediction', function (data) {
                 //console.log("Note Pediction: " + data.msg_id);
-                var offset = syncClient.getOffset();
-                var instr;
-                if (data.path == "/left") {
-                    instr = 0;
-                }
-                else if (data.path == "/middle") {
-                    instr = 1;
-                }
-                else if (data.path == "/right") {
-                    instr = 2;
-                }
-                else {
-                    console.log("Didn't recognize path: " + data.path);
-                }
+                if (isAudioSetup) {
+                    var offset = syncClient.getOffset();
+                    var instr;
+                    if (data.path == "/left") {
+                        instr = 0;
+                    }
+                    else if (data.path == "/middle") {
+                        instr = 1;
+                    }
+                    else if (data.path == "/right") {
+                        instr = 2;
+                    }
+                    else {
+                        console.log("Didn't recognize path: " + data.path);
+                    }
 
-                // we divide by 1000 because the audio context works in ms
-                var diff = data.predicted_time / 1000.0 - syncClient.getTime();
-                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
-                scheduler.curIds[instr] = data.msg_id;
-                scheduler.curParams[instr] = {velocity: data.velocity, x_pos: data.x_pos, y_pos: data.y_pos, z_pos: data.z_pos};
+                    // we divide by 1000 because the audio context works in ms
+                    var diff = data.predicted_time / 1000.0 - syncClient.getTime();
+                    scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
+                    scheduler.curIds[instr] = data.msg_id;
+                    scheduler.curParams[instr] = {
+                        velocity: data.velocity,
+                        x_pos: data.x_pos,
+                        y_pos: data.y_pos,
+                        z_pos: data.z_pos
+                    };
 
-                if (Math.abs(diff) < 0.02) {
-                    //console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
-                    //console.log("RECV TIME DIFF: " + diff);
-                    //console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                    if (Math.abs(diff) < 0.02) {
+                        //console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
+                        //console.log("RECV TIME DIFF: " + diff);
+                        //console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                    }
+                    logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
                 }
-                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
             });
 
 
@@ -408,6 +419,7 @@ html
 
             function initSyncAndScheduler() {
                 syncClient = new SyncClient();
+
                 if (syncClient != undefined) {
                     console.log("syncClient is defined");
                     metronome.setSyncClient(syncClient);
@@ -510,7 +522,7 @@ html
                 logger.info("{ \"FLPSE\" : " + isOn + ", \"global_time\" : " + syncClient.getTime() + "}");
                 if (isOn) {
                     sequencerID = setInterval(function () {
-                        console.log('Timer, ' + tutorialSequencer);
+                        //console.log('Timer, ' + tutorialSequencer);
                         if (tutorialSequencer == 0) {
                             scheduler.setPrediction(audioContext.currentTime + 0.01, 0);
                         } else if (tutorialSequencer == 1) {
@@ -737,7 +749,6 @@ html
                     $('#m' + i + '-ethereality').val(players[i].ethereality).trigger('change');
                     $('#m' + i + '-glimmer').val(players[i].glimmer).trigger('change');
                     $('#m' + i + '-shift').val(players[i].shift).trigger('change');
-
                 }
             }
 
@@ -899,31 +910,31 @@ html
                         .ui-content
                             label.leftItem(for='m0-pitch1') Pitch 1
                             .rightItem
-                                input#m0-pitch1(type='range', name='m0-pitch1', data-track-theme='b', data-theme='b', min='150', max='1000', value='500', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m0-pitch1(type='range', name='m0-pitch1', data-track-theme='b', data-theme='b', min='150', max='1000', value='500', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-pitch2') Pitch 2
                             .rightItem
-                                input#m0-pitch2(type='range', name='m0-pitch2', data-track-theme='b', data-theme='b', min='150', max='1000', value='490', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m0-pitch2(type='range', name='m0-pitch2', data-track-theme='b', data-theme='b', min='150', max='1000', value='490', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-pitch3') Pitch 3
                             .rightItem
-                                input#m0-pitch3(type='range', name='m0-pitch3', data-track-theme='b', data-theme='b', min='150', max='1000', value='510', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m0-pitch3(type='range', name='m0-pitch3', data-track-theme='b', data-theme='b', min='150', max='1000', value='510', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-echo') Echo
                             .rightItem
-                                input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-ethereality') Ethereality
                             .rightItem
-                                input#m0-ethereality(type='range', name='m0-ethereality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m0-ethereality(type='range', name='m0-ethereality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-glimmer') Glimmer
                             .rightItem
-                                input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5',data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-shift') Shift
                             .rightItem
-                                input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5',data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-volume') Volume
                             .rightItem
@@ -935,31 +946,31 @@ html
                         .ui-content
                             label.leftItem(for='m1-pitch1') Pitch 1
                             .rightItem
-                                input#m1-pitch1(type='range', name='m1-pitch1', data-track-theme='c', data-theme='c', min='150', max='1000', value='500', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m1-pitch1(type='range', name='m1-pitch1', data-track-theme='c', data-theme='c', min='150', max='1000', value='500', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-pitch2') Pitch 2
                             .rightItem
-                                input#m1-pitch2(type='range', name='m1-pitch2', data-track-theme='c', data-theme='c', min='150', max='1000', value='490', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m1-pitch2(type='range', name='m1-pitch2', data-track-theme='c', data-theme='c', min='150', max='1000', value='490', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-pitch3') Pitch 3
                             .rightItem
-                                input#m1-pitch3(type='range', name='m1-pitch3', data-track-theme='c', data-theme='c', min='150', max='1000', value='510', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m1-pitch3(type='range', name='m1-pitch3', data-track-theme='c', data-theme='c', min='150', max='1000', value='510', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-echo') Echo
                             .rightItem
-                                input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-ethereality') Ethereality
                             .rightItem
-                                input#m1-ethereality(type='range', name='m1-ethereality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m1-ethereality(type='range', name='m1-ethereality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-glimmer') Glimmer
                             .rightItem
-                                input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-shift') Shift
                             .rightItem
-                                input#m1-shift(type='range', name='m1-shift', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m1-shift(type='range', name='m1-shift', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-volume') Volume
                             .rightItem
@@ -970,31 +981,31 @@ html
                         .ui-content
                             label.leftItem(for='m2-pitch1') Pitch 1
                             .rightItem
-                                input#m2-pitch1(type='range', name='m2-pitch1', data-track-theme='d', data-theme='d', min='150', max='1000', value='500', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m2-pitch1(type='range', name='m2-pitch1', data-track-theme='d', data-theme='d', min='150', max='1000', value='500', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-pitch2') Pitch 2
                             .rightItem
-                                input#m2-pitch2(type='range', name='m2-pitch2', data-track-theme='d', data-theme='d', min='150', max='1000', value='490', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m2-pitch2(type='range', name='m2-pitch2', data-track-theme='d', data-theme='d', min='150', max='1000', value='490', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-pitch3') Pitch 3
                             .rightItem
-                                input#m2-pitch3(type='range', name='m2-pitch3', data-track-theme='d', data-theme='d', min='150', max='1000', value='510', step='1', data-popup-enabled='true', data-mini='true')
+                                input#m2-pitch3(type='range', name='m2-pitch3', data-track-theme='d', data-theme='d', min='150', max='1000', value='510', step='25', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-echo') Echo
                             .rightItem
-                                input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-ethereality') Ethereality
                             .rightItem
-                                input#m2-ethereality(type='range', name='m2-ethereality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m2-ethereality(type='range', name='m2-ethereality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-glimmer') Glimmer
                             .rightItem
-                                input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-shift') Shift
                             .rightItem
-                                input#m2-shift(type='range', name='m2-shift', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                                input#m2-shift(type='range', name='m2-shift', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-volume') Volume
                             .rightItem

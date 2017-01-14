@@ -38,7 +38,7 @@ block content
         const CONSENT_COOKIE_NAME = "consentFormAgreement";
         const DAYS_TO_KEEP_COOKIE = 1;
 
-        var customIPflag = 0;
+        var customIPflag = 1;
         var serverURL = 'http://localhost:3000';
         var customServerURL = '192.168.1.9:3000';
 
@@ -139,6 +139,7 @@ block content
 
         //receive messages from server (masterServerControl) on when to turn on/off the mallos
         socket.on('flipMallo', function (data) {
+            /*
             console.log("Message from server, turn mallo: " + data.isOn);
             if (loggerOn) {
                 if (initMovements) {
@@ -147,7 +148,8 @@ block content
                     logger.info("{ \"FLPMA\" : " + data.isOn + ", \"global_time\" :  NA }");
                 }
             }
-            switchMalloOn(data.isOn);
+             //NOMUTE switchMalloOn(data.isOn);
+             */
         });
 
 
@@ -180,33 +182,40 @@ block content
         //when we receive predictions, schedule them
         socket.on('note_prediction', function (data) {
             //console.log("Note Pediction: " + data.msg_id);
-            var offset = syncClient.getOffset();
-            var instr;
-            if (data.path == "/left") {
-                instr = 0;
-            }
-            else if (data.path == "/middle") {
-                instr = 1;
-            }
-            else if (data.path == "/right") {
-                instr = 2;
-            }
-            else {
-                console.log("Didn't recognize path: " + data.path);
-            }
+            if (isAudioSetup) {
+                var offset = syncClient.getOffset();
+                var instr;
+                if (data.path == "/left") {
+                    instr = 0;
+                }
+                else if (data.path == "/middle") {
+                    instr = 1;
+                }
+                else if (data.path == "/right") {
+                    instr = 2;
+                }
+                else {
+                    console.log("Didn't recognize path: " + data.path);
+                }
 
-            // we divide by 1000 because the audio context works in ms
-            var diff = data.predicted_time / 1000.0 - syncClient.getTime();
-            scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
-            scheduler.curIds[instr] = data.msg_id;
-            scheduler.curParams[instr] = {velocity: data.velocity, x_pos: data.x_pos, y_pos: data.y_pos, z_pos: data.z_pos};
+                // we divide by 1000 because the audio context works in ms
+                var diff = data.predicted_time / 1000.0 - syncClient.getTime();
+                scheduler.curPredictions[instr] = (data.predicted_time / 1000.0) - offset;
+                scheduler.curIds[instr] = data.msg_id;
+                scheduler.curParams[instr] = {
+                    velocity: data.velocity,
+                    x_pos: data.x_pos,
+                    y_pos: data.y_pos,
+                    z_pos: data.z_pos
+                };
 
-            if (Math.abs(diff) < 0.02) {
-                //console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
-                //console.log("RECV TIME DIFF: " + diff);
-                //console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                if (Math.abs(diff) < 0.02) {
+                    //console.log("RECV PRED Time: " + data.predicted_time / 1000.0 + " Global Time: " + syncClient.getTime());
+                    //console.log("RECV TIME DIFF: " + diff);
+                    //console.log("curPredictions[instr]: " + scheduler.curPredictions[instr] + ", audioContext.currentTime: " + audioContext.currentTime + ", diff: " + (scheduler.curPredictions[instr] - audioContext.currentTime));
+                }
+                logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
             }
-            logger.info("{ \"PREDI\" : " + data.predicted_time + ",\"msg_id\" : " + data.msg_id + ", \"path\" : " + instr + ", \"send_time\" : " + data.send_time + ", \"receive_time\" : " + syncClient.getTime() + ", \"velocity\" : " + data.velocity + ", \"x\" : " + data.x_pos + ", \"y\" : " + data.y_pos + ", \"z\" : " + data.z_pos + " }");
         });
 
 
@@ -258,7 +267,7 @@ block content
                         console.log("currentInterface: " + currentInterface);
                         $('#sequencerOn').show();
                         switchSequencerOn(true);
-                        switchMalloOn(false);
+                        //NOMUTE: switchMalloOn(false);
                     } else {
                         playSound(audioContext.currentTime);
                     }
@@ -475,7 +484,7 @@ block content
                     case InterfaceEnum.M1:
                         $('#movement1').show();
                         switchSequencerOn(false);
-                        switchMalloOn(true);
+                        //NOMUTE: switchMalloOn(true);
 
 
                         $('#consent').hide();
@@ -487,7 +496,7 @@ block content
                         //disaply Tutorial header
                         $('#header').show();
                         switchSequencerOn(true);
-                        switchMalloOn(false);
+                        //NOMUTE: switchMalloOn(false);
 
                         //begin popups
 
@@ -504,8 +513,8 @@ block content
 
                     case InterfaceEnum.M2:
                         //TODO CHANGE BACK FOR PERFORMANCE!!!!!
-                        //switchSequencerOn(false);
-                        switchMalloOn(true);
+                        switchSequencerOn(false);
+                        //NOMUTE: switchMalloOn(true);
 
                         $('#movement2').show();
                         $('#tabButton1').trigger('click');
@@ -1107,31 +1116,31 @@ block content
                     .ui-content
                         label.leftItem(for='m0-pitch1') Pitch 1
                         .rightItem
-                            input#m0-pitch1(type='range', name='m0-pitch1', data-track-theme='b', data-theme='b', min='150', max='1000', value='500', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-pitch1(type='range', name='m0-pitch1', data-track-theme='b', data-theme='b', min='150', max='1000', value='500', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-pitch2') Pitch 2
                         .rightItem
-                            input#m0-pitch2(type='range', name='m0-pitch2', data-track-theme='b', data-theme='b', min='150', max='1000', value='490', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-pitch2(type='range', name='m0-pitch2', data-track-theme='b', data-theme='b', min='150', max='1000', value='490', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-pitch3') Pitch 3
                         .rightItem
-                            input#m0-pitch3(type='range', name='m0-pitch3', data-track-theme='b', data-theme='b', min='150', max='1000', value='510', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m0-pitch3(type='range', name='m0-pitch3', data-track-theme='b', data-theme='b', min='150', max='1000', value='510', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-echo') Echo
                         .rightItem
-                            input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m0-echo(type='range', name='m0-echo', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-ethereality') Ethereality
                         .rightItem
-                            input#m0-ethereality(type='range', name='m0-ethereality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m0-ethereality(type='range', name='m0-ethereality', data-track-theme='b', data-theme='b', min='0', max='100', step='5', value='50', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-glimmer') Glimmer
                         .rightItem
-                            input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-shift') Shift
                         .rightItem
-                            input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m0-shift(type='range', name='m0-shift', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m0-volume') Volume
                         .rightItem
@@ -1143,31 +1152,31 @@ block content
                     .ui-content
                         label.leftItem(for='m1-pitch1') Pitch 1
                         .rightItem
-                            input#m1-pitch1(type='range', name='m1-pitch1', data-track-theme='c', data-theme='c', min='150', max='1000', value='500', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-pitch1(type='range', name='m1-pitch1', data-track-theme='c', data-theme='c', min='150', max='1000', value='500', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-pitch2') Pitch 2
                         .rightItem
-                            input#m1-pitch2(type='range', name='m1-pitch2', data-track-theme='c', data-theme='c', min='150', max='1000', value='490', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-pitch2(type='range', name='m1-pitch2', data-track-theme='c', data-theme='c', min='150', max='1000', value='490', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-pitch3') Pitch 3
                         .rightItem
-                            input#m1-pitch3(type='range', name='m1-pitch3', data-track-theme='c', data-theme='c', min='150', max='1000', value='510', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m1-pitch3(type='range', name='m1-pitch3', data-track-theme='c', data-theme='c', min='150', max='1000', value='510', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-echo') Echo
                         .rightItem
-                            input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m1-echo(type='range', name='m1-echo', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-ethereality') Ethereality
                         .rightItem
-                            input#m1-ethereality(type='range', name='m1-ethereality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m1-ethereality(type='range', name='m1-ethereality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-glimmer') Glimmer
                         .rightItem
-                            input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-shift') Shift
                         .rightItem
-                            input#m1-shift(type='range', name='m1-shift', data-track-theme='c', data-theme='c', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m1-shift(type='range', name='m1-shift', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m1-volume') Volume
                         .rightItem
@@ -1178,31 +1187,31 @@ block content
                     .ui-content
                         label.leftItem(for='m2-pitch1') Pitch 1
                         .rightItem
-                            input#m2-pitch1(type='range', name='m2-pitch1', data-track-theme='d', data-theme='d', min='150', max='1000', value='500', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-pitch1(type='range', name='m2-pitch1', data-track-theme='d', data-theme='d', min='150', max='1000', value='500', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-pitch2') Pitch 2
                         .rightItem
-                            input#m2-pitch2(type='range', name='m2-pitch2', data-track-theme='d', data-theme='d', min='150', max='1000', value='490', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-pitch2(type='range', name='m2-pitch2', data-track-theme='d', data-theme='d', min='150', max='1000', value='490', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-pitch3') Pitch 3
                         .rightItem
-                            input#m2-pitch3(type='range', name='m2-pitch3', data-track-theme='d', data-theme='d', min='150', max='1000', value='510', step='1', data-popup-enabled='true', data-mini='true')
+                            input#m2-pitch3(type='range', name='m2-pitch3', data-track-theme='d', data-theme='d', min='150', max='1000', value='510', step='25', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-echo') Echo
                         .rightItem
-                            input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m2-echo(type='range', name='m2-echo', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-ethereality') Ethereality
                         .rightItem
-                            input#m2-ethereality(type='range', name='m2-ethereality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m2-ethereality(type='range', name='m2-ethereality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-glimmer') Glimmer
                         .rightItem
-                            input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-shift') Shift
                         .rightItem
-                            input#m2-shift(type='range', name='m2-shift', data-track-theme='d', data-theme='d', min='0', max='100', value='50', data-popup-enabled='true', data-mini='true')
+                            input#m2-shift(type='range', name='m2-shift', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                         label.leftItem(for='m2-volume') Volume
                         .rightItem
