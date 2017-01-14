@@ -252,7 +252,7 @@ var Player = function () {
         val = parseFloat(val);
         this.ethereality = val;
         this.nReverbGain.gain.value = val / 100.0;
-        this.nDryGain.gain.value = 1 - (val / 100.0);
+        this.nDryGain.gain.value = 1 - (val / 100.0 * 0.3);
     };
     this.setGlimmer = function(val) {
         val = parseFloat(val);
