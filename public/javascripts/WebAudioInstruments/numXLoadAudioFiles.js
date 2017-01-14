@@ -31,7 +31,7 @@ function loadAudioFiles(amIperformer) {
                 players[j].setNReverbBuffer(buffer);
             }
         }, function (e) {
-            console.log("Error setting up the jcReverb buffer: " + e.err);
+            console.log("Error setting up the nReverb buffer: " + e.err);
         });
     };
     nrequest.send();

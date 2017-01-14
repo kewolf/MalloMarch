@@ -10,7 +10,7 @@ var NumXVoice = function (player) {
     this.env.sustainValue = 0.0;
     this.env.releaseTime = 0.1;
     this.outAmp = audioContext.createGain();
-    this.outAmp.gain.value = 0.50;
+    this.outAmp.gain.value = 0.40;
     this.adsrAmp.connect(this.outAmp);
     this.outAmp.connect(player.out);
 

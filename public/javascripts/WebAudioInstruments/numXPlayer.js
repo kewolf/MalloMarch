@@ -111,19 +111,18 @@ var Player = function () {
     this.pitchShifterProcessor.connect(this.delayDry);
 
 
-    // NRev
+    // NRev (Ethereality)
     this.nReverbGain = audioContext.createGain();
     this.nReverbGain.connect(this.pitchShifterProcessor);
-    // this.nReverbGain.connect(this.panner);
 
     this.nReverb = audioContext.createConvolver();
     this.nReverb.connect(this.nReverbGain);
 
     this.nDryGain = audioContext.createGain();
     this.nDryGain.connect(this.pitchShifterProcessor);
-    // this.nDryGain.connect(this.panner);
 
-    // JCRev
+
+    // JCRev (Glimmer)
     this.jcReverbGain = audioContext.createGain();
     this.jcReverbGain.connect(this.nDryGain);
     this.jcReverbGain.connect(this.nReverb);
@@ -134,6 +133,7 @@ var Player = function () {
     this.jcDryGain = audioContext.createGain();
     this.jcDryGain.connect(this.nDryGain);
     this.jcDryGain.connect(this.nReverb);
+
 
     //create output for instruments to connect to
     this.out = audioContext.createGain();
@@ -163,10 +163,12 @@ var Player = function () {
     };
 
     this.setNReverbBuffer = function (buffer) {
+        console.log("Set nReverb buffer");
         this.nReverb.buffer = buffer;
     };
 
     this.setJcReverbBuffer = function (buffer) {
+        console.log("Set jcReverb buffer");
         this.jcReverb.buffer = buffer;
     };
 
@@ -246,16 +248,17 @@ var Player = function () {
         this.delay.delayTime.value = val / 200.00;
     };
     this.setEthereality = function(val) {
+        console.log("val: " + val);
         val = parseFloat(val);
         this.ethereality = val;
         this.nReverbGain.gain.value = val / 100.0;
-        this.nDryGain.gain.value = 1 - (val / 100.0) * 0.25;
+        this.nDryGain.gain.value = 1 - (val / 100.0);
     };
     this.setGlimmer = function(val) {
         val = parseFloat(val);
         this.glimmer = val;
         this.jcReverbGain.gain.value = val / 100.0;
-        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.25;
+        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.3;
     };
     this.setShift = function(val) {
         val = parseFloat(val);
