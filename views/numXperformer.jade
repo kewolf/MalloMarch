@@ -282,12 +282,12 @@ html
 
                 $('#countdownDiv').hide();
 
-                $('#m0-el-size-l').hide();
-                $('#m0-el-size-r').hide();
-                $('#m1-el-size-l').hide();
-                $('#m1-el-size-r').hide();
-                $('#m2-el-size-l').hide();
-                $('#m2-el-size-r').hide();
+                $('#gl_m0_right').hide();
+                $('#gl_m0_left').hide();
+                $('#gl_m1_right').hide();
+                $('#gl_m1_left').hide();
+                $('#gl_m2_right').hide();
+                $('#gl_m2_left').hide();
 
             });
 
@@ -928,8 +928,8 @@ html
                             .rightItem
                                 input#m0-ethereality(type='range', name='m0-ethereality', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
-                            label.leftItem(for='m0-glimmer') Glimmer
-                            .rightItem
+                            label#gl_m0_left.leftItem(for='m0-glimmer') Glimmer
+                            #gl_m0_right.rightItem
                                 input#m0-glimmer(type='range', name='m0-glimmer', data-track-theme='b', data-theme='b', min='0', max='100', value='50', step='5',data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m0-shift') Shift
@@ -964,8 +964,8 @@ html
                             .rightItem
                                 input#m1-ethereality(type='range', name='m1-ethereality', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
-                            label.leftItem(for='m1-glimmer') Glimmer
-                            .rightItem
+                            label#gl_m1_left.leftItem(for='m1-glimmer') Glimmer
+                            #gl_m1_right.rightItem
                                 input#m1-glimmer(type='range', name='m1-glimmer', data-track-theme='c', data-theme='c', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m1-shift') Shift
@@ -999,8 +999,8 @@ html
                             .rightItem
                                 input#m2-ethereality(type='range', name='m2-ethereality', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
-                            label.leftItem(for='m2-glimmer') Glimmer
-                            .rightItem
+                            label#gl_m2_left.leftItem(for='m2-glimmer') Glimmer
+                            #gl_m2_right.rightItem
                                 input#m2-glimmer(type='range', name='m2-glimmer', data-track-theme='d', data-theme='d', min='0', max='100', value='50', step='5', data-popup-enabled='true', data-mini='true')
 
                             label.leftItem(for='m2-shift') Shift
