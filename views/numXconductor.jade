@@ -393,57 +393,108 @@ html
                             case 0:
                                 console.log("BEGINNING PIECE!");
                                 break;
-                            case 3:
-                                console.log("SWITCH TEMPO");
-                                //updateBPM(55);
-                                break;
 
+                                //case 1:
                             case 19:
                                 console.log("MEASURE 19");
                                 // P1 increase echo by .25
                                 updateAudienceParameter(0, 'echo', 25);
                                 // P2 increase glimmer by .25
-                                updateAudienceParameter(1, 'glimmer', 25);
+                                updateAudienceParameter(1, 'shift', 25);
                                 // P3 increase ethereality by .25
                                 updateAudienceParameter(2, 'ethereality', 25);
 
+                                updateAudienceParameter(0, 'pitch1', 250);
+                                updateAudienceParameter(0, 'pitch2', 250);
+                                updateAudienceParameter(0, 'pitch3', 250);
+
+                                updateAudienceParameter(1, 'pitch1', 350);
+                                updateAudienceParameter(1, 'pitch2', 350);
+                                updateAudienceParameter(1, 'pitch3', 350);
+
+                                updateAudienceParameter(2, 'pitch1', 400);
+                                updateAudienceParameter(2, 'pitch2', 400);
+                                updateAudienceParameter(2, 'pitch3', 400);
+
                                 break;
 
+                                //case 2:
                             case 24:
                                 console.log("MEASURE 24");
                                 // P1 increase echo by .25
                                 updateAudienceParameter(0, 'echo', 50);
                                 // P2 increase glimmer by .25
-                                updateAudienceParameter(1, 'glimmer', 50);
+                                updateAudienceParameter(1, 'shift', 50);
                                 // P3 increase ethereality by .25
                                 updateAudienceParameter(2, 'ethereality', 50);
+
+                                updateAudienceParameter(0, 'pitch1', 350);
+                                updateAudienceParameter(0, 'pitch2', 350);
+                                updateAudienceParameter(0, 'pitch3', 350);
+
+                                updateAudienceParameter(1, 'volume', 0.25);
+                                updateAudienceParameter(1, 'pitch1', 450);
+                                updateAudienceParameter(1, 'pitch2', 450);
+                                updateAudienceParameter(1, 'pitch3', 450);
+
+                                updateAudienceParameter(2, 'pitch1', 500);
+                                updateAudienceParameter(2, 'pitch2', 500);
+                                updateAudienceParameter(2, 'pitch3', 500);
+
                                 break;
 
+                                //case 3:
                             case 29:
                                 console.log("MEASURE 29");
                                 // P1 increase echo by .25
                                 updateAudienceParameter(0, 'echo', 75);
                                 // P2 increase glimmer by .25
-                                updateAudienceParameter(1, 'glimmer', 75);
+                                updateAudienceParameter(1, 'shift', 75);
                                 // P3 increase ethereality by .25
                                 updateAudienceParameter(2, 'ethereality', 75);
-                                break;
 
+                                updateAudienceParameter(0, 'pitch2', 450);
+                                updateAudienceParameter(0, 'pitch3', 500);
+
+                                updateAudienceParameter(1, 'pitch1', 350);
+                                updateAudienceParameter(1, 'pitch3', 500);
+
+                                updateAudienceParameter(2, 'pitch1', 350);
+                                updateAudienceParameter(2, 'pitch2', 450);
+
+                                break;
+                                //case 4:
                             case 34:
                                 console.log("MEASURE 34");
                                 // P1 increase echo by .25
                                 updateAudienceParameter(0, 'echo', 100);
                                 // P2 increase glimmer by .25
-                                updateAudienceParameter(1, 'glimmer', 100);
+                                updateAudienceParameter(1, 'shift', 100);
                                 // P3 increase ethereality by .25
                                 updateAudienceParameter(2, 'ethereality', 100);
-                                break;
 
+                                updateAudienceParameter(0, 'pitch1', 150);
+                                updateAudienceParameter(0, 'pitch2', 150);
+                                updateAudienceParameter(0, 'pitch3', 150);
+
+                                updateAudienceParameter(1, 'volume', 0.5);
+                                updateAudienceParameter(1, 'pitch1', 250);
+                                updateAudienceParameter(1, 'pitch2', 250);
+                                updateAudienceParameter(1, 'pitch3', 250);
+
+                                updateAudienceParameter(2, 'pitch1', 350);
+                                updateAudienceParameter(2, 'pitch2', 350);
+                                updateAudienceParameter(2, 'pitch3', 350);
+
+
+                                break;
+                                //case 5:
                             case 36:
                                 setChannel(0);
                                 break;
 
                             case 38:
+                                //case 6:
                                 console.log("MEASURE 38");
                                 // P1 max ethereality
                                 updateAudienceParameter(0, 'ethereality', 100);
@@ -451,21 +502,111 @@ html
                                 updateAudienceParameter(1, 'ethereality', 100);
                                 // P3 max ethereality
                                 updateAudienceParameter(2, 'ethereality', 100);
+
+                                updateAudienceParameter(0, 'pitch1', 200);
+                                updateAudienceParameter(0, 'pitch2', 500);
+                                updateAudienceParameter(0, 'pitch3', 800);
+
+                                updateAudienceParameter(1, 'pitch1', 300);
+                                updateAudienceParameter(1, 'pitch2', 600);
+                                updateAudienceParameter(1, 'pitch3', 900);
+
+                                updateAudienceParameter(2, 'pitch1', 150);
+                                updateAudienceParameter(2, 'pitch2', 500);
+                                updateAudienceParameter(2, 'pitch3', 1000);
                                 break;
 
+                            case 50:
+                                //case 7:
+                                console.log("MEASURE 50");
+                                updateAudienceParameter(0, 'pitch1', 250);
+                                updateAudienceParameter(0, 'pitch2', 250);
+                                updateAudienceParameter(0, 'pitch3', 250);
+
+                                updateAudienceParameter(1, 'pitch1', 350);
+                                updateAudienceParameter(1, 'pitch2', 350);
+                                updateAudienceParameter(1, 'pitch3', 350);
+
+                                updateAudienceParameter(2, 'pitch1', 400);
+                                updateAudienceParameter(2, 'pitch2', 400);
+                                updateAudienceParameter(2, 'pitch3', 400);
+
+
                             case 59:
+                                //case 8:
                                 console.log("MEASURE 59");
                                 // Slow Metronome
                                 //updateBPM(55);
+                                updateAudienceParameter(0, 'pitch1', 200);
+                                updateAudienceParameter(0, 'pitch2', 500);
+                                updateAudienceParameter(0, 'pitch3', 800);
+
+                                updateAudienceParameter(1, 'pitch1', 150);
+                                updateAudienceParameter(1, 'pitch2', 250);
+                                updateAudienceParameter(1, 'pitch3', 300);
+
+                                updateAudienceParameter(2, 'pitch1', 150);
+                                updateAudienceParameter(2, 'pitch2', 500);
+                                updateAudienceParameter(2, 'pitch3', 1000);
+
                                 break;
 
-                            case 93:
+                            case 70:
+                                //case 9:
+                                // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 75);
+                                // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'shift', 75);
+                                // P3 increase ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 75);
+
+                                break;
+
+                                //case 10:
+                            case 75:
+                                // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 50);
+                                // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'shift', 50);
+                                // P3 increase ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 50);
+                                break;
+
+                            case 80:
+                                //case 11:
+                                // P1 increase echo by .25
+                                updateAudienceParameter(0, 'echo', 25);
+                                // P2 increase glimmer by .25
+                                updateAudienceParameter(1, 'shift', 25);
+                                // P3 decrease ethereality by .25
+                                updateAudienceParameter(2, 'ethereality', 25);
+                                break;
+
+                                //case 12:
+                            case 85:
+                                // P1 decrease echo by 0
+                                updateAudienceParameter(0, 'echo', 0);
+                                // P2 decrease shift by 0
+                                updateAudienceParameter(1, 'shift', 0);
+                                // P3 decrease ethereality by 0
+                                updateAudienceParameter(2, 'ethereality', 0);
+                                break;
+
+
+                            case 91:
                                 console.log("DONE!");
                                 stopPiece();
                                 break;
 
                             default:
                                 console.log("Nothing happening");
+                        }
+
+                    } else {
+                        if (measureNum == 91) {
+                            console.log("DONE!");
+                            stopPiece();
+
                         }
 
                     }
