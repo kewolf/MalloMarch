@@ -128,7 +128,7 @@ var Player = function () {
     this.jcReverbGain.connect(this.nReverb);
 
     this.jcReverb = audioContext.createConvolver();
-    this.jcReverb.connect(this.jcReverbGain);
+    // this.jcReverb.connect(this.jcReverbGain);
 
     this.jcDryGain = audioContext.createGain();
     this.jcDryGain.connect(this.nDryGain);
@@ -258,7 +258,7 @@ var Player = function () {
         val = parseFloat(val);
         this.glimmer = val;
         this.jcReverbGain.gain.value = val / 100.0;
-        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.3;
+        this.jcDryGain.gain.value = 1 - (val / 100.0) * 0.0;
     };
     this.setShift = function(val) {
         val = parseFloat(val);

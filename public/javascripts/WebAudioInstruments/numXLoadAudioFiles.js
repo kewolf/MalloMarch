@@ -1,7 +1,7 @@
 var reverbPath = '/audio/reverbImpulses/Large_Wide_Echo_Hall.wav';
 var reverbBasePath = '/audio/chuck_reverb_impulses/';
 var jcImpulse = 'jcrev.wav';
-var nImpulse = 'nrev.wav';
+var nImpulse = 'jcrev.wav';
 var clickPath = '/audio/stick.wav';
 var clickPath2 = '/audio/stick2.wav';
 
