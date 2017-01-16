@@ -142,7 +142,7 @@ io.on('connection', function (socket) {
         //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
         var date = newSocket.dateTime;
         var data = JSON.parse(newSocket.str);
-        var LOGTITLE = "practice"
+        var LOGTITLE = "HOS";
 
         data["ip"] = id;
 

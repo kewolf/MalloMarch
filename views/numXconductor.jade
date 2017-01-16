@@ -432,7 +432,7 @@ html
                                 updateAudienceParameter(0, 'pitch2', 350);
                                 updateAudienceParameter(0, 'pitch3', 350);
 
-                                updateAudienceParameter(1, 'volume', 0.25);
+                                //updateAudienceParameter(1, 'volume', 0.25);
                                 updateAudienceParameter(1, 'pitch1', 450);
                                 updateAudienceParameter(1, 'pitch2', 450);
                                 updateAudienceParameter(1, 'pitch3', 450);
@@ -477,7 +477,7 @@ html
                                 updateAudienceParameter(0, 'pitch2', 150);
                                 updateAudienceParameter(0, 'pitch3', 150);
 
-                                updateAudienceParameter(1, 'volume', 0.5);
+                                //updateAudienceParameter(1, 'volume', 0.5);
                                 updateAudienceParameter(1, 'pitch1', 250);
                                 updateAudienceParameter(1, 'pitch2', 250);
                                 updateAudienceParameter(1, 'pitch3', 250);
@@ -490,6 +490,7 @@ html
                                 break;
                                 //case 5:
                             case 36:
+                                setChannel(1);
                                 setChannel(0);
                                 break;
 
@@ -537,13 +538,13 @@ html
                                 console.log("MEASURE 59");
                                 // Slow Metronome
                                 //updateBPM(55);
-                                updateAudienceParameter(0, 'pitch1', 200);
-                                updateAudienceParameter(0, 'pitch2', 500);
-                                updateAudienceParameter(0, 'pitch3', 800);
+                                updateAudienceParameter(0, 'pitch1', 250);
+                                updateAudienceParameter(0, 'pitch2', 250);
+                                updateAudienceParameter(0, 'pitch3', 350);
 
-                                updateAudienceParameter(1, 'pitch1', 150);
-                                updateAudienceParameter(1, 'pitch2', 250);
-                                updateAudienceParameter(1, 'pitch3', 300);
+                                updateAudienceParameter(1, 'pitch1', 250);
+                                updateAudienceParameter(1, 'pitch2', 500);
+                                updateAudienceParameter(1, 'pitch3', 800);
 
                                 updateAudienceParameter(2, 'pitch1', 150);
                                 updateAudienceParameter(2, 'pitch2', 500);
@@ -593,7 +594,7 @@ html
                                 break;
 
 
-                            case 91:
+                            case 92:
                                 console.log("DONE!");
                                 stopPiece();
                                 break;
@@ -603,7 +604,7 @@ html
                         }
 
                     } else {
-                        if (measureNum == 91) {
+                        if (measureNum == 92) {
                             console.log("DONE!");
                             stopPiece();
 
