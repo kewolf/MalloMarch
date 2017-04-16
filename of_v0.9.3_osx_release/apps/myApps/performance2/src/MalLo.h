@@ -31,12 +31,12 @@ using Poco::TimerCallback;
  *****************/
 
 
-/* Used to simluate the prediction process by updating the "predicted_height" 
-  of the mallo predictor after <latency> amount of time has passed. It's a hack.
+/* Used to simluate the prediction process by updating the "predicted_height"
+ of the mallo predictor after <latency> amount of time has passed. It's a hack.
  */
 class FutureHeight
 {
-
+    
 public:
     FutureHeight(double height_val, double * predicted_height, LeapPosition leap_pos, LeapPosition * past_leap_position)
     {
@@ -45,13 +45,13 @@ public:
         pos = leap_pos;
         past_leap_position_ptr = past_leap_position;
     }
-
+    
     void schedule(Timer& timer)
     {
         *predicted_height_ptr = height;
         *past_leap_position_ptr = pos;
     }
-
+    
 protected:
     double height;
     double * predicted_height_ptr;
@@ -108,7 +108,7 @@ public:
             timers.push_back(new Timer(latency, 0));
             timers.back()->start(TimerCallback<FutureHeight>(*predicted_heights.back(),
                                                              &FutureHeight::schedule),
-                                                             Thread::PRIO_HIGHEST);
+                                 Thread::PRIO_HIGHEST);
         }
     }
     
@@ -281,7 +281,7 @@ public:
         ofxOscMessage msg;
         msg.clear();
         msg.setAddress("/time_req");
-        msg.addInt64Arg((int64_t)ofGetElapsedTimeMillis());
+        msg.addIntArg(ofGetElapsedTimeMillis());
         msg.addIntArg(local_port);
         osc_sender->sendMessage(msg);
     }
@@ -293,28 +293,31 @@ public:
         if (osc_receiver.hasWaitingMessages())
         {
             receive_time = ofGetElapsedTimeMillis();
-        }
-        
-        while (osc_receiver.hasWaitingMessages())
-        {
-            osc_receiver.getNextMessage(msg);
-        }
-        
-        if (msg.getAddress() == "/time_res")
-        {
-            int64_t send_time = msg.getArgAsInt64(0);
-            int64_t server_time = msg.getArgAsInt64(1);
-            instant_offset = server_time - (send_time + receive_time) / 2;
-            //ofLog() << "send_time: " << send_time << ", server_time: " << server_time << ", instant_offset: " << instant_offset << endl;
             
-            if (!kalman_initialized)
+            while (osc_receiver.hasWaitingMessages())
             {
-                kalman_filter.posteri_est = instant_offset;
-                kalman_initialized = true;
+                osc_receiver.getNextMessage(msg);
             }
+            //            cout << "msg.getAddress: " << msg.getAddress() << endl;
             
-            kalman_filter.input_a_measurement(instant_offset);
-            //cout << fixed << "kalman posteri: " << kalman_filter.posteri_est << endl;
+            if (msg.getAddress() == "/time_res")
+            {
+                int64_t send_time = msg.getArgAsInt64(0);
+                //                int64_t server_time = msg.getArgAsInt64(1);
+                int64_t server_time = (int64_t)msg.getArgAsDouble(1);
+                instant_offset = server_time - (send_time + receive_time) / 2;
+                ofLog() << "send_time: " << send_time << ", server_time: " << server_time << ", instant_offset: " << instant_offset << endl;
+                cout << "send_time: " << send_time << ", server_time: " << server_time << ", instant_offset: " << instant_offset << endl;
+                
+                if (!kalman_initialized)
+                {
+                    kalman_filter.posteri_est = instant_offset;
+                    kalman_initialized = true;
+                }
+                
+                kalman_filter.input_a_measurement(instant_offset);
+                //cout << fixed << "kalman posteri: " << kalman_filter.posteri_est << endl;
+            }
         }
     }
 };
