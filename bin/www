@@ -8,10 +8,11 @@ var debug = require('debug')('MalloMarch:server');
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
-var osc = require('osc');
+var osc = require('osc-min');
 var jsonfile = require('jsonfile');
 var dateFormat = require('dateformat');
 var Long = require("long");
+udp = require("dgram");
 
 var interfaceConstants = require('../public/javascripts/interfaceConstants.js');
 
@@ -37,51 +38,88 @@ server.on('listening', onListening);
 //Create a socket io that listens on our server
 var io = require('socket.io').listen(server);
 
-// Create an osc.js UDP Port listening on port 6450.
-var udpPort = new osc.UDPPort({
-    localAddress: "0.0.0.0",
-    localPort: 6450
-});
+// // Create an osc.js UDP Port listening on port 6450.
+// var udpPort = new osc.UDPPort({
+//     localAddress: "0.0.0.0",
+//     localPort: 6450
+// });
+//
+// // Listen for incoming OSC Messages
+// udpPort.on("bundle", function (oscBundle, timeTag, info) {
+//     var path = oscBundle.packets[0].address;
+//     if (path == '/time_req') {
+//         var client_send_time = oscBundle.packets[0].args[0];
+//         var return_port = oscBundle.packets[0].args[1];
+//         // Send an OSC message back to performer
+//         var server_time = Long.fromValue((new Date).getTime());
+//         console.log("clent_send_time: " + client_send_time + ", server_time: " + server_time);
+//         udpPort.send({
+//             address: "/time_res",
+//             args: [client_send_time, server_time]
+//         }, info.address, 6448);
+//     } else {
+//         var divider = 1000000;
+//         var predicted_time = Number(oscBundle.packets[0].args[1]) * divider + Number(oscBundle.packets[0].args[2]);
+//         var send_time = Number(oscBundle.packets[0].args[3]) * divider + Number(oscBundle.packets[0].args[4]);
+//         io.emit('note_prediction', {
+//             path: path,
+//             predicted_time: predicted_time,
+//             send_time: send_time,
+//             velocity: oscBundle.packets[0].args[5],
+//             msg_id: oscBundle.packets[0].args[0],
+//             x_pos: oscBundle.packets[0].args[6],
+//             y_pos: oscBundle.packets[0].args[7],
+//             z_pos: oscBundle.packets[0].args[8]
+//         });
+//         // console.log("path: " + path + ", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime());
+//        //  console.log("predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (predicted_time - (new Date).getTime()));
+//         //console.log("velocity: ")
+//     }
+// });
+// udpPort.open();
 
-// Listen for incoming OSC Messages
-// NEEDS TO CHAGE FOR NEW OSC MESSAGES!
-udpPort.on("bundle", function (oscBundle, timeTag, info) {
-    var path = oscBundle.packets[0].address;
-    if (path == '/time_req') {
-        var client_send_time = oscBundle.packets[0].args[0];
-        var return_port = oscBundle.packets[0].args[1];
-        // Send an OSC message back to performer
-        var server_time = Long.fromValue((new Date).getTime());
-        udpPort.send({
-            address: "/time_res",
-            args: [client_send_time, server_time]
-        }, info.address, 6448);
-    } else {
-        var divider = 1000000;
-        var predicted_time = Number(oscBundle.packets[0].args[1]) * divider + Number(oscBundle.packets[0].args[2]);
-        var send_time = Number(oscBundle.packets[0].args[3]) * divider + Number(oscBundle.packets[0].args[4]);
-        io.emit('note_prediction', {
-            path: path,
-            predicted_time: predicted_time,
-            send_time: send_time,
-            velocity: oscBundle.packets[0].args[5],
-            msg_id: oscBundle.packets[0].args[0],
-            x_pos: oscBundle.packets[0].args[6],
-            y_pos: oscBundle.packets[0].args[7],
-            z_pos: oscBundle.packets[0].args[8]
-        });
-        console.log("path: " + path + ", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime());
-       //  console.log("predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (predicted_time - (new Date).getTime()));
-        //console.log("velocity: ")
+sock = udp.createSocket("udp4", function(msg, rinfo) {
+    var error, error1;
+    try {
+        contents = osc.fromBuffer(msg)['elements'][0];
+        // console.log(contents);
+
+        if (contents['address'] == '/time_req')
+        {
+            var client_send_time = contents['args'][0]['value'];
+            var return_port = contents['args'][1]['value'];
+            // Send an OSC message back to the performer
+            // var server_time = Long.fromValue((new Date).getTime());
+            var server_time = (new Date).getTime();
+            var server_time_float = parseFloat(server_time);
+            var response = osc.toBuffer({
+                oscType: 'message',
+                address: '/time_res',
+                args: [
+                    {type: 'integer', value: client_send_time},
+                    {type: 'double', value: server_time}
+                ]
+            });
+            sock.send(response, 0, response.length, 6448, rinfo.address);
+            console.log("clent_send_time: " + client_send_time + ", server_time: " + server_time + ", server_float: " + server_time_float);
+        }
+
+        // console.log(contents['elements'][0]['args']);
+        // if (contents["oscType"] == "bundle")
+        // {
+        //     console.log(contents);
+        // }
+    } catch (error1) {
+        error = error1;
+        console.log("error: " + error1);
+        return console.log("invalid OSC packet");
     }
 });
-
-// Open the osc socket for listening
-udpPort.open();
+sock.bind(6450);
 
 // Setup the mode for our interface
 // Initial Values
-var interfaceMode = interfaceConstants.InterfaceEnum.INFO;
+var interfaceMode = interfaceConstants.InterfaceEnum.M1;
 var isLoggerOn = 1;
 var isConsentFormOn = 1;
 var isSeqOn = 0;
@@ -142,7 +180,7 @@ io.on('connection', function (socket) {
         //var date = dateFormat(new Date(newSocket.dateTime), "dd-mm-yy_hh:MM:ssTT") //KT changed
         var date = newSocket.dateTime;
         var data = JSON.parse(newSocket.str);
-        var LOGTITLE = "HOS";
+        var LOGTITLE = "practice"
 
         data["ip"] = id;
 
