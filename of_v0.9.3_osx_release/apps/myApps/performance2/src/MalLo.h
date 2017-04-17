@@ -302,7 +302,7 @@ public:
             
             if (msg.getAddress() == "/time_res")
             {
-                int64_t send_time = msg.getArgAsInt64(0);
+                int64_t send_time = msg.getArgAsInt(0);
                 //                int64_t server_time = msg.getArgAsInt64(1);
                 int64_t server_time = (int64_t)msg.getArgAsDouble(1);
                 instant_offset = server_time - (send_time + receive_time) / 2;
