@@ -38,46 +38,6 @@ server.on('listening', onListening);
 //Create a socket io that listens on our server
 var io = require('socket.io').listen(server);
 
-// // Create an osc.js UDP Port listening on port 6450.
-// var udpPort = new osc.UDPPort({
-//     localAddress: "0.0.0.0",
-//     localPort: 6450
-// });
-//
-// // Listen for incoming OSC Messages
-// udpPort.on("bundle", function (oscBundle, timeTag, info) {
-//     var path = oscBundle.packets[0].address;
-//     if (path == '/time_req') {
-//         var client_send_time = oscBundle.packets[0].args[0];
-//         var return_port = oscBundle.packets[0].args[1];
-//         // Send an OSC message back to performer
-//         var server_time = Long.fromValue((new Date).getTime());
-//         console.log("clent_send_time: " + client_send_time + ", server_time: " + server_time);
-//         udpPort.send({
-//             address: "/time_res",
-//             args: [client_send_time, server_time]
-//         }, info.address, 6448);
-//     } else {
-//         var divider = 1000000;
-//         var predicted_time = Number(oscBundle.packets[0].args[1]) * divider + Number(oscBundle.packets[0].args[2]);
-//         var send_time = Number(oscBundle.packets[0].args[3]) * divider + Number(oscBundle.packets[0].args[4]);
-//         io.emit('note_prediction', {
-//             path: path,
-//             predicted_time: predicted_time,
-//             send_time: send_time,
-//             velocity: oscBundle.packets[0].args[5],
-//             msg_id: oscBundle.packets[0].args[0],
-//             x_pos: oscBundle.packets[0].args[6],
-//             y_pos: oscBundle.packets[0].args[7],
-//             z_pos: oscBundle.packets[0].args[8]
-//         });
-//         // console.log("path: " + path + ", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime());
-//        //  console.log("predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (predicted_time - (new Date).getTime()));
-//         //console.log("velocity: ")
-//     }
-// });
-// udpPort.open();
-
 sock = udp.createSocket("udp4", function(msg, rinfo) {
     var error, error1;
     try {
@@ -86,7 +46,7 @@ sock = udp.createSocket("udp4", function(msg, rinfo) {
 
         if (contents['address'] == '/time_req')
         {
-            var client_send_time = contents['args'][0]['value'];
+            var client_send_time = parseInt(contents['args'][0]['value']);
             var return_port = contents['args'][1]['value'];
             // Send an OSC message back to the performer
             // var server_time = Long.fromValue((new Date).getTime());
@@ -101,14 +61,26 @@ sock = udp.createSocket("udp4", function(msg, rinfo) {
                 ]
             });
             sock.send(response, 0, response.length, 6448, rinfo.address);
-            console.log("clent_send_time: " + client_send_time + ", server_time: " + server_time + ", server_float: " + server_time_float);
+            // console.log("clent_send_time: " + client_send_time + ", server_time: " + server_time + ", server_float: " + server_time_float);
+        } else
+        {
+            var divider = 1000000;
+            var predicted_time = Number(contents['args'][1]['value']) * divider + Number(contents['args'][2]['value']);
+            var send_time = Number(contents['args'][3]['value']) * divider + Number(contents['args'][4]['value']);
+            io.emit('note_prediction', {
+                path: contents['address'],
+                predicted_time: predicted_time,
+                send_time: send_time,
+                velocity: Number(contents['args'][5]['value']),
+                msg_id: Number(contents['args'][0]['value']),
+                x_pos: Number(contents['args'][6]['value']),
+                y_pos: Number(contents['args'][7]['value']),
+                z_pos: Number(contents['args'][8]['value'])
+            });
+            // console.log("path: " + contents['address'] + ", send_time: " + send_time + ", predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime());
+            console.log("predicted_time: " + predicted_time + ", current_time: " + (new Date).getTime() + ", diff: " + (predicted_time - (new Date).getTime()));
+            // console.log(contents['args']);
         }
-
-        // console.log(contents['elements'][0]['args']);
-        // if (contents["oscType"] == "bundle")
-        // {
-        //     console.log(contents);
-        // }
     } catch (error1) {
         error = error1;
         console.log("error: " + error1);
