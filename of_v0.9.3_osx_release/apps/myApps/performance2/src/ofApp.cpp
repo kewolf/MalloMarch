@@ -32,6 +32,7 @@ void ofApp::setup(){
     /****** OSC Setup******/
     int port_num = (send_to_chuck) ? 6449 : 6450;
     osc_sender.setup(ip_address, port_num);
+    osc_sender2.setup("192.168.1.124", port_num);
     
     /****** Time Sync *****/
     
@@ -234,43 +235,10 @@ void ofApp::sendOsc(double & scheduled_time)
         
         initializeOscMsg(&msg, leap_position1, OSC_MSG, send_value);
         osc_sender.sendMessage(msg);
+        osc_sender2.sendMessage(msg);
         //cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
     }
 }
-
-//void ofApp::sendOsc(float & scheduled_time)
-//{
-//    if (!send_to_chuck)
-//    {
-//        int64_t send_value;
-//        if (scheduled_time == -1)
-//        {
-//            if (last_message_was_unschedule) { return; }
-//            send_value = -1;
-//            last_message_was_unschedule = true;
-//            last_message_was_nada = false;
-//            
-//        } else if (scheduled_time == 0)
-//        {
-//            if (last_message_was_nada) { return; }
-//            //        cout << "*** sent nothing ***" << endl;
-//            last_message_was_nada = true;
-//            return;
-//        } else {
-//            send_value = sync_client->get_offset() + (int64_t) scheduled_time;
-//            last_message_was_unschedule = false;
-//            last_message_was_nada = false;
-//        }
-//        
-//        msg.clear();
-//        msg.setAddress(osc_path);
-//        msg.addInt64Arg(send_value);
-//        msg.addFloatArg(1.f);
-//        
-//        osc_sender.sendMessage(msg);
-//        //    cout << "path: " << osc_path << ", schedule_time: " << scheduled_time << ", send_value: " << send_value << endl;
-//    }
-//}
 
 // callbacks for the gui. it was necessary to have 3 functions.
 void ofApp::leftChanged(bool & param)

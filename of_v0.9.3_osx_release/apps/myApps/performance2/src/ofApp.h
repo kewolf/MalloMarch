@@ -79,6 +79,7 @@ public:
     // OSC
     int chuck_msg_id = 0;
     ofxOscSender osc_sender;
+    ofxOscSender osc_sender2;
     ofxOscReceiver osc_receiver;
     ofxOscMessage msg;
     string ip_address = "localhost";
