@@ -307,7 +307,7 @@ public:
                 int64_t server_time = (int64_t)msg.getArgAsDouble(1);
                 instant_offset = server_time - (send_time + receive_time) / 2;
                 ofLog() << "send_time: " << send_time << ", server_time: " << server_time << ", instant_offset: " << instant_offset << endl;
-                cout << "send_time: " << send_time << ", server_time: " << server_time << ", instant_offset: " << instant_offset << endl;
+                //cout << "send_time: " << send_time << ", server_time: " << server_time << ", instant_offset: " << instant_offset << endl;
                 
                 if (!kalman_initialized)
                 {

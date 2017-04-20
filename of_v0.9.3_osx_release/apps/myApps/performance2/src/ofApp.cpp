@@ -329,7 +329,7 @@ void ofApp::initializeOscMsg(ofxOscMessage * msg, LeapPosition pos, int chuck_or
     
     int64_t server_time_now = sync_client->get_server_time();
     int send_time_high_part = server_time_now / divider;
-    int send_time_low_part = server_time_now = (send_time_high_part * divider);
+    int send_time_low_part = server_time_now - (send_time_high_part * divider);
     
     long long since_epoch = getMillisSinceEpoch();
     int epoch_high_part = since_epoch / divider;
