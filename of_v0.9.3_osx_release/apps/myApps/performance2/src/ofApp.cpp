@@ -32,7 +32,7 @@ void ofApp::setup(){
     /****** OSC Setup******/
     int port_num = (send_to_chuck) ? 6449 : 6450;
     osc_sender.setup(ip_address, port_num);
-    osc_sender2.setup("192.168.1.124", port_num);
+    osc_sender2.setup("23.241.198.157", port_num);
     
     /****** Time Sync *****/
     
