@@ -9,7 +9,7 @@ npm install
 npm install serve-favicon jsnlog winston osc dateformat long socket.io
 ```
 
-for pigmi branch do this instead
+for pigmi branch do this instead (for the last line)
 ```
 npm install serve-favicon jsnlog winston osc-min dateformat long socket.io
 ```
