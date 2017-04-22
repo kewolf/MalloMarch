@@ -9,6 +9,11 @@ npm install
 npm install serve-favicon jsnlog winston osc dateformat long socket.io
 ```
 
+for pigmi branch do this instead
+```
+npm install serve-favicon jsnlog winston osc-min dateformat long socket.io
+```
+
 To install Eigen (needed for MalLo XCode project)
 ```
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
